@@ -92,6 +92,22 @@
 		});
 	});
 
+	/* Instant price estimator */
+	$$('[data-est]').forEach(function (box) {
+		var sel = $('[data-est-select]', box), out = $('[data-est-price]', box), wa = $('[data-est-wa]', box);
+		var base = wa ? wa.getAttribute('href') : '';
+		sel.addEventListener('change', function () {
+			var opt = sel.options[sel.selectedIndex];
+			if (!sel.value) { out.textContent = 'اختر خدمة أعلاه'; if (wa) wa.setAttribute('href', base); return; }
+			var price = opt.getAttribute('data-price');
+			out.textContent = price;
+			if (wa && box.dataset.wa) {
+				var text = 'مرحباً، أرغب بخدمة: ' + box.dataset.title + ' — ' + opt.text + ' (' + price + ')';
+				wa.setAttribute('href', 'https://wa.me/' + box.dataset.wa + '?text=' + encodeURIComponent(text));
+			}
+		});
+	});
+
 	/* Before / after sliders */
 	$$('[data-ba]').forEach(function (fig) {
 		var stage = $('.ba__stage', fig), input = $('input', fig);

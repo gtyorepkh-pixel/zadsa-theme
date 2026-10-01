@@ -94,3 +94,29 @@ add_filter( 'body_class', function ( $c ) {
 
 add_filter( 'excerpt_length', function () { return 24; } );
 add_filter( 'excerpt_more', function () { return '…'; } );
+
+/** "All our services" sidebar grouped by category, current page highlighted. */
+function zad_services_sidebar( $current_id = 0 ) {
+	$cats = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true ) );
+	echo '<nav class="sbar" aria-label="كل خدماتنا"><h3>كل خدماتنا</h3>';
+	if ( $cats && ! is_wp_error( $cats ) ) {
+		foreach ( $cats as $c ) {
+			$q = new WP_Query( array( 'post_type' => 'zad_service', 'posts_per_page' => 30, 'no_found_rows' => true, 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) ), 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
+			if ( ! $q->have_posts() ) {
+				continue;
+			}
+			echo '<details class="sbar__grp"' . ( has_term( $c->term_id, 'service_cat', $current_id ) ? ' open' : '' ) . '><summary>' . esc_html( $c->name ) . zad_icon( 'chevron', 16 ) . '</summary><ul>'; // phpcs:ignore
+			while ( $q->have_posts() ) {
+				$q->the_post();
+				echo '<li><a href="' . esc_url( get_permalink() ) . '"' . ( get_the_ID() === (int) $current_id ? ' class="is-on" aria-current="page"' : '' ) . '>' . esc_html( get_the_title() ) . '</a></li>';
+			}
+			echo '</ul></details>';
+			wp_reset_postdata();
+		}
+	}
+	echo '</nav>';
+	$phone = zad_phone( $current_id );
+	if ( $phone ) {
+		echo '<a class="callbox" href="' . esc_url( zad_tel_href( $phone ) ) . '">' . zad_icon( 'phone', 26 ) . '<span><small>اتصل مباشرة</small><b dir="ltr">' . esc_html( $phone ) . '</b></span></a>'; // phpcs:ignore
+	}
+}

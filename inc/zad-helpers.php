@@ -194,3 +194,38 @@ function zad_crumbs_schema( $crumbs ) {
 	}
 	return array( '@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'itemListElement' => $items );
 }
+
+/** Parse the price list textarea: "group | service | price | warranty". */
+function zad_parse_prices( $text ) {
+	$rows = array();
+	foreach ( zad_lines( $text ) as $line ) {
+		$c = array_map( 'trim', explode( '|', $line ) );
+		if ( count( $c ) < 2 ) {
+			continue;
+		}
+		if ( count( $c ) === 2 ) {
+			$row = array( '', $c[0], $c[1], '' );
+		} elseif ( count( $c ) === 3 ) {
+			$row = array( $c[0], $c[1], $c[2], '' );
+		} else {
+			$row = array( $c[0], $c[1], $c[2], $c[3] );
+		}
+		$num = 0;
+		if ( preg_match( '/\d[\d,٬]*/u', strtr( $row[2], '٠١٢٣٤٥٦٧٨٩', '0123456789' ), $m ) ) {
+			$num = (int) str_replace( array( ',', '٬' ), '', $m[0] );
+		}
+		$rows[] = array( 'group' => $row[0], 'name' => $row[1], 'price' => $row[2], 'warranty' => $row[3], 'num' => $num );
+	}
+	return $rows;
+}
+
+/** Lowest numeric price across rows (0 if none). */
+function zad_min_price( $rows ) {
+	$min = 0;
+	foreach ( $rows as $r ) {
+		if ( $r['num'] > 0 && ( ! $min || $r['num'] < $min ) ) {
+			$min = $r['num'];
+		}
+	}
+	return $min;
+}

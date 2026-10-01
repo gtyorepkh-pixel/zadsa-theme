@@ -23,14 +23,13 @@
 		});
 	});
 
-	var btn = document.getElementById('zad_gallery_btn');
-	if (btn && window.wp && wp.media) {
+	function mediaPicker(btn, input, prev) {
 		var frame;
 		btn.addEventListener('click', function () {
 			if (!frame) {
-				frame = wp.media({ title: 'معرض الخدمة', multiple: 'add', library: { type: 'image' } });
+				frame = wp.media({ title: 'اختيار الصور', multiple: 'add', library: { type: 'image' } });
 				frame.on('select', function () {
-					var ids = [], prev = document.getElementById('zad_gallery_prev');
+					var ids = [];
 					prev.innerHTML = '';
 					frame.state().get('selection').each(function (att) {
 						ids.push(att.id);
@@ -39,10 +38,17 @@
 						img.src = u; img.width = 60; img.height = 60;
 						prev.appendChild(img);
 					});
-					document.getElementById('zad_gallery').value = ids.join(',');
+					input.value = ids.join(',');
 				});
 			}
 			frame.open();
+		});
+	}
+	if (window.wp && wp.media) {
+		var g = document.getElementById('zad_gallery_btn');
+		if (g) mediaPicker(g, document.getElementById('zad_gallery'), document.getElementById('zad_gallery_prev'));
+		document.querySelectorAll('.zad-media-btn').forEach(function (b) {
+			mediaPicker(b, document.getElementById(b.dataset.target), document.getElementById(b.dataset.target + '_prev'));
 		});
 	}
 })();

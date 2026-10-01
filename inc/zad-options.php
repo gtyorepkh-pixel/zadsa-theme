@@ -6,10 +6,14 @@ $zad_prefix = '_memo_theme_options';
 CSF::createSection( $zad_prefix, array(
 	'title'  => 'الهوية والألوان',
 	'fields' => array(
-		array( 'id' => 'zad_color_primary', 'type' => 'color', 'title' => 'اللون الأساسي', 'default' => '#0b4f5c' ),
-		array( 'id' => 'zad_color_accent', 'type' => 'color', 'title' => 'لون الأزرار (التمييز)', 'default' => '#f59e0b' ),
+		array( 'id' => 'zad_color_primary', 'type' => 'color', 'title' => 'اللون الأساسي', 'default' => '#0b2e3a' ),
+		array( 'id' => 'zad_color_accent', 'type' => 'color', 'title' => 'لون الأزرار (التمييز)', 'default' => '#f2b134' ),
 		array( 'id' => 'memopt_lead_email', 'type' => 'text', 'title' => 'بريد استقبال الطلبات', 'desc' => 'إن تُرك فارغاً يُستخدم بريد التواصل العام.' ),
 		array( 'id' => 'zad_hours', 'type' => 'text', 'title' => 'أوقات العمل', 'default' => 'نخدمكم 24 ساعة طوال أيام الأسبوع' ),
+		array( 'id' => 'zad_provider', 'type' => 'text', 'title' => 'الاسم الرسمي للشركة', 'default' => '' ),
+		array( 'id' => 'zad_since', 'type' => 'text', 'title' => 'سنة التأسيس', 'default' => '' ),
+		array( 'id' => 'zad_reg', 'type' => 'text', 'title' => 'رقم السجل التجاري (اختياري)' ),
+		array( 'id' => 'zad_rating_text', 'type' => 'text', 'title' => 'نص التقييم أعلى الموقع', 'default' => 'تقييمات حقيقية على Google' ),
 		array( 'id' => 'zad_trustindex', 'type' => 'text', 'title' => 'معرّف ودجت Trustindex (اختياري)' ),
 	),
 ) );
@@ -50,6 +54,13 @@ CSF::createSection( $zad_prefix, array(
 			'fields' => array(
 				array( 'id' => 'q', 'type' => 'text', 'title' => 'السؤال' ),
 				array( 'id' => 'a', 'type' => 'textarea', 'title' => 'الإجابة' ),
+			),
+		),
+		array(
+			'id' => 'zad_clients', 'type' => 'group', 'title' => 'عملاؤنا (جهات وشركات)', 'button_title' => 'إضافة عميل',
+			'fields' => array(
+				array( 'id' => 'name', 'type' => 'text', 'title' => 'الاسم' ),
+				array( 'id' => 'note', 'type' => 'text', 'title' => 'ملاحظة (المدينة / المشروع)' ),
 			),
 		),
 		array( 'id' => 'zad_cta_title', 'type' => 'text', 'title' => 'عنوان الدعوة الختامية', 'default' => 'جاهزون لخدمتك الآن' ),

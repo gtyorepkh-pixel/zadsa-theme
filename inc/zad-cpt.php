@@ -78,14 +78,32 @@ add_action( 'add_meta_boxes', function () {
 	add_meta_box( 'zad_lead_meta', 'بيانات الطلب', 'zad_lead_metabox', 'zad_lead', 'normal', 'high' );
 } );
 
+
+/** Two-field repeater UI used by the service meta box. */
+function zad_repeater_ui( $post_id, $key, $a, $b, $pa, $pb, $add ) {
+	$rows = (array) get_post_meta( $post_id, '_zad_' . $key, true );
+	echo '<div class="zad-repeater" data-name="' . esc_attr( $key ) . '" data-a="' . esc_attr( $a ) . '" data-b="' . esc_attr( $b ) . '" data-pa="' . esc_attr( $pa ) . '" data-pb="' . esc_attr( $pb ) . '">';
+	foreach ( $rows as $i => $r ) {
+		echo '<div class="zad-row"><input type="text" name="zad[' . esc_attr( $key ) . '][' . (int) $i . '][' . esc_attr( $a ) . ']" value="' . esc_attr( $r[ $a ] ?? '' ) . '" placeholder="' . esc_attr( $pa ) . '"><textarea name="zad[' . esc_attr( $key ) . '][' . (int) $i . '][' . esc_attr( $b ) . ']" rows="2" placeholder="' . esc_attr( $pb ) . '">' . esc_textarea( $r[ $b ] ?? '' ) . '</textarea><button type="button" class="button zad-del">حذف</button></div>';
+	}
+	echo '<button type="button" class="button zad-add">+ ' . esc_html( $add ) . '</button></div>';
+}
+
+function zad_media_ui( $post_id, $key, $label ) {
+	$val = (string) get_post_meta( $post_id, '_zad_' . $key, true );
+	echo '<p><input type="hidden" class="zad-media-val" id="zad_' . esc_attr( $key ) . '" name="zad[' . esc_attr( $key ) . ']" value="' . esc_attr( $val ) . '"><button type="button" class="button zad-media-btn" data-target="zad_' . esc_attr( $key ) . '">' . esc_html( $label ) . '</button> <span class="zad-prev" id="zad_' . esc_attr( $key ) . '_prev">';
+	foreach ( array_filter( array_map( 'intval', explode( ',', $val ) ) ) as $aid ) {
+		echo wp_get_attachment_image( $aid, array( 60, 60 ) );
+	}
+	echo '</span></p>';
+}
+
 function zad_service_metabox( $post ) {
 	wp_nonce_field( 'zad_service_save', 'zad_service_nonce' );
 	$g = function ( $k, $d = '' ) use ( $post ) {
 		$v = get_post_meta( $post->ID, '_zad_' . $k, true );
 		return '' === $v ? $d : $v;
 	};
-	$steps   = (array) $g( 'steps', array() );
-	$faq     = (array) $g( 'faq', array() );
 	$gallery = (string) $g( 'gallery', '' );
 	$related = array_map( 'intval', (array) $g( 'related', array() ) );
 	$icon    = $g( 'icon', 'sparkle' );
@@ -120,29 +138,52 @@ function zad_service_metabox( $post ) {
 		<h4>مميزات الخدمة <small>(ميزة في كل سطر)</small></h4>
 		<p><textarea name="zad[features]" rows="5" style="width:100%"><?php echo esc_textarea( $g( 'features' ) ); ?></textarea></p>
 
+		<h4>الأرقام والإنجازات <small>(الرقم + الوصف، مثال: 13+ / سنة خبرة)</small></h4>
+		<?php zad_repeater_ui( $post->ID, 'stats', 'n', 'l', 'الرقم', 'الوصف', 'إضافة رقم' ); ?>
+
+		<h4>لماذا نحن (بطاقات)</h4>
+		<?php zad_repeater_ui( $post->ID, 'why', 't', 'd', 'العنوان', 'الوصف', 'إضافة ميزة' ); ?>
+
+		<h4>أنواع الخدمة / الخدمات الفرعية</h4>
+		<?php zad_repeater_ui( $post->ID, 'subs', 't', 'd', 'العنوان', 'الوصف', 'إضافة خدمة فرعية' ); ?>
+
+		<h4>الأدوات والمعدات</h4>
+		<?php zad_repeater_ui( $post->ID, 'tools', 't', 'd', 'العنوان', 'الوصف', 'إضافة أداة' ); ?>
+
 		<h4>خطوات التنفيذ</h4>
-		<div class="zad-repeater" data-name="steps" data-a="t" data-b="d" data-pa="عنوان الخطوة" data-pb="وصف الخطوة">
-			<?php foreach ( $steps as $i => $s ) : ?>
-				<div class="zad-row">
-					<input type="text" name="zad[steps][<?php echo (int) $i; ?>][t]" value="<?php echo esc_attr( $s['t'] ?? '' ); ?>" placeholder="عنوان الخطوة">
-					<textarea name="zad[steps][<?php echo (int) $i; ?>][d]" rows="2" placeholder="وصف الخطوة"><?php echo esc_textarea( $s['d'] ?? '' ); ?></textarea>
-					<button type="button" class="button zad-del">حذف</button>
-				</div>
-			<?php endforeach; ?>
-			<button type="button" class="button zad-add">+ إضافة خطوة</button>
-		</div>
+		<?php zad_repeater_ui( $post->ID, 'steps', 't', 'd', 'عنوان الخطوة', 'وصف الخطوة', 'إضافة خطوة' ); ?>
+
+		<h4>كيف نحدد السعر (عوامل التسعير)</h4>
+		<?php zad_repeater_ui( $post->ID, 'factors', 't', 'd', 'العنوان', 'الوصف', 'إضافة عامل' ); ?>
+
+		<h4>قائمة الأسعار <small>(سطر لكل بند بالشكل: الفئة | الخدمة | السعر | الضمان — الفئة والضمان اختياريان. يُستخدم أيضاً في مقدّر السعر الفوري)</small></h4>
+		<p><textarea name="zad[prices]" rows="8" style="width:100%" placeholder="مسبح صغير | تنظيف عميق شامل | 250 ريال | ضمان شهر&#10;مسبح صغير | تكنيس المسبح | 150 - 200 ريال"><?php echo esc_textarea( $g( 'prices' ) ); ?></textarea></p>
+
+		<h4>علامات الإصابة / المشكلة <small>(كيف تعرف أنك تحتاج الخدمة)</small></h4>
+		<?php zad_repeater_ui( $post->ID, 'signs', 't', 'd', 'العلامة', 'الوصف', 'إضافة علامة' ); ?>
+
+		<h4>الأضرار المحتملة عند التأجيل</h4>
+		<?php zad_repeater_ui( $post->ID, 'harms', 't', 'd', 'الضرر', 'الوصف', 'إضافة ضرر' ); ?>
+
+		<h4>الأمان أولاً <small>(بطاقات)</small></h4>
+		<?php zad_repeater_ui( $post->ID, 'safety', 't', 'd', 'العنوان', 'الوصف', 'إضافة نقطة أمان' ); ?>
+		<p><label>إرشادات ما بعد الخدمة (سطر لكل إرشاد)<textarea name="zad[aftercare]" rows="3" style="width:100%"><?php echo esc_textarea( $g( 'aftercare' ) ); ?></textarea></label></p>
+
+		<h4>الباقات <small>(سطر لكل باقة: الاسم | السعر | ميزة؛ ميزة؛ ميزة)</small></h4>
+		<p><textarea name="zad[packages]" rows="5" style="width:100%" placeholder="باقة أساسية | 250 ريال | معاينة؛ مبيدات آمنة؛ ضمان شهر"><?php echo esc_textarea( $g( 'packages' ) ); ?></textarea></p>
+
+		<h4>الضمان <small>(بطاقات)</small></h4>
+		<?php zad_repeater_ui( $post->ID, 'warrantyrows', 't', 'd', 'العنوان', 'الوصف', 'إضافة بند ضمان' ); ?>
+
+		<h4>البطاقة الفنية <small>(سطر: العنوان | القيمة — تضاف إلى البيانات التلقائية)</small></h4>
+		<p><textarea name="zad[spec]" rows="4" style="width:100%" placeholder="المواد المستخدمة | مبيدات مبطّنة مرخصة SFDA"><?php echo esc_textarea( $g( 'spec' ) ); ?></textarea></p>
 
 		<h4>الأسئلة الشائعة</h4>
-		<div class="zad-repeater" data-name="faq" data-a="q" data-b="a" data-pa="السؤال" data-pb="الإجابة">
-			<?php foreach ( $faq as $i => $s ) : ?>
-				<div class="zad-row">
-					<input type="text" name="zad[faq][<?php echo (int) $i; ?>][q]" value="<?php echo esc_attr( $s['q'] ?? '' ); ?>" placeholder="السؤال">
-					<textarea name="zad[faq][<?php echo (int) $i; ?>][a]" rows="2" placeholder="الإجابة"><?php echo esc_textarea( $s['a'] ?? '' ); ?></textarea>
-					<button type="button" class="button zad-del">حذف</button>
-				</div>
-			<?php endforeach; ?>
-			<button type="button" class="button zad-add">+ إضافة سؤال</button>
-		</div>
+		<?php zad_repeater_ui( $post->ID, 'faq', 'q', 'a', 'السؤال', 'الإجابة', 'إضافة سؤال' ); ?>
+
+		<h4>قبل / بعد <small>(اختر الصور بالترتيب: قبل، بعد، قبل، بعد… والعناوين سطراً لكل زوج: العنوان | الوصف)</small></h4>
+		<?php zad_media_ui( $post->ID, 'ba', 'اختيار صور قبل/بعد' ); ?>
+		<p><textarea name="zad[ba_text]" rows="3" style="width:100%"><?php echo esc_textarea( $g( 'ba_text' ) ); ?></textarea></p>
 
 		<h4>معرض الصور (قبل / بعد / أعمال)</h4>
 		<p>
@@ -212,7 +253,20 @@ add_action( 'save_post_zad_service', function ( $post_id ) {
 	$gal = isset( $in['gallery'] ) ? implode( ',', array_filter( array_map( 'absint', explode( ',', $in['gallery'] ) ) ) ) : '';
 	update_post_meta( $post_id, '_zad_gallery', $gal );
 
-	foreach ( array( 'steps' => array( 't', 'd' ), 'faq' => array( 'q', 'a' ) ) as $key => $f ) {
+	$maps = array(
+		'stats'   => array( 'n', 'l' ),
+		'why'     => array( 't', 'd' ),
+		'subs'    => array( 't', 'd' ),
+		'tools'   => array( 't', 'd' ),
+		'steps'   => array( 't', 'd' ),
+		'factors' => array( 't', 'd' ),
+		'faq'     => array( 'q', 'a' ),
+		'signs'   => array( 't', 'd' ),
+		'harms'   => array( 't', 'd' ),
+		'safety'  => array( 't', 'd' ),
+		'warrantyrows' => array( 't', 'd' ),
+	);
+	foreach ( $maps as $key => $f ) {
 		$rows = array();
 		foreach ( isset( $in[ $key ] ) ? (array) $in[ $key ] : array() as $r ) {
 			$a = isset( $r[ $f[0] ] ) ? sanitize_text_field( $r[ $f[0] ] ) : '';
@@ -223,6 +277,12 @@ add_action( 'save_post_zad_service', function ( $post_id ) {
 		}
 		update_post_meta( $post_id, '_zad_' . $key, $rows );
 	}
+	foreach ( array( 'aftercare', 'packages', 'spec' ) as $tk ) {
+		update_post_meta( $post_id, '_zad_' . $tk, isset( $in[ $tk ] ) ? sanitize_textarea_field( $in[ $tk ] ) : '' );
+	}
+	update_post_meta( $post_id, '_zad_prices', isset( $in['prices'] ) ? sanitize_textarea_field( $in['prices'] ) : '' );
+	update_post_meta( $post_id, '_zad_ba_text', isset( $in['ba_text'] ) ? sanitize_textarea_field( $in['ba_text'] ) : '' );
+	update_post_meta( $post_id, '_zad_ba', isset( $in['ba'] ) ? implode( ',', array_filter( array_map( 'absint', explode( ',', $in['ba'] ) ) ) ) : '' );
 	update_post_meta( $post_id, '_zad_related', isset( $in['related'] ) ? array_map( 'absint', (array) $in['related'] ) : array() );
 } );
 
