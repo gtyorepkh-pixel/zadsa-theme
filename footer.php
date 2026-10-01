@@ -53,7 +53,7 @@ $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'n
 <div class="dock" role="complementary" aria-label="تواصل سريع">
 	<?php if ( $phone ) : ?><a class="dock__btn dock__btn--call" href="<?php echo esc_url( zad_tel_href( $phone ) ); ?>"><?php echo zad_icon( 'phone', 22 ); // phpcs:ignore ?><span>اتصل الآن</span></a><?php endif; ?>
 	<?php if ( $wa ) : ?><a class="dock__btn dock__btn--wa" href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 22 ); // phpcs:ignore ?><span>واتساب</span></a><?php endif; ?>
-	<a class="dock__btn dock__btn--quote" href="#quote" data-scroll-quote><?php echo zad_icon( 'bolt', 22 ); // phpcs:ignore ?><span>عرض سعر</span></a>
+	<button type="button" class="dock__btn dock__btn--quote" data-open-wizard><?php echo zad_icon( 'bolt', 22 ); // phpcs:ignore ?><span>عرض سعر</span></button>
 </div>
 <button type="button" class="totop" data-totop aria-label="العودة للأعلى"><?php echo zad_icon( 'up', 22 ); // phpcs:ignore ?></button>
 <?php endif; ?>

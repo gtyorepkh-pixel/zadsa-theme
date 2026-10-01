@@ -24,6 +24,107 @@
 		});
 	});
 
+	/* Booking wizard */
+	var wiz = $('#zad-wizard');
+	if (wiz) {
+		var form = $('[data-wiz-form]', wiz), svcs = [], steps = $$('.wiz__step', wiz), cur = 1;
+		try { svcs = JSON.parse(wiz.getAttribute('data-services') || '[]'); } catch (e) {}
+		var sel = $('[data-wiz-service]', wiz), hidSvc = form.elements.service, cat = 0;
+		function fillServices() {
+			var keep = hidSvc.value;
+			sel.innerHTML = '<option value="">اختر الخدمة</option>';
+			svcs.forEach(function (s) {
+				if (cat && s.cat !== cat) return;
+				var o = document.createElement('option'); o.value = s.id; o.textContent = s.name;
+				if (String(s.id) === String(keep)) o.selected = true;
+				sel.appendChild(o);
+			});
+		}
+		function open() {
+			wiz.classList.add('is-open'); wiz.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden';
+			form.elements.source.value = location.href;
+			var c = wiz.getAttribute('data-current');
+			if (c && c !== '0' && !hidSvc.value) { hidSvc.value = c; }
+			fillServices();
+			go(cur);
+		}
+		function close() { wiz.classList.remove('is-open'); wiz.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
+		function go(n) {
+			cur = n;
+			steps.forEach(function (st) { st.hidden = st.getAttribute('data-step') != n; });
+			$$('[data-dot]', wiz).forEach(function (d) { var k = +d.getAttribute('data-dot'); d.classList.toggle('is-on', k <= n); });
+			$('[data-wiz-back]', wiz).hidden = n === 1;
+			$('[data-wiz-next]', wiz).hidden = n === 3;
+			$('[data-wiz-submit]', wiz).hidden = n !== 3;
+			if (n === 3) summary();
+		}
+		function err(n, msg) { var e = $('[data-err="' + n + '"]', wiz); if (!e) return; e.hidden = !msg; e.textContent = msg || ''; }
+		function summary() {
+			var s = svcs.filter(function (x) { return String(x.id) === String(hidSvc.value); })[0];
+			var rows = [['الخدمة', s ? s.name : '—'], ['المدينة', form.elements.area ? (form.elements.area.value || '—') : '—'],
+				['الموعد', [form.elements.date.value, form.elements.time.value].filter(Boolean).join(' ') || 'أي وقت']];
+			$('[data-wiz-sum]', wiz).innerHTML = rows.map(function (r) { return '<div><small>' + r[0] + '</small><b></b></div>'; }).join('');
+			$$('[data-wiz-sum] b', wiz).forEach(function (b, i) { b.textContent = rows[i][1]; });
+		}
+		$$('[data-open-wizard]').forEach(function (b) { b.addEventListener('click', open); });
+		$$('[data-wiz-close]', wiz).forEach(function (b) { b.addEventListener('click', close); });
+		document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && wiz.classList.contains('is-open')) close(); });
+		$$('[data-wiz-cats] .wiz__cat', wiz).forEach(function (b) {
+			b.addEventListener('click', function () {
+				var id = +b.getAttribute('data-cat'); cat = (cat === id) ? 0 : id;
+				$$('[data-wiz-cats] .wiz__cat', wiz).forEach(function (x) { x.classList.toggle('is-on', +x.getAttribute('data-cat') === cat); });
+				hidSvc.value = ''; fillServices();
+			});
+		});
+		sel.addEventListener('change', function () { hidSvc.value = sel.value; });
+		function chips(sel2, field, attr) {
+			$$(sel2 + ' button', wiz).forEach(function (b) {
+				b.addEventListener('click', function () {
+					var on = b.classList.contains('is-on');
+					$$(sel2 + ' button', wiz).forEach(function (x) { x.classList.remove('is-on'); });
+					if (!on) b.classList.add('is-on');
+					if (form.elements[field]) form.elements[field].value = on ? '' : b.getAttribute(attr);
+				});
+			});
+		}
+		chips('[data-wiz-city]', 'area', 'data-city'); chips('[data-wiz-time]', 'time', 'data-time');
+		var geo = $('[data-wiz-geo]', wiz);
+		geo.addEventListener('click', function () {
+			var lbl = $('span', geo);
+			if (!navigator.geolocation) { lbl.textContent = 'المتصفح لا يدعم تحديد الموقع'; return; }
+			lbl.textContent = 'جاري تحديد موقعك…';
+			navigator.geolocation.getCurrentPosition(function (p) {
+				form.elements.lat.value = p.coords.latitude.toFixed(6); form.elements.lng.value = p.coords.longitude.toFixed(6);
+				geo.classList.add('is-on'); lbl.textContent = 'تم تحديد موقعك ✓';
+			}, function () { lbl.textContent = 'تعذّر تحديد الموقع — اكتب الحي بدلاً منه'; }, { timeout: 10000 });
+		});
+		$('[data-wiz-next]', wiz).addEventListener('click', function () {
+			if (cur === 1) { if (!hidSvc.value) { err(1, 'اختر الخدمة المطلوبة للمتابعة.'); return; } err(1, ''); }
+			go(cur + 1);
+		});
+		$('[data-wiz-back]', wiz).addEventListener('click', function () { go(cur - 1); });
+		form.addEventListener('submit', function (e) {
+			var ph = (form.elements.phone.value || '').replace(/\D/g, '');
+			if (ph.length < 8) { e.preventDefault(); err(3, 'أدخل رقم جوال صحيح.'); form.elements.phone.focus(); return; }
+			if (!window.fetch || !window.ZAD) return;
+			e.preventDefault(); err(3, '');
+			var btn = $('[data-wiz-submit]', wiz); btn.disabled = true;
+			fetch(ZAD.ajax, { method: 'POST', body: new FormData(form), credentials: 'same-origin' })
+				.then(function (r) { return r.json(); })
+				.then(function (j) {
+					btn.disabled = false;
+					if (j && j.success) {
+						form.hidden = true; $('.wiz__progress', wiz).hidden = true;
+						var d = $('[data-wiz-done]', wiz); d.hidden = false;
+						$('[data-wiz-done-msg]', d).textContent = j.data.message;
+						var w = $('[data-wiz-wa]', d); if (j.data.whatsapp) { w.href = j.data.whatsapp; } else { w.hidden = true; }
+						if (window.gtag) gtag('event', 'generate_lead');
+					} else { err(3, (j && j.data && j.data.message) || 'تعذر الإرسال، حاول مرة أخرى.'); }
+				})
+				.catch(function () { btn.disabled = false; err(3, 'تعذر الاتصال، حاول مرة أخرى أو اتصل بنا.'); });
+		});
+	}
+
 	/* Light / dark theme */
 	$$('[data-theme-toggle]').forEach(function (b) {
 		b.addEventListener('click', function () {

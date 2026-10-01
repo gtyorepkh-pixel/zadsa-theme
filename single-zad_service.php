@@ -393,6 +393,16 @@ while ( have_posts() ) :
 	</div></section>
 	<?php endif; ?>
 
+	<!-- 15a. Related detailed questions -->
+	<?php $rf = zad_service_faqs( $id, 6 );
+	if ( $rf->have_posts() ) : ?>
+	<section class="sec sec--tint"><div class="wrap">
+		<header class="sec__head"><span class="eyebrow">شبكة الأسئلة</span><h2>أسئلة تفصيلية ذات صلة</h2></header>
+		<div class="faqlinks faqlinks--grid"><?php while ( $rf->have_posts() ) { $rf->the_post(); echo '<a href="' . esc_url( get_permalink() ) . '"><span>' . esc_html( get_the_title() ) . '</span>' . zad_icon( 'arrow', 18 ) . '</a>'; } wp_reset_postdata(); // phpcs:ignore ?></div>
+		<p class="sec__more"><a class="btn btn--ghost-dark" href="<?php echo esc_url( get_post_type_archive_link( 'zad_faq' ) ); ?>">كل الأسئلة</a></p>
+	</div></section>
+	<?php endif; ?>
+
 	<!-- 15b. Guides -->
 	<?php $gp = new WP_Query( array( 'post_type' => 'post', 'posts_per_page' => 4, 'ignore_sticky_posts' => 1, 'no_found_rows' => true ) );
 	if ( $gp->have_posts() ) : ?>

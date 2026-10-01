@@ -66,6 +66,9 @@ function zad_register_content_types() {
 
 add_action( 'after_switch_theme', function () {
 	zad_register_content_types();
+	if ( function_exists( 'zad_register_faq' ) ) {
+		zad_register_faq();
+	}
 	flush_rewrite_rules();
 } );
 

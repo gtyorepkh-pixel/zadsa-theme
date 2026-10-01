@@ -120,6 +120,10 @@ function zad_handle_quote() {
 	$message = isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '';
 	$date    = isset( $_POST['date'] ) ? sanitize_text_field( wp_unslash( $_POST['date'] ) ) : '';
 	$time    = isset( $_POST['time'] ) ? sanitize_text_field( wp_unslash( $_POST['time'] ) ) : '';
+	$addr    = isset( $_POST['address'] ) ? sanitize_text_field( wp_unslash( $_POST['address'] ) ) : '';
+	$lat     = isset( $_POST['lat'] ) && is_numeric( $_POST['lat'] ) ? (float) $_POST['lat'] : 0;
+	$lng     = isset( $_POST['lng'] ) && is_numeric( $_POST['lng'] ) ? (float) $_POST['lng'] : 0;
+	$map     = ( $lat && $lng ) ? 'https://maps.google.com/?q=' . $lat . ',' . $lng : '';
 	$source  = isset( $_POST['source'] ) ? esc_url_raw( wp_unslash( $_POST['source'] ) ) : '';
 
 	if ( mb_strlen( $name ) < 2 ) {
@@ -144,7 +148,7 @@ function zad_handle_quote() {
 		update_post_meta( $lead_id, '_lead_phone', $phone );
 		update_post_meta( $lead_id, '_lead_service', $service->post_title );
 		update_post_meta( $lead_id, '_lead_area', $area );
-		update_post_meta( $lead_id, '_lead_message', trim( $message . ( $date || $time ? "\nالموعد المفضّل: $date $time" : '' ) ) );
+		update_post_meta( $lead_id, '_lead_message', trim( $message . ( $date || $time ? "\nالموعد المفضّل: $date $time" : '' ) . ( $addr ? "\nالعنوان: $addr" : '' ) . ( $map ? "\nالموقع: $map" : '' ) ) );
 		update_post_meta( $lead_id, '_lead_source', $source );
 		update_post_meta( $lead_id, '_lead_ip', $ip );
 		update_post_meta( $lead_id, '_lead_status', 'new' );
@@ -153,7 +157,7 @@ function zad_handle_quote() {
 	$to = zad_opt( 'memopt_lead_email', zad_opt( 'memopt_mail', get_option( 'admin_email' ) ) );
 	if ( is_email( $to ) ) {
 		$body  = "طلب جديد من الموقع\n\n";
-		$body .= "الاسم: $name\nالجوال: $phone\nالخدمة: {$service->post_title}\nالمنطقة: $area\nالتفاصيل: $message\nالموعد المفضّل: $date $time\nالصفحة: $source\n";
+		$body .= "الاسم: $name\nالجوال: $phone\nالخدمة: {$service->post_title}\nالمنطقة: $area\nالتفاصيل: $message\nالموعد المفضّل: $date $time\nالعنوان: $addr\nالموقع: $map\nالصفحة: $source\n";
 		$body .= "واتساب: https://wa.me/" . zad_intl_number( $phone ) . "\n";
 		wp_mail( $to, 'طلب جديد: ' . $service->post_title, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 	}

@@ -137,5 +137,24 @@ function zad_demo_import() {
 			update_post_meta( $pid, '_zad_' . $k, $v );
 		}
 	}
+	// Demo FAQ pages linked to the first service.
+	$first = get_page_by_title( 'شركة رش مبيدات بالرياض', OBJECT, 'zad_service' );
+	$fcat  = zad_demo_term( 'الرش والمبيدات', 'faq_cat' );
+	$faqs  = array(
+		'كم يدوم أثر الرش الوقائي؟' => array( 'يمتد الأثر الوقائي أسابيع، ونحدد موعد الرش التالي حسب الموسم ونوع الإصابة.', '<p>المبيدات المبطّنة تثبت على الأسطح وتقاوم الرطوبة، لذلك يطول أثرها مقارنة بالمبيدات العادية. نجدول المتابعة بعد المعاينة.</p>' ),
+		'ماذا أغطّي قبل الرش؟' => array( 'غطِّ الطعام والأواني وأخرج الحيوانات الأليفة وأحواض السمك.', '<p>نرسل لك قائمة التحضير قبل الزيارة، ونوضح متى يمكن العودة للمكان بعد الجفاف.</p>' ),
+		'هل الرش الضبابي يضر النباتات؟' => array( 'يُوجَّه بعيداً عن النباتات الحساسة وبتركيز مناسب، ونحدد ذلك بعد المعاينة.', '<p>الفوغ يناسب المساحات الكبيرة والمنشآت، أما النباتات فنحميها أو نستبدله برش موضعي.</p>' ),
+		'كيف أتحقق من ترخيص شركة المكافحة؟' => array( 'اطلب السجل التجاري ورخصة المبيدات وتحقق منها من الجهات الرسمية.', '<p>الشركة الموثوقة تعرض بياناتها بوضوح وتقدم عقداً وضماناً مكتوبين.</p>' ),
+	);
+	foreach ( $faqs as $q => $a ) {
+		if ( get_page_by_title( $q, OBJECT, 'zad_faq' ) ) {
+			continue;
+		}
+		$fid = wp_insert_post( array( 'post_type' => 'zad_faq', 'post_status' => 'publish', 'post_title' => $q, 'post_excerpt' => $a[0], 'post_content' => $a[1] ) );
+		if ( $fid && ! is_wp_error( $fid ) ) {
+			if ( $fcat ) { wp_set_object_terms( $fid, array( $fcat ), 'faq_cat' ); }
+			if ( $first ) { update_post_meta( $fid, '_zad_faq_services', array( (string) $first->ID ) ); }
+		}
+	}
 	return $created;
 }

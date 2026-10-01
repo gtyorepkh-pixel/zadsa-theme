@@ -59,11 +59,7 @@ $phone = zad_opt( 'memopt_phone' );
 					<button type="submit" aria-label="بحث"><?php echo zad_icon( 'search', 18 ); // phpcs:ignore ?></button>
 				</form>
 			</nav>
-			<?php if ( zad_whatsapp( 0 ) || $phone ) : ?>
-				<a class="btn btn--accent hdr__cta" href="<?php echo esc_url( zad_wa_link( 'مرحباً، أرغب بطلب خدمة', 0 ) ?: zad_tel_href( $phone ) ); ?>" <?php echo zad_wa_link( '', 0 ) ? 'target="_blank" rel="noopener"' : ''; ?>>
-					<?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> اطلب الآن
-				</a>
-			<?php endif; ?>
+			<button type="button" class="btn btn--accent hdr__cta" data-open-wizard><?php echo zad_icon( 'bolt', 20 ); // phpcs:ignore ?> احجز موعد</button>
 		</div>
 	</div>
 	<div class="nav-overlay" data-nav-close></div>

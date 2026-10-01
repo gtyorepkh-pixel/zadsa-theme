@@ -9,7 +9,8 @@ $wa    = zad_wa_link( 'مرحباً، أرغب بطلب خدمة' );
 			<p><?php echo esc_html( zad_opt( 'zad_cta_sub', 'تواصل معنا وسيصلك الفني مع عرض سعر واضح قبل البدء.' ) ); ?></p>
 		</div>
 		<div class="cta__btns">
-			<?php if ( $phone ) : ?><a class="btn btn--accent" href="<?php echo esc_url( zad_tel_href( $phone ) ); ?>"><?php echo zad_icon( 'phone', 20 ); // phpcs:ignore ?> اتصل الآن</a><?php endif; ?>
+			<button type="button" class="btn btn--accent" data-open-wizard><?php echo zad_icon( 'bolt', 20 ); // phpcs:ignore ?> احجز موعد</button>
+			<?php if ( $phone ) : ?><a class="btn btn--ghost" href="<?php echo esc_url( zad_tel_href( $phone ) ); ?>"><?php echo zad_icon( 'phone', 20 ); // phpcs:ignore ?> اتصل الآن</a><?php endif; ?>
 			<?php if ( $wa ) : ?><a class="btn btn--wa" href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> واتساب</a><?php endif; ?>
 		</div>
 	</div>
