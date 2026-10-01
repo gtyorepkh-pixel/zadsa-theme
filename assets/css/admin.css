@@ -1,0 +1,7 @@
+.zad-mb h4{margin:22px 0 8px;font-size:14px;border-bottom:1px solid #dcdcde;padding-bottom:6px}
+.zad-mb small{font-weight:400;color:#646970}
+.zad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 16px}
+.zad-grid label,.zad-mb label{display:block;font-weight:600}
+.zad-grid input[type=text],.zad-grid input[type=number],.zad-grid input[type=url],.zad-grid select{width:100%;margin-top:4px}
+.zad-row{display:grid;grid-template-columns:1fr 2fr auto;gap:8px;margin-bottom:8px;align-items:start}
+.zad-prev img{margin:0 4px;border-radius:4px;vertical-align:middle}
