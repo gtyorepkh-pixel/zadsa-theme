@@ -27,6 +27,7 @@ require_once MEMO_THEME_DIR .'inc/zad-helpers.php';
 require_once MEMO_THEME_DIR .'inc/zad-cpt.php';
 require_once MEMO_THEME_DIR .'inc/zad-leads.php';
 require_once MEMO_THEME_DIR .'inc/zad-frontend.php';
+require_once MEMO_THEME_DIR .'inc/zad-demo.php';
 require_once get_theme_file_path() .'/_inc/_admin/admin-options.php';
 
 $GLOBALS['memo_theme_options'] = get_option( '_memo_options' );
