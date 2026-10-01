@@ -39,6 +39,7 @@ if ( ! class_exists( 'MemoSetupTheme' ) ) :
                 'mainmenu' => 'القائمه العلوية',
                 'footermenu' => 'قائمة الفوتر',
                 'footerinfo' => 'قائمة الفوتر الثانية',
+                'legalmenu' => 'الروابط القانونية (أسفل الفوتر)',
             )
         );
     
