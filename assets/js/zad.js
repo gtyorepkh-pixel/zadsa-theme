@@ -108,6 +108,23 @@
 		});
 	});
 
+	/* Video poster -> load on click */
+	$$('.vframe').forEach(function (f) {
+		var btn = $('.vframe__play', f);
+		btn.addEventListener('click', function () {
+			var src = f.getAttribute('data-video'), el, m;
+			if ((m = src.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/))) {
+				el = document.createElement('iframe');
+				el.src = 'https://www.youtube-nocookie.com/embed/' + m[1] + '?autoplay=1&rel=0';
+				el.allow = 'autoplay; encrypted-media; picture-in-picture'; el.allowFullscreen = true; el.title = 'فيديو';
+			} else {
+				el = document.createElement('video');
+				el.src = src; el.controls = true; el.autoplay = true; el.playsInline = true;
+			}
+			f.appendChild(el); f.classList.add('is-on');
+		});
+	});
+
 	/* Before / after sliders */
 	$$('[data-ba]').forEach(function (fig) {
 		var stage = $('.ba__stage', fig), input = $('input', fig);

@@ -156,8 +156,8 @@ function zad_service_metabox( $post ) {
 		<h4>كيف نحدد السعر (عوامل التسعير)</h4>
 		<?php zad_repeater_ui( $post->ID, 'factors', 't', 'd', 'العنوان', 'الوصف', 'إضافة عامل' ); ?>
 
-		<h4>قائمة الأسعار <small>(سطر لكل بند بالشكل: الفئة | الخدمة | السعر | الضمان — الفئة والضمان اختياريان. يُستخدم أيضاً في مقدّر السعر الفوري)</small></h4>
-		<p><textarea name="zad[prices]" rows="8" style="width:100%" placeholder="مسبح صغير | تنظيف عميق شامل | 250 ريال | ضمان شهر&#10;مسبح صغير | تكنيس المسبح | 150 - 200 ريال"><?php echo esc_textarea( $g( 'prices' ) ); ?></textarea></p>
+		<h4>قائمة الأسعار <small>(سطر لكل بند: الفئة | الخدمة | السعر | التفاصيل | الضمان — الفئة والتفاصيل والضمان اختيارية. يُستخدم أيضاً في مقدّر السعر الفوري)</small></h4>
+		<p><textarea name="zad[prices]" rows="8" style="width:100%" placeholder="غرف خاصة | غرفة صغيرة | 400 ريال / شهرياً | مناسبة لشقة صغيرة | &#10;خدمات إضافية | النقل والتغليف | 300 - 650 ريال | تُدفع مرة واحدة"><?php echo esc_textarea( $g( 'prices' ) ); ?></textarea></p>
 
 		<h4>علامات الإصابة / المشكلة <small>(كيف تعرف أنك تحتاج الخدمة)</small></h4>
 		<?php zad_repeater_ui( $post->ID, 'signs', 't', 'd', 'العلامة', 'الوصف', 'إضافة علامة' ); ?>
@@ -177,6 +177,8 @@ function zad_service_metabox( $post ) {
 
 		<h4>البطاقة الفنية <small>(سطر: العنوان | القيمة — تضاف إلى البيانات التلقائية)</small></h4>
 		<p><textarea name="zad[spec]" rows="4" style="width:100%" placeholder="المواد المستخدمة | مبيدات مبطّنة مرخصة SFDA"><?php echo esc_textarea( $g( 'spec' ) ); ?></textarea></p>
+
+		<p><label>ملاحظة تحت جدول الأسعار (خصومات، شروط…)<textarea name="zad[price_note]" rows="2" style="width:100%"><?php echo esc_textarea( $g( 'price_note' ) ); ?></textarea></label></p>
 
 		<h4>الأسئلة الشائعة</h4>
 		<?php zad_repeater_ui( $post->ID, 'faq', 'q', 'a', 'السؤال', 'الإجابة', 'إضافة سؤال' ); ?>
@@ -277,7 +279,7 @@ add_action( 'save_post_zad_service', function ( $post_id ) {
 		}
 		update_post_meta( $post_id, '_zad_' . $key, $rows );
 	}
-	foreach ( array( 'aftercare', 'packages', 'spec' ) as $tk ) {
+	foreach ( array( 'aftercare', 'packages', 'spec', 'price_note' ) as $tk ) {
 		update_post_meta( $post_id, '_zad_' . $tk, isset( $in[ $tk ] ) ? sanitize_textarea_field( $in[ $tk ] ) : '' );
 	}
 	update_post_meta( $post_id, '_zad_prices', isset( $in['prices'] ) ? sanitize_textarea_field( $in['prices'] ) : '' );

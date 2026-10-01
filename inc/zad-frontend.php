@@ -34,12 +34,25 @@ add_action( 'wp_head', function () {
 		if ( $price ) {
 			$s['offers'] = array( '@type' => 'Offer', 'price' => (string) $price, 'priceCurrency' => 'SAR' );
 		}
+		$offers = array();
+		foreach ( zad_parse_prices( get_post_meta( $id, '_zad_prices', true ) ) as $r ) {
+			if ( $r['num'] > 0 ) {
+				$offers[] = array( '@type' => 'Offer', 'name' => $r['name'], 'priceCurrency' => 'SAR', 'price' => $r['num'], 'category' => $r['group'] );
+			}
+		}
+		if ( $offers ) {
+			$s['hasOfferCatalog'] = array( '@type' => 'OfferCatalog', 'name' => 'أسعار ' . get_the_title(), 'itemListElement' => $offers );
+		}
 		$rating  = get_post_meta( $id, '_zad_rating', true );
 		$reviews = (int) get_post_meta( $id, '_zad_reviews', true );
 		if ( $rating && $reviews > 0 ) {
 			$s['aggregateRating'] = array( '@type' => 'AggregateRating', 'ratingValue' => (string) $rating, 'reviewCount' => $reviews );
 		}
 		zad_print_schema( $s );
+		$vid = get_post_meta( $id, '_zad_video', true );
+		if ( $vid ) {
+			zad_print_schema( array( '@context' => 'https://schema.org', '@type' => 'VideoObject', 'name' => get_the_title(), 'description' => wp_strip_all_tags( get_the_excerpt() ?: get_the_title() ), 'contentUrl' => $vid, 'uploadDate' => get_the_date( 'c' ), 'thumbnailUrl' => has_post_thumbnail() ? get_the_post_thumbnail_url( $id, 'large' ) : home_url( '/' ) ) );
+		}
 		zad_print_schema( zad_business_schema() );
 		zad_print_schema( zad_crumbs_schema( zad_service_crumbs( $id ) ) );
 

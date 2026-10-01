@@ -203,18 +203,19 @@ function zad_parse_prices( $text ) {
 		if ( count( $c ) < 2 ) {
 			continue;
 		}
+		// 2 cols: name|price ; 3: group|name|price ; 4: group|name|price|details ; 5: + warranty.
 		if ( count( $c ) === 2 ) {
-			$row = array( '', $c[0], $c[1], '' );
+			$c = array( '', $c[0], $c[1], '', '' );
 		} elseif ( count( $c ) === 3 ) {
-			$row = array( $c[0], $c[1], $c[2], '' );
-		} else {
-			$row = array( $c[0], $c[1], $c[2], $c[3] );
+			$c = array( $c[0], $c[1], $c[2], '', '' );
+		} elseif ( count( $c ) === 4 ) {
+			$c[] = '';
 		}
 		$num = 0;
-		if ( preg_match( '/\d[\d,٬]*/u', strtr( $row[2], '٠١٢٣٤٥٦٧٨٩', '0123456789' ), $m ) ) {
+		if ( preg_match( '/\d[\d,٬]*/u', strtr( $c[2], '٠١٢٣٤٥٦٧٨٩', '0123456789' ), $m ) ) {
 			$num = (int) str_replace( array( ',', '٬' ), '', $m[0] );
 		}
-		$rows[] = array( 'group' => $row[0], 'name' => $row[1], 'price' => $row[2], 'warranty' => $row[3], 'num' => $num );
+		$rows[] = array( 'group' => $c[0], 'name' => $c[1], 'price' => $c[2], 'details' => $c[3], 'warranty' => $c[4], 'num' => $num );
 	}
 	return $rows;
 }

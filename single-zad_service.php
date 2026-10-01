@@ -27,6 +27,8 @@ while ( have_posts() ) :
 		$pkgs[] = array( 'name' => $c[0], 'price' => $c[1] ?? '', 'feat' => isset( $c[2] ) ? array_filter( array_map( 'trim', preg_split( '/[;؛]/u', $c[2] ) ) ) : array() );
 	}
 	$prices   = zad_parse_prices( $m( 'prices' ) );
+	$has_det  = (bool) array_filter( wp_list_pluck( $prices, 'details' ) );
+	$has_war  = (bool) array_filter( wp_list_pluck( $prices, 'warranty' ) );
 	$min      = zad_min_price( $prices ) ?: (int) $m( 'price' );
 	$unit     = $m( 'price_unit' ) ?: 'ريال';
 	$gallery  = array_filter( array_map( 'intval', explode( ',', (string) $m( 'gallery' ) ) ) );
@@ -211,19 +213,21 @@ while ( have_posts() ) :
 	<section class="sec"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">قائمة الأسعار</span><h2>أسعار <?php echo esc_html( $title ); ?></h2></header>
 		<div class="tbl"><table>
-			<thead><tr><th>الخدمة</th><th>السعر</th><th>الضمان</th><th></th></tr></thead>
+			<thead><tr><th>الخدمة</th><?php if ( $has_det ) : ?><th>التفاصيل</th><?php endif; ?><th>السعر</th><?php if ( $has_war ) : ?><th>الضمان</th><?php endif; ?><th></th></tr></thead>
 			<tbody>
 			<?php $last = null; foreach ( $prices as $r ) :
-				if ( $r['group'] && $r['group'] !== $last ) { echo '<tr class="tbl__grp"><td colspan="4">' . esc_html( $r['group'] ) . '</td></tr>'; $last = $r['group']; } ?>
+				if ( $r['group'] && $r['group'] !== $last ) { echo '<tr class="tbl__grp"><td colspan="5">' . esc_html( $r['group'] ) . '</td></tr>'; $last = $r['group']; } ?>
 				<tr>
 					<td data-l="الخدمة"><?php echo esc_html( $r['name'] ); ?></td>
+					<?php if ( $has_det ) : ?><td data-l="التفاصيل" class="tbl__det"><?php echo esc_html( $r['details'] ); ?></td><?php endif; ?>
 					<td data-l="السعر"><b><?php echo esc_html( $r['price'] ); ?></b></td>
-					<td data-l="الضمان"><?php echo esc_html( $r['warranty'] ?: '—' ); ?></td>
+					<?php if ( $has_war ) : ?><td data-l="الضمان"><?php echo esc_html( $r['warranty'] ?: '—' ); ?></td><?php endif; ?>
 					<td><a class="iconbtn iconbtn--wa" href="<?php echo esc_url( zad_wa_link( 'مرحباً، أرغب بـ: ' . $r['name'], $id ) ); ?>" target="_blank" rel="noopener" aria-label="اطلب عبر واتساب"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?></a></td>
 				</tr>
 			<?php endforeach; ?>
 			</tbody>
 		</table></div>
+		<?php if ( $m( 'price_note' ) ) : ?><p class="tbl__note"><?php echo esc_html( $m( 'price_note' ) ); ?></p><?php endif; ?>
 	</div></section>
 	<?php endif; ?>
 
@@ -327,11 +331,33 @@ while ( have_posts() ) :
 	</div></section>
 	<?php endif; ?>
 
-	<?php if ( $gallery || $video ) : ?>
+	<?php if ( $video ) : ?>
+	<section class="sec sec--dark" id="video"><div class="wrap wrap--narrow">
+		<header class="sec__head"><span class="eyebrow">شاهد الفرق بنفسك</span><h2>شاهد خدماتنا عن قرب</h2></header>
+		<div class="vframe" data-video="<?php echo esc_url( $video ); ?>"<?php echo $thumb ? ' style="--poster:url(\'' . esc_url( wp_get_attachment_image_url( $thumb, 'large' ) ) . '\')"' : ''; ?>>
+			<button type="button" class="vframe__play" aria-label="تشغيل الفيديو"><svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M8 5v14l11-7Z"/></svg></button>
+		</div>
+	</div></section>
+	<?php endif; ?>
+
+	<?php if ( $gallery ) : ?>
 	<section class="sec sec--tint"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">من أعمالنا</span><h2>صور من التنفيذ</h2></header>
 		<?php if ( $gallery ) : ?><div class="gal"><?php foreach ( $gallery as $gid ) : ?><a href="<?php echo esc_url( wp_get_attachment_image_url( $gid, 'full' ) ); ?>" target="_blank" rel="noopener"><?php echo wp_get_attachment_image( $gid, 'medium_large', false, array( 'loading' => 'lazy' ) ); ?></a><?php endforeach; ?></div><?php endif; ?>
-		<?php if ( $video ) : ?><div class="video"><?php echo wp_oembed_get( $video ) ?: '<video controls preload="none" src="' . esc_url( $video ) . '"></video>'; // phpcs:ignore ?></div><?php endif; ?>
+	</div></section>
+	<?php endif; ?>
+
+	<!-- 13a. B2B sectors -->
+	<?php $sectors = array_filter( (array) zad_opt( 'zad_sectors', array() ), function ( $c ) { return ! empty( $c['name'] ); } );
+	if ( $sectors ) : ?>
+	<section class="sec sec--tint"><div class="wrap">
+		<header class="sec__head"><span class="eyebrow">قطاع الأعمال</span><h2>شركات تثق بنا</h2></header>
+		<div class="b2b">
+			<?php foreach ( $sectors as $sct ) : ?>
+				<div class="b2b__s"><h3><?php echo esc_html( $sct['name'] ); ?></h3>
+				<?php $names = zad_lines( $sct['names'] ?? '' ); if ( $names ) : ?><ul><?php foreach ( $names as $n ) { echo '<li>' . esc_html( $n ) . '</li>'; } ?></ul><?php else : ?><p><?php echo esc_html( $sct['note'] ?? '' ); ?></p><?php endif; ?></div>
+			<?php endforeach; ?>
+		</div>
 	</div></section>
 	<?php endif; ?>
 

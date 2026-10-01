@@ -50,6 +50,11 @@ function zad_quote_form( $args = array() ) {
 				</select></label>
 		<?php endif; ?>
 		<?php if ( ! $a['compact'] ) : ?>
+			<div class="fld--row">
+				<label class="fld" for="<?php echo $id; ?>-date"><span>التاريخ المفضّل (اختياري)</span><input id="<?php echo $id; ?>-date" name="date" type="date"></label>
+				<label class="fld" for="<?php echo $id; ?>-time"><span>الفترة (اختياري)</span>
+					<select id="<?php echo $id; ?>-time" name="time"><option value="">أي وقت</option><option value="صباحاً">صباحاً</option><option value="ظهراً">ظهراً</option><option value="مساءً">مساءً</option></select></label>
+			</div>
 			<label class="fld" for="<?php echo $id; ?>-msg"><span>تفاصيل إضافية (اختياري)</span>
 				<textarea id="<?php echo $id; ?>-msg" name="message" rows="3" placeholder="مساحة المكان، الحي، الوقت المناسب"></textarea></label>
 		<?php endif; ?>
@@ -113,6 +118,8 @@ function zad_handle_quote() {
 	$sid     = isset( $_POST['service'] ) ? absint( $_POST['service'] ) : 0;
 	$area    = isset( $_POST['area'] ) ? sanitize_text_field( wp_unslash( $_POST['area'] ) ) : '';
 	$message = isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '';
+	$date    = isset( $_POST['date'] ) ? sanitize_text_field( wp_unslash( $_POST['date'] ) ) : '';
+	$time    = isset( $_POST['time'] ) ? sanitize_text_field( wp_unslash( $_POST['time'] ) ) : '';
 	$source  = isset( $_POST['source'] ) ? esc_url_raw( wp_unslash( $_POST['source'] ) ) : '';
 
 	if ( mb_strlen( $name ) < 2 ) {
@@ -137,7 +144,7 @@ function zad_handle_quote() {
 		update_post_meta( $lead_id, '_lead_phone', $phone );
 		update_post_meta( $lead_id, '_lead_service', $service->post_title );
 		update_post_meta( $lead_id, '_lead_area', $area );
-		update_post_meta( $lead_id, '_lead_message', $message );
+		update_post_meta( $lead_id, '_lead_message', trim( $message . ( $date || $time ? "\nالموعد المفضّل: $date $time" : '' ) ) );
 		update_post_meta( $lead_id, '_lead_source', $source );
 		update_post_meta( $lead_id, '_lead_ip', $ip );
 		update_post_meta( $lead_id, '_lead_status', 'new' );
@@ -146,7 +153,7 @@ function zad_handle_quote() {
 	$to = zad_opt( 'memopt_lead_email', zad_opt( 'memopt_mail', get_option( 'admin_email' ) ) );
 	if ( is_email( $to ) ) {
 		$body  = "طلب جديد من الموقع\n\n";
-		$body .= "الاسم: $name\nالجوال: $phone\nالخدمة: {$service->post_title}\nالمنطقة: $area\nالتفاصيل: $message\nالصفحة: $source\n";
+		$body .= "الاسم: $name\nالجوال: $phone\nالخدمة: {$service->post_title}\nالمنطقة: $area\nالتفاصيل: $message\nالموعد المفضّل: $date $time\nالصفحة: $source\n";
 		$body .= "واتساب: https://wa.me/" . zad_intl_number( $phone ) . "\n";
 		wp_mail( $to, 'طلب جديد: ' . $service->post_title, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 	}

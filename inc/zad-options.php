@@ -63,6 +63,14 @@ CSF::createSection( $zad_prefix, array(
 				array( 'id' => 'note', 'type' => 'text', 'title' => 'ملاحظة (المدينة / المشروع)' ),
 			),
 		),
+		array(
+			'id' => 'zad_sectors', 'type' => 'group', 'title' => 'قطاعات العملاء (شركات تثق بنا)', 'button_title' => 'إضافة قطاع',
+			'fields' => array(
+				array( 'id' => 'name', 'type' => 'text', 'title' => 'اسم القطاع' ),
+				array( 'id' => 'names', 'type' => 'textarea', 'title' => 'أسماء العملاء (اسم في كل سطر) — أو اتركه فارغاً وضع الملاحظة', 'desc' => '' ),
+				array( 'id' => 'note', 'type' => 'text', 'title' => 'ملاحظة بدل الأسماء (مثال: 4+ عملاء — أسماء غير معلنة)' ),
+			),
+		),
 		array( 'id' => 'zad_cta_title', 'type' => 'text', 'title' => 'عنوان الدعوة الختامية', 'default' => 'جاهزون لخدمتك الآن' ),
 		array( 'id' => 'zad_cta_sub', 'type' => 'text', 'title' => 'نص الدعوة الختامية', 'default' => 'تواصل معنا وسيصلك الفني مع عرض سعر واضح قبل البدء.' ),
 	),

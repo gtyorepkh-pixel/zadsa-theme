@@ -76,7 +76,8 @@ function zad_demo_import() {
 			'after' => "تهوية المكان بعد المعالجة\nإبعاد الأطفال والحيوانات عن الأسطح حتى الجفاف\nمسح الأسطح الملامسة للطعام قبل استخدامها",
 			'steps' => $common_steps,
 			'factors' => array( array( 't' => 'نوع الآفة', 'd' => 'تختلف طريقة المعالجة والمواد.' ), array( 't' => 'مساحة المكان', 'd' => 'كل فئة مساحة لها سعر.' ), array( 't' => 'مرة واحدة أم دوري', 'd' => 'العقود الدورية أوفر.' ) ),
-			'prices' => "شقة | رش وقائي | 150 ريال | ضمان شهر\nشقة | رش علاجي | 250 ريال | ضمان 3 أشهر\nفيلا | رش وقائي | 300 ريال | ضمان شهر\nفيلا | رش علاجي | 450 ريال | ضمان 3 أشهر",
+			'price_note' => 'عند التعاقد السنوي يحصل العميل على خصم شهرين مجاناً.',
+			'prices' => "شقة | رش وقائي | 150 ريال | مناسب للوقاية الدورية | ضمان شهر\nشقة | رش علاجي | 250 ريال | للإصابات المنتشرة | ضمان 3 أشهر\nفيلا | رش وقائي | 300 ريال | محيط وحديقة | ضمان شهر\nفيلا | رش علاجي | 450 ريال | داخلي وخارجي | ضمان 3 أشهر",
 			'packages' => "أساسية | 150 ريال | معاينة؛ رش داخلي؛ ضمان شهر\nشاملة | 300 ريال | معاينة؛ رش محيطي وداخلي؛ ضمان 3 أشهر\nدورية | من 120 ريال شهرياً | زيارات موسمية؛ أولوية في الحجز؛ ضمان مستمر",
 			'warrantyrows' => array( array( 't' => 'إعادة مجانية خلال الضمان', 'd' => 'إن عادت الإصابة نعود ونعالج مجاناً.' ), array( 't' => 'ضمان مكتوب', 'd' => 'نحدد مدة الضمان كتابة قبل البدء.' ) ),
 			'spec' => "المواد المستخدمة | مبيدات مبطّنة مرخصة SFDA\nمدة الفعالية | أثر وقائي يمتد أسابيع",
@@ -130,7 +131,7 @@ function zad_demo_import() {
 			'duration' => $sv['duration'], 'response' => $sv['response'], 'rating' => $sv['rating'], 'reviews' => $sv['reviews'], 'featured' => '1',
 			'features' => $sv['features'], 'stats' => $stats, 'why' => $sv['why'], 'subs' => $sv['subs'], 'tools' => $sv['tools'], 'steps' => $sv['steps'],
 			'factors' => $sv['factors'], 'prices' => $sv['prices'], 'faq' => $sv['faq'], 'signs' => $sv['signs'], 'harms' => $sv['harms'], 'safety' => $sv['safety'],
-			'aftercare' => $sv['after'], 'packages' => $sv['packages'], 'warrantyrows' => $sv['warrantyrows'], 'spec' => $sv['spec'],
+			'aftercare' => $sv['after'], 'price_note' => $sv['price_note'] ?? '', 'packages' => $sv['packages'], 'warrantyrows' => $sv['warrantyrows'], 'spec' => $sv['spec'],
 		);
 		foreach ( $meta as $k => $v ) {
 			update_post_meta( $pid, '_zad_' . $k, $v );
