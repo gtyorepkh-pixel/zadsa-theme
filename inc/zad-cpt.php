@@ -1,4 +1,20 @@
 <?php defined( 'ABSPATH' ) || exit;
+
+/** Sanitized URL base from theme options (Latin letters, digits, dashes). */
+function zad_slug( $opt, $default ) {
+	$v = sanitize_title_with_dashes( (string) zad_opt( $opt, $default ) );
+	return $v ? $v : $default;
+}
+
+/** Re-flush rewrite rules automatically when a URL base option changes. */
+add_action( 'init', function () {
+	$h = md5( zad_slug( 'zad_services_slug', 'services' ) . '|' . zad_slug( 'zad_areas_slug', 'areas' ) . '|' . zad_slug( 'zad_faq_slug', 'faq' ) );
+	if ( get_option( 'zad_rw_hash' ) !== $h ) {
+		flush_rewrite_rules( false );
+		update_option( 'zad_rw_hash', $h, false );
+	}
+}, 99 );
+
 /**
  * Services CPT (zad_service), taxonomies, meta box, admin columns and the
  * leads CPT (zad_lead) that stores quote requests.
@@ -6,7 +22,8 @@
 
 add_action( 'init', 'zad_register_content_types' );
 function zad_register_content_types() {
-	$slug = apply_filters( 'zad_services_slug', 'services' );
+	$slug = zad_slug( 'zad_services_slug', 'services' );
+	$area = zad_slug( 'zad_areas_slug', 'areas' );
 
 	register_post_type( 'zad_service', array(
 		'labels'        => array(
@@ -46,7 +63,7 @@ function zad_register_content_types() {
 		'public'            => true,
 		'show_admin_column' => true,
 		'show_in_rest'      => true,
-		'rewrite'           => array( 'slug' => 'service-area', 'with_front' => false ),
+		'rewrite'           => array( 'slug' => $area, 'with_front' => false ),
 	) );
 
 	register_post_type( 'zad_lead', array(

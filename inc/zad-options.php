@@ -8,6 +8,9 @@ CSF::createSection( $zad_prefix, array(
 	'fields' => array(
 		array( 'id' => 'zad_color_primary', 'type' => 'color', 'title' => 'اللون الأساسي', 'default' => '#0b2e3a' ),
 		array( 'id' => 'zad_color_accent', 'type' => 'color', 'title' => 'لون الأزرار (التمييز)', 'default' => '#f2b134' ),
+		array( 'id' => 'zad_services_slug', 'type' => 'text', 'title' => 'رابط الخدمات', 'default' => 'services', 'desc' => 'مثال: yourdomain.com/<b>services</b>/اسم-الخدمة — أحرف إنجليزية وشرطات فقط. يتحدّث الرابط تلقائياً بعد الحفظ.' ),
+		array( 'id' => 'zad_areas_slug', 'type' => 'text', 'title' => 'رابط المدن والأحياء', 'default' => 'areas' ),
+		array( 'id' => 'zad_faq_slug', 'type' => 'text', 'title' => 'رابط الأسئلة', 'default' => 'faq' ),
 		array( 'id' => 'memopt_lead_email', 'type' => 'text', 'title' => 'بريد استقبال الطلبات', 'desc' => 'إن تُرك فارغاً يُستخدم بريد التواصل العام.' ),
 		array( 'id' => 'zad_hours', 'type' => 'text', 'title' => 'أوقات العمل', 'default' => 'نخدمكم 24 ساعة طوال أيام الأسبوع' ),
 		array( 'id' => 'zad_provider', 'type' => 'text', 'title' => 'الاسم الرسمي للشركة', 'default' => '' ),

@@ -2,11 +2,12 @@
 /** FAQ network: one page per question (zad_faq) linked to services. */
 
 function zad_register_faq() {
+	$fs = zad_slug( 'zad_faq_slug', 'faq' );
 	register_post_type( 'zad_faq', array(
 		'labels'       => array( 'name' => 'الأسئلة الشائعة', 'singular_name' => 'سؤال', 'add_new' => 'إضافة سؤال', 'add_new_item' => 'إضافة سؤال جديد', 'edit_item' => 'تعديل السؤال', 'all_items' => 'كل الأسئلة', 'menu_name' => 'الأسئلة' ),
 		'public'       => true,
-		'has_archive'  => 'faq',
-		'rewrite'      => array( 'slug' => 'faq', 'with_front' => false ),
+		'has_archive'  => $fs,
+		'rewrite'      => array( 'slug' => $fs, 'with_front' => false ),
 		'menu_icon'    => 'dashicons-editor-help',
 		'menu_position'=> 7,
 		'show_in_rest' => true,
@@ -18,7 +19,7 @@ function zad_register_faq() {
 		'public'            => true,
 		'show_admin_column' => true,
 		'show_in_rest'      => true,
-		'rewrite'           => array( 'slug' => 'faq-category', 'with_front' => false ),
+		'rewrite'           => array( 'slug' => $fs . '-category', 'with_front' => false ),
 	) );
 }
 add_action( 'init', 'zad_register_faq', 11 );

@@ -55,9 +55,12 @@ function zad_demo_delete() {
 
 /** @return int term id. */
 function zad_demo_term( $name, $tax, $parent = 0 ) {
+	static $slugs = array( 'مكافحة الحشرات' => 'pest-control', 'النظافة والتعقيم' => 'cleaning', 'الرياض' => 'riyadh', 'جدة' => 'jeddah', 'الدمام' => 'dammam', 'الملقا' => 'malqa', 'النرجس' => 'narjis', 'حطين' => 'hittin', 'الياسمين' => 'yasmin', 'العارض' => 'arid', 'الرش والمبيدات' => 'spraying' );
 	$t = term_exists( $name, $tax );
 	if ( ! $t ) {
-		$t = wp_insert_term( $name, $tax, array( 'parent' => $parent ) );
+		$args = array( 'parent' => $parent );
+		if ( isset( $slugs[ $name ] ) ) { $args['slug'] = $slugs[ $name ]; }
+		$t = wp_insert_term( $name, $tax, $args );
 	}
 	return is_wp_error( $t ) ? 0 : (int) ( is_array( $t ) ? $t['term_id'] : $t );
 }
@@ -172,7 +175,7 @@ function zad_demo_import() {
 
 	$services = array(
 		array(
-			'title' => 'شركة رش مبيدات بالرياض', 'cat' => 'مكافحة الحشرات', 'icon' => 'bug', 'tag' => 'رش محيطي ووقائي بمواد مرخصة — موجّه لا عشوائي',
+			'title' => 'شركة رش مبيدات بالرياض', 'slug' => 'pesticide-spraying', 'cat' => 'مكافحة الحشرات', 'icon' => 'bug', 'tag' => 'رش محيطي ووقائي بمواد مرخصة — موجّه لا عشوائي',
 			'badge' => 'الأكثر طلباً', 'price' => 150, 'warranty' => 'ضمان مكتوب', 'duration' => '30–90 دقيقة', 'response' => 'نفس اليوم', 'rating' => 4.9, 'reviews' => 320,
 			'content' => '<p>خدمة رش المبيدات تناسب الوقاية العامة ومعالجة الإصابات المنتشرة على أكثر من نوع من الحشرات في وقت واحد. نبدأ دائماً بمعاينة تحدد نوع الإصابة ومصادرها قبل الرش.</p><h3>متى يكون الرش أفضل من الطعم؟</h3><p>حين تكون الإصابة منتشرة في أكثر من غرفة، أو توجد رطوبة عالية، وفي المعالجة الخارجية التي تمنع دخول الحشرات.</p><h3>رش وقائي دوري</h3><p>الرش الوقائي الدوري يمنع الإصابة قبل حدوثها، خاصة للمنازل ذات الحدائق.</p>',
 			'features' => "معاينة وتحديد الإصابة أولاً\nمبيدات مبطّنة طويلة الأثر\nرش محيطي خارجي\nرش داخلي موضعي\nإعادة مجانية خلال الضمان",
@@ -192,7 +195,7 @@ function zad_demo_import() {
 			'faq' => array_merge( array( array( 'q' => 'ما الفرق بين الرش والطعم؟', 'a' => 'الرش للإصابات المنتشرة والرطوبة والمعالجة الخارجية، والطعم للبؤر المحصورة.' ) ), $faq_common ),
 		),
 		array(
-			'title' => 'شركة تنظيف مسابح بالرياض', 'cat' => 'النظافة والتعقيم', 'icon' => 'drop', 'tag' => 'تكنيس بالفاكيوم بدون تفريغ المياه',
+			'title' => 'شركة تنظيف مسابح بالرياض', 'slug' => 'pool-cleaning', 'cat' => 'النظافة والتعقيم', 'icon' => 'drop', 'tag' => 'تكنيس بالفاكيوم بدون تفريغ المياه',
 			'badge' => 'جديد', 'price' => 150, 'warranty' => 'ضمان جودة', 'duration' => '2 – 4 ساعات', 'response' => 'معاينة نفس اليوم', 'rating' => 4.8, 'reviews' => 210,
 			'content' => '<p>نوفر تنظيف المسابح بطريقتين حسب الحالة: تكنيس بالمكنسة الخاصة بدون تفريغ المياه، أو تنظيف عميق شامل للأرضيات والجدران مع التعقيم.</p><h3>لماذا التكنيس بدل التفريغ؟</h3><p>التفريغ الكامل يهدر آلاف اللترات ويحتاج وقتاً لإعادة الملء والموازنة، بينما يحل التكنيس مشكلة الطحالب والرواسب في أغلب الحالات.</p>',
 			'features' => "تكنيس بالفاكيوم بدون تفريغ\nتنظيف عميق شامل\nتعقيم بمواد آمنة\nاستبدال الفلاتر عند الحاجة\nعقود دورية من 4 إلى 8 زيارات",
@@ -216,7 +219,7 @@ function zad_demo_import() {
 	$created = 0;
 	foreach ( $services as $i => $sv ) {
 		if ( get_page_by_title( $sv['title'], OBJECT, 'zad_service' ) ) { continue; }
-		$pid = wp_insert_post( array( 'post_type' => 'zad_service', 'post_status' => 'publish', 'post_title' => $sv['title'], 'post_content' => $sv['content'], 'post_excerpt' => $sv['tag'], 'menu_order' => $i ) );
+		$pid = wp_insert_post( array( 'post_type' => 'zad_service', 'post_status' => 'publish', 'post_title' => $sv['title'], 'post_name' => $sv['slug'], 'post_content' => $sv['content'], 'post_excerpt' => $sv['tag'], 'menu_order' => $i ) );
 		if ( ! $pid || is_wp_error( $pid ) ) { continue; }
 		$created++;
 		update_post_meta( $pid, '_zad_demo', '1' );
@@ -237,7 +240,7 @@ function zad_demo_import() {
 	$fcat  = zad_demo_term( 'الرش والمبيدات', 'faq_cat' );
 	$q     = 'كم يدوم أثر الرش الوقائي؟';
 	if ( ! get_page_by_title( $q, OBJECT, 'zad_faq' ) ) {
-		$fid = wp_insert_post( array( 'post_type' => 'zad_faq', 'post_status' => 'publish', 'post_title' => $q, 'post_excerpt' => 'يمتد الأثر الوقائي أسابيع، ونحدد موعد الرش التالي حسب الموسم ونوع الإصابة.',
+		$fid = wp_insert_post( array( 'post_type' => 'zad_faq', 'post_status' => 'publish', 'post_title' => $q, 'post_name' => 'spray-effect-duration', 'post_excerpt' => 'يمتد الأثر الوقائي أسابيع، ونحدد موعد الرش التالي حسب الموسم ونوع الإصابة.',
 			'post_content' => '<p>المبيدات المبطّنة تثبت على الأسطح وتقاوم الرطوبة، لذلك يطول أثرها مقارنة بالمبيدات العادية.</p><h3>ما الذي يقلّل مدة الأثر؟</h3><p>التنظيف المتكرر للأسطح المعالجة، والرطوبة العالية جداً، وتعرّض المحيط الخارجي لأشعة الشمس المباشرة.</p><h3>متى أعيد الرش؟</h3><p>نجدول المتابعة بعد المعاينة حسب الموسم ونوع الإصابة، وغالباً مرة كل موسم للمنازل ذات الحدائق.</p>' ) );
 		if ( $fid && ! is_wp_error( $fid ) ) {
 			$created++;
@@ -250,7 +253,7 @@ function zad_demo_import() {
 	// One blog post.
 	$bt = 'تحضير المنزل قبل الرش وماذا تفعل بعده: قائمة عملية';
 	if ( ! get_page_by_title( $bt, OBJECT, 'post' ) ) {
-		$bid = wp_insert_post( array( 'post_type' => 'post', 'post_status' => 'publish', 'post_title' => $bt, 'post_excerpt' => 'ماذا تُفرغ وتغطّي قبل رش المبيدات، ومتى تعود، وأي الأسطح تُنظَّف وأيها تُترك.',
+		$bid = wp_insert_post( array( 'post_type' => 'post', 'post_status' => 'publish', 'post_title' => $bt, 'post_name' => 'pre-post-spray-checklist', 'post_excerpt' => 'ماذا تُفرغ وتغطّي قبل رش المبيدات، ومتى تعود، وأي الأسطح تُنظَّف وأيها تُترك.',
 			'post_content' => '<p>التحضير الجيد قبل الرش يرفع فعالية المعالجة ويحمي أسرتك. هذه قائمة عملية تغطي ما قبل الزيارة وما بعدها.</p><h2>قبل الرش</h2><ul><li>غطِّ الطعام والأواني أو أخرجها من المطبخ.</li><li>أخرج الحيوانات الأليفة وأحواض السمك أو غطِّها.</li><li>أبعد الأطفال عن المكان أثناء التنفيذ.</li><li>أخبر الفني بأماكن ظهور الحشرات.</li></ul><h2>بعد الرش</h2><ul><li>هوِّ المكان حسب توجيه الفني.</li><li>لا تمسح الأسطح المعالَجة مباشرة؛ انتظر حتى الجفاف.</li><li>امسح الأسطح الملامسة للطعام قبل استخدامها.</li></ul><h2>الخطأ الشائع</h2><p>تنظيف الأسطح المعالَجة فور الانتهاء يُلغي أثر المبيد المبطّن. اترك المدة التي يحددها الفني.</p><h2>هل تحتاج مساعدة؟</h2><p>اطلب معاينة مجانية وسنخبرك بالتحضير المناسب لحالتك.</p>' ) );
 		if ( $bid && ! is_wp_error( $bid ) ) { $created++; update_post_meta( $bid, '_zad_demo', '1' ); }
 	}
