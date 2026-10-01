@@ -96,6 +96,113 @@ function zad_demo_options() {
 	update_option( '_memo_theme_options', $o );
 }
 
+/** Find an openly licensed image on Wikimedia Commons and sideload it. Returns attachment ID or 0. */
+function zad_demo_open_image( $slug, $query ) {
+	$existing = get_posts( array( 'post_type' => 'attachment', 'meta_key' => '_zad_demo_img', 'meta_value' => $slug, 'numberposts' => 1, 'fields' => 'ids' ) );
+	if ( $existing ) {
+		return (int) $existing[0];
+	}
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	require_once ABSPATH . 'wp-admin/includes/media.php';
+	require_once ABSPATH . 'wp-admin/includes/image.php';
+	$url = add_query_arg( array(
+		'action' => 'query', 'format' => 'json', 'generator' => 'search', 'gsrnamespace' => 6, 'gsrlimit' => 12,
+		'gsrsearch' => 'filetype:bitmap ' . $query, 'prop' => 'imageinfo', 'iiprop' => 'url|extmetadata|size|mime', 'iiurlwidth' => 1600,
+	), 'https://commons.wikimedia.org/w/api.php' );
+	$res = wp_remote_get( $url, array( 'timeout' => 20, 'user-agent' => 'ZadProTheme/3 (demo importer)' ) );
+	if ( is_wp_error( $res ) ) {
+		return 0;
+	}
+	$data = json_decode( wp_remote_retrieve_body( $res ), true );
+	if ( empty( $data['query']['pages'] ) ) {
+		return 0;
+	}
+	foreach ( $data['query']['pages'] as $pg ) {
+		$ii = $pg['imageinfo'][0] ?? null;
+		if ( ! $ii || 'image/jpeg' !== ( $ii['mime'] ?? '' ) || ( $ii['width'] ?? 0 ) < 1000 || empty( $ii['thumburl'] ) ) {
+			continue;
+		}
+		$lic = $ii['extmetadata']['LicenseShortName']['value'] ?? '';
+		if ( ! preg_match( '/^(CC0|Public domain|PD|CC BY(?!-))/i', $lic ) && ! preg_match( '/^CC BY-SA/i', $lic ) ) {
+			continue;
+		}
+		$tmp = download_url( $ii['thumburl'], 30 );
+		if ( is_wp_error( $tmp ) ) {
+			continue;
+		}
+		$artist = wp_strip_all_tags( $ii['extmetadata']['Artist']['value'] ?? 'Wikimedia Commons' );
+		$aid    = media_handle_sideload( array( 'name' => 'zad-' . $slug . '.jpg', 'tmp_name' => $tmp ), 0, wp_strip_all_tags( $pg['title'] ?? $slug ) );
+		if ( is_wp_error( $aid ) ) {
+			@unlink( $tmp ); // phpcs:ignore
+			continue;
+		}
+		wp_update_post( array( 'ID' => $aid, 'post_excerpt' => 'صورة: ' . $artist . ' — ' . $lic . ' — Wikimedia Commons' ) );
+		update_post_meta( $aid, '_zad_demo_img', $slug );
+		update_post_meta( $aid, '_wp_attachment_image_alt', $query );
+		update_post_meta( $aid, '_zad_source', $ii['descriptionurl'] ?? '' );
+		return (int) $aid;
+	}
+	return 0;
+}
+
+/** Pages (about, contact), main/footer menus. */
+function zad_demo_site() {
+	$mk = function ( $title, $tpl, $content ) {
+		$p = get_page_by_title( $title, OBJECT, 'page' );
+		if ( $p ) {
+			return $p->ID;
+		}
+		$id = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => $title, 'post_content' => $content ) );
+		if ( $id && ! is_wp_error( $id ) && $tpl ) {
+			update_post_meta( $id, '_wp_page_template', $tpl );
+		}
+		return $id;
+	};
+	$about   = $mk( 'من نحن', 'temp/memo-about.php', '' );
+	$contact = $mk( 'اتصل بنا', 'temp/memo-contact.php', '' );
+
+	$menu_id = 0;
+	$m = wp_get_nav_menu_object( 'القائمة الرئيسية' );
+	if ( $m ) {
+		return;
+	}
+	$menu_id = wp_create_nav_menu( 'القائمة الرئيسية' );
+	if ( is_wp_error( $menu_id ) ) {
+		return;
+	}
+	$add = function ( $title, $url, $parent = 0, $obj_id = 0, $type = 'custom' ) use ( $menu_id ) {
+		$args = array( 'menu-item-title' => $title, 'menu-item-status' => 'publish', 'menu-item-parent-id' => $parent );
+		if ( 'custom' === $type ) {
+			$args['menu-item-url']  = $url;
+			$args['menu-item-type'] = 'custom';
+		} else {
+			$args['menu-item-type']      = 'post_type';
+			$args['menu-item-object']    = 'page';
+			$args['menu-item-object-id'] = $obj_id;
+		}
+		return wp_update_nav_menu_item( $menu_id, 0, $args );
+	};
+	$add( 'الرئيسية', home_url( '/' ) );
+	$svc = $add( 'الخدمات', get_post_type_archive_link( 'zad_service' ) );
+	foreach ( get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => false ) ) as $t ) {
+		$add( $t->name, get_term_link( $t ), $svc );
+	}
+	$add( 'الأسئلة الشائعة', get_post_type_archive_link( 'zad_faq' ) );
+	if ( $about ) { $add( 'من نحن', '', 0, $about, 'page' ); }
+	if ( $contact ) { $add( 'اتصل بنا', '', 0, $contact, 'page' ); }
+
+	$f = wp_create_nav_menu( 'قائمة الفوتر' );
+	if ( ! is_wp_error( $f ) ) {
+		foreach ( array( array( 'الرئيسية', home_url( '/' ) ), array( 'الخدمات', get_post_type_archive_link( 'zad_service' ) ), array( 'الأسئلة الشائعة', get_post_type_archive_link( 'zad_faq' ) ) ) as $it ) {
+			wp_update_nav_menu_item( $f, 0, array( 'menu-item-title' => $it[0], 'menu-item-url' => $it[1], 'menu-item-type' => 'custom', 'menu-item-status' => 'publish' ) );
+		}
+	}
+	$loc = get_theme_mod( 'nav_menu_locations', array() );
+	$loc['mainmenu']   = $menu_id;
+	if ( ! is_wp_error( $f ) ) { $loc['footermenu'] = $f; }
+	set_theme_mod( 'nav_menu_locations', $loc );
+}
+
 function zad_demo_import() {
 	zad_demo_options();
 	$cats = array(
@@ -209,14 +316,15 @@ function zad_demo_import() {
 		}
 		// Placeholder images so every section of the design is visible.
 		$pal = array( array( '#0b2e3a', '#1c6a7d' ), array( '#8a5a00', '#f2b134' ), array( '#0d7f70', '#5fd1bf' ), array( '#3a4a6b', '#8ea6d9' ), array( '#6b3a3a', '#d98e8e' ), array( '#35523a', '#8fd99b' ) );
-		$hero = zad_demo_image( 'hero-' . $i, $pal[ $i % 6 ][0], $pal[ $i % 6 ][1], 1600, 900 );
+		$qs   = array( 'pest control spraying', 'swimming pool cleaning', 'plumber leak detection' );
+		$hero = zad_demo_open_image( 'hero-' . $i, $qs[ $i % 3 ] ) ?: zad_demo_image( 'hero-' . $i, $pal[ $i % 6 ][0], $pal[ $i % 6 ][1], 1600, 900 );
 		if ( $hero ) {
 			set_post_thumbnail( $pid, $hero );
 		}
 		if ( 0 === $i ) {
 			$g = array();
 			foreach ( array( 'work-1' => 2, 'work-2' => 3, 'work-3' => 4, 'work-4' => 5 ) as $slug => $pi ) {
-				$aid = zad_demo_image( $slug, $pal[ $pi ][0], $pal[ $pi ][1], 1200, 900 );
+				$aid = zad_demo_open_image( $slug, array( 'work-1' => 'pest control technician', 'work-2' => 'insecticide spraying', 'work-3' => 'cockroach', 'work-4' => 'house exterior garden' )[ $slug ] ) ?: zad_demo_image( $slug, $pal[ $pi ][0], $pal[ $pi ][1], 1200, 900 );
 				if ( $aid ) { $g[] = $aid; }
 			}
 			update_post_meta( $pid, '_zad_gallery', implode( ',', $g ) );
@@ -248,5 +356,6 @@ function zad_demo_import() {
 			if ( $first ) { update_post_meta( $fid, '_zad_faq_services', array( (string) $first->ID ) ); }
 		}
 	}
+	zad_demo_site();
 	return $created;
 }
