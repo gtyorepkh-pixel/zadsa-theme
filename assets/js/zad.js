@@ -46,6 +46,8 @@
 			var c = wiz.getAttribute('data-current');
 			if (c && c !== '0' && !hidSvc.value) { hidSvc.value = c; }
 			fillServices();
+			var ar = wiz.getAttribute('data-area');
+			if (ar && form.elements.area && !form.elements.area.value) { $$('[data-wiz-city] button', wiz).forEach(function (b) { if (b.getAttribute('data-city') === ar) b.click(); }); }
 			go(cur);
 		}
 		function close() { wiz.classList.remove('is-open'); wiz.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }

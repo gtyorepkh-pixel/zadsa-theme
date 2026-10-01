@@ -79,3 +79,77 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_cta_sub', 'type' => 'text', 'title' => 'نص الدعوة الختامية', 'default' => 'تواصل معنا وسيصلك الفني مع عرض سعر واضح قبل البدء.' ),
 	),
 ) );
+
+CSF::createSection( $zad_prefix, array(
+	'title'  => 'بيانات الشركة والسكيما',
+	'fields' => array(
+		array( 'type' => 'subheading', 'content' => 'تُستخدم في بيانات Google المنظّمة (Schema) وفي الفوتر وصفحة الاتصال.' ),
+		array( 'id' => 'zad_legal_name', 'type' => 'text', 'title' => 'الاسم النظامي للشركة' ),
+		array( 'id' => 'zad_cr', 'type' => 'text', 'title' => 'رقم السجل التجاري' ),
+		array( 'id' => 'zad_vat', 'type' => 'text', 'title' => 'الرقم الضريبي (VAT)' ),
+		array( 'id' => 'zad_street', 'type' => 'text', 'title' => 'الشارع ورقم المبنى', 'default' => '' ),
+		array( 'id' => 'zad_district', 'type' => 'text', 'title' => 'الحي', 'default' => '' ),
+		array( 'id' => 'zad_city_name', 'type' => 'text', 'title' => 'المدينة', 'default' => 'الرياض' ),
+		array( 'id' => 'zad_region', 'type' => 'text', 'title' => 'المنطقة', 'default' => 'منطقة الرياض' ),
+		array( 'id' => 'zad_postal', 'type' => 'text', 'title' => 'الرمز البريدي' ),
+		array( 'id' => 'zad_lat', 'type' => 'text', 'title' => 'خط العرض (Latitude)', 'desc' => 'مثال: 24.6584739 — انسخه من خرائط Google.' ),
+		array( 'id' => 'zad_lng', 'type' => 'text', 'title' => 'خط الطول (Longitude)', 'desc' => 'مثال: 46.8421882' ),
+		array( 'id' => 'zad_map_url', 'type' => 'text', 'title' => 'رابط موقعك في خرائط Google (hasMap)' ),
+		array( 'id' => 'zad_hours_spec', 'type' => 'textarea', 'title' => 'ساعات العمل للسكيما', 'desc' => 'سطر لكل فترة: الأيام بالإنجليزية مفصولة بفاصلة | من | إلى', 'default' => "Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday | 09:00 | 22:30\nFriday | 16:00 | 22:30" ),
+		array( 'id' => 'zad_linkedin', 'type' => 'text', 'title' => 'لينكدإن' ),
+		array( 'id' => 'zad_pinterest', 'type' => 'text', 'title' => 'بينترست' ),
+		array( 'id' => 'zad_tiktok', 'type' => 'text', 'title' => 'تيك توك' ),
+		array( 'id' => 'zad_snapchat', 'type' => 'text', 'title' => 'سناب شات' ),
+		array( 'id' => 'zad_og_default', 'type' => 'media', 'title' => 'صورة المشاركة الافتراضية (OG)', 'desc' => '1200×630 تقريباً.' ),
+		array( 'id' => 'zad_site_desc', 'type' => 'textarea', 'title' => 'وصف الموقع (للسكيما والصفحة الرئيسية)' ),
+	),
+) );
+
+CSF::createSection( $zad_prefix, array(
+	'title'  => 'الرئيسية: خريطة المنزل والأمان',
+	'fields' => array(
+		array(
+			'id' => 'zad_rooms', 'type' => 'group', 'title' => 'خريطة المنزل (حسب المكان)', 'button_title' => 'إضافة مكان',
+			'fields' => array(
+				array( 'id' => 'name', 'type' => 'text', 'title' => 'اسم المكان (مطبخ، حمّام، حديقة…)' ),
+				array( 'id' => 'icon', 'type' => 'select', 'title' => 'الأيقونة', 'options' => array_combine( zad_icon_keys(), zad_icon_keys() ) ),
+				array( 'id' => 'desc', 'type' => 'text', 'title' => 'وصف قصير (مثال: أكثر الأماكن عرضة للصراصير)' ),
+				array( 'id' => 'services', 'type' => 'select', 'title' => 'الخدمات المرتبطة', 'chosen' => true, 'multiple' => true, 'sortable' => true, 'options' => 'posts', 'query_args' => array( 'post_type' => 'zad_service', 'posts_per_page' => -1 ) ),
+			),
+		),
+		array( 'id' => 'zad_home_safety_title', 'type' => 'text', 'title' => 'عنوان قسم الأمان', 'default' => 'آمن لمن تحب' ),
+		array(
+			'id' => 'zad_home_safety', 'type' => 'group', 'title' => 'بطاقات الأمان', 'button_title' => 'إضافة بطاقة',
+			'fields' => array(
+				array( 'id' => 't', 'type' => 'text', 'title' => 'العنوان' ),
+				array( 'id' => 'd', 'type' => 'textarea', 'title' => 'الوصف' ),
+			),
+		),
+		array(
+			'id' => 'zad_global_stats', 'type' => 'group', 'title' => 'أرقام الشركة (صفحة من نحن)', 'button_title' => 'إضافة رقم',
+			'fields' => array(
+				array( 'id' => 'n', 'type' => 'text', 'title' => 'الرقم' ),
+				array( 'id' => 'l', 'type' => 'text', 'title' => 'الوصف' ),
+			),
+		),
+	),
+) );
+
+CSF::createSection( $zad_prefix, array(
+	'title'  => 'أداة تعرّف على الآفة',
+	'fields' => array(
+		array( 'type' => 'subheading', 'content' => 'معالج أسئلة بسيط: المكان ← نوع المشكلة ← النتيجة والخدمة المقترحة. أنشئ صفحة بقالب «تعرّف على الآفة».' ),
+		array( 'id' => 'zad_identify_where', 'type' => 'textarea', 'title' => 'أين رأيتها؟ (خيار في كل سطر)', 'default' => "المطبخ\nالحمّام والصرف\nغرفة النوم والأرائك\nالحديقة والمحيط\nالأخشاب والجدران" ),
+		array( 'id' => 'zad_identify_kind', 'type' => 'textarea', 'title' => 'كيف تبدو؟ (خيار في كل سطر)', 'default' => "حشرة زاحفة داكنة\nحشرة صغيرة تعض\nحشرة طائرة\nقوارض أو آثار قرض\nنمل بأجنحة أو ثقوب بالخشب" ),
+		array(
+			'id' => 'zad_identify_rules', 'type' => 'group', 'title' => 'النتائج', 'button_title' => 'إضافة نتيجة',
+			'fields' => array(
+				array( 'id' => 'where', 'type' => 'text', 'title' => 'المكان (نفس النص تماماً من القائمة أعلاه)' ),
+				array( 'id' => 'kind', 'type' => 'text', 'title' => 'الشكل (نفس النص تماماً)' ),
+				array( 'id' => 'title', 'type' => 'text', 'title' => 'اسم الآفة المرجّحة' ),
+				array( 'id' => 'text', 'type' => 'textarea', 'title' => 'شرح قصير ونصيحة' ),
+				array( 'id' => 'service', 'type' => 'select', 'title' => 'الخدمة المقترحة', 'options' => 'posts', 'query_args' => array( 'post_type' => 'zad_service', 'posts_per_page' => -1 ) ),
+			),
+		),
+	),
+) );

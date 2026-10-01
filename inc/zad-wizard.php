@@ -16,7 +16,7 @@ add_action( 'wp_footer', function () {
 	}
 	$icons = array( 'phone', 'shield', 'clock' );
 	?>
-<div class="wiz" id="zad-wizard" aria-hidden="true" data-current="<?php echo (int) $cur; ?>" data-services="<?php echo esc_attr( wp_json_encode( array_values( $map ) ) ); ?>">
+<div class="wiz" id="zad-wizard" aria-hidden="true" data-current="<?php echo (int) $cur; ?>" data-area="<?php echo esc_attr( ( function_exists( 'zad_current_city' ) && zad_current_city() ) ? zad_current_city()->name : '' ); ?>" data-services="<?php echo esc_attr( wp_json_encode( array_values( $map ) ) ); ?>">
 	<div class="wiz__overlay" data-wiz-close></div>
 	<div class="wiz__panel" role="dialog" aria-modal="true" aria-labelledby="wiz-title">
 		<div class="wiz__head"><h2 id="wiz-title">احجز موعدك</h2><button type="button" class="wiz__x" data-wiz-close aria-label="إغلاق"><?php echo zad_icon( 'close', 22 ); // phpcs:ignore ?></button></div>

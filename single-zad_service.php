@@ -6,7 +6,8 @@ while ( have_posts() ) :
 	$m    = function ( $k ) use ( $id ) { return get_post_meta( $id, '_zad_' . $k, true ); };
 	$arr  = function ( $k ) use ( $m ) { return array_values( array_filter( (array) $m( $k ), function ( $r ) { return is_array( $r ); } ) ); };
 
-	$title    = get_the_title();
+	$city     = zad_current_city();
+	$title    = $city ? zad_city_title( $id, $city ) : get_the_title();
 	$tagline  = $m( 'tagline' );
 	$features = zad_lines( $m( 'features' ) );
 	$stats    = $arr( 'stats' );
@@ -58,7 +59,7 @@ while ( have_posts() ) :
 	<!-- 1. HERO + instant price estimator -->
 	<section class="shero<?php echo $thumb ? ' shero--photo' : ''; ?>"<?php echo $thumb ? ' style="--hero-img:url(\'' . esc_url( wp_get_attachment_image_url( $thumb, 'full' ) ) . '\')"' : ''; ?>>
 		<div class="wrap">
-			<?php zad_render_crumbs( zad_service_crumbs( $id ) ); ?>
+			<?php zad_render_crumbs( zad_current_crumbs() ); ?>
 			<div class="shero__grid">
 				<div class="shero__text">
 					<?php if ( $provider ) : ?><span class="pill"><?php echo zad_icon( 'badge', 18 ); // phpcs:ignore ?> <?php echo esc_html( $provider ); ?></span><?php endif; ?>
@@ -119,6 +120,7 @@ while ( have_posts() ) :
 		<div class="wrap slayout">
 			<div class="slayout__main">
 				<h2 class="h-line"><?php echo esc_html( $title ); ?></h2>
+				<?php if ( $city ) : ?><div class="cityblock"><?php echo zad_icon( 'pin', 22 ); // phpcs:ignore ?><p><?php echo esc_html( zad_city_text( $id, $city ) ); ?></p></div><?php endif; ?>
 				<div class="prose entry-content"><?php the_content(); ?></div>
 				<p><a class="btn btn--accent" href="#quote" data-scroll-quote><?php echo zad_icon( 'bolt', 20 ); // phpcs:ignore ?> <?php echo esc_html( $cta ); ?></a></p>
 			</div>
@@ -381,7 +383,7 @@ while ( have_posts() ) :
 	<?php if ( $area_names ) : ?>
 	<section class="sec sec--tint"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">تغطيتنا</span><h2>نصل إليك في أي منطقة</h2></header>
-		<ul class="chips"><?php foreach ( $areas as $t ) : ?><li><a href="<?php echo esc_url( get_term_link( $t ) ); ?>"><?php echo zad_icon( 'pin', 16 ); // phpcs:ignore ?> <?php echo esc_html( $t->name ); ?></a></li><?php endforeach; ?></ul>
+		<ul class="chips"><?php foreach ( $areas as $t ) : ?><li><a href="<?php echo esc_url( 0 === (int) $t->parent ? zad_city_url( $id, $t ) : get_term_link( $t ) ); ?>"><?php echo zad_icon( 'pin', 16 ); // phpcs:ignore ?> <?php echo esc_html( $t->name ); ?></a></li><?php endforeach; ?></ul>
 	</div></section>
 	<?php endif; ?>
 
@@ -433,7 +435,7 @@ while ( have_posts() ) :
 				<?php if ( $wa ) : ?><a class="btn btn--wa" href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> واتساب</a><?php endif; ?>
 			</div>
 		</div>
-		<?php echo zad_quote_form( array( 'service_id' => $id, 'id' => 'fq', 'title' => 'اترك بياناتك ونتصل بك', 'sub' => 'رد خلال دقائق' ) ); // phpcs:ignore ?>
+		<?php echo zad_quote_form( array( 'service_id' => $id, 'id' => 'fq', 'title' => 'اترك بياناتك ونتصل بك', 'sub' => 'رد خلال دقائق', 'area' => $city ? $city->name : '' ) ); // phpcs:ignore ?>
 	</div></section>
 </main>
 <?php endwhile; get_footer(); ?>

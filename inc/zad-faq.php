@@ -85,5 +85,4 @@ add_action( 'wp_head', function () {
 			'acceptedAnswer' => array( '@type' => 'Answer', 'text' => $ans, 'dateCreated' => get_the_modified_date( 'c' ), 'url' => get_permalink() ),
 		),
 	) );
-	zad_print_schema( zad_crumbs_schema( array( array( 'الرئيسية', home_url( '/' ) ), array( 'الأسئلة', get_post_type_archive_link( 'zad_faq' ) ), array( get_the_title(), '' ) ) ) );
 }, 21 );
