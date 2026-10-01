@@ -10,9 +10,14 @@ function zad_demo_page() {
 	if ( isset( $_POST['zad_demo_go'] ) && check_admin_referer( 'zad_demo' ) && current_user_can( 'manage_options' ) ) {
 		$n = zad_demo_import();
 		flush_rewrite_rules();
-		echo '<div class="notice notice-success"><p>تم إنشاء ' . (int) $n . ' خدمات تجريبية. <a href="' . esc_url( get_post_type_archive_link( 'zad_service' ) ) . '">عرض الخدمات</a></p></div>';
+		$sv = get_page_by_title( 'شركة رش مبيدات بالرياض', OBJECT, 'zad_service' );
+		$fq = get_posts( array( 'post_type' => 'zad_faq', 'numberposts' => 1, 'orderby' => 'title', 'order' => 'ASC' ) );
+		echo '<div class="notice notice-success"><p>تم إنشاء ' . (int) $n . ' خدمات تجريبية.</p><p>';
+		if ( $sv ) { echo '<a class="button button-primary" target="_blank" href="' . esc_url( get_permalink( $sv ) ) . '">افتح الخدمة الكاملة</a> '; }
+		if ( $fq ) { echo '<a class="button" target="_blank" href="' . esc_url( get_permalink( $fq[0] ) ) . '">افتح سؤالاً كاملاً</a> '; }
+		echo '<a class="button" target="_blank" href="' . esc_url( home_url( '/' ) ) . '">الرئيسية</a> <a class="button" target="_blank" href="' . esc_url( get_post_type_archive_link( 'zad_faq' ) ) . '">كل الأسئلة</a></p></div>';
 	}
-	echo '<p>ينشئ أقساماً ومدناً وثلاث خدمات مكتملة البيانات لتجربة التصميم. يمكنك حذفها لاحقاً من قائمة الخدمات. لن يُكرَّر الإنشاء إن وُجدت خدمات بنفس العنوان.</p>';
+	echo '<p>ينشئ أقساماً ومدناً وثلاث خدمات وأسئلة مكتملة البيانات مع صور بديلة (يلزم GD) لتجربة التصميم كاملاً، ويملأ إعدادات القالب الفارغة فقط. يمكنك حذفها لاحقاً من قائمة الخدمات. لن يُكرَّر الإنشاء إن وُجدت خدمات بنفس العنوان.</p>';
 	echo '<form method="post">';
 	wp_nonce_field( 'zad_demo' );
 	echo '<p><button class="button button-primary" name="zad_demo_go" value="1">إنشاء البيانات التجريبية</button></p></form></div>';
@@ -26,7 +31,73 @@ function zad_demo_term( $name, $tax, $parent = 0 ) {
 	return is_wp_error( $t ) ? 0 : (int) ( is_array( $t ) ? $t['term_id'] : $t );
 }
 
+
+/** Create a gradient placeholder image in the media library (needs GD). Returns attachment ID or 0. */
+function zad_demo_image( $slug, $c1, $c2, $w = 1200, $h = 800 ) {
+	if ( ! function_exists( 'imagecreatetruecolor' ) ) {
+		return 0;
+	}
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	require_once ABSPATH . 'wp-admin/includes/image.php';
+	$up   = wp_upload_dir();
+	$file = trailingslashit( $up['path'] ) . 'zad-demo-' . $slug . '.jpg';
+	if ( ! file_exists( $file ) ) {
+		$im = imagecreatetruecolor( $w, $h );
+		list( $r1, $g1, $b1 ) = sscanf( $c1, '#%02x%02x%02x' );
+		list( $r2, $g2, $b2 ) = sscanf( $c2, '#%02x%02x%02x' );
+		for ( $y = 0; $y < $h; $y++ ) {
+			$t = $y / $h;
+			imageline( $im, 0, $y, $w, $y, imagecolorallocate( $im, (int) ( $r1 + ( $r2 - $r1 ) * $t ), (int) ( $g1 + ( $g2 - $g1 ) * $t ), (int) ( $b1 + ( $b2 - $b1 ) * $t ) ) );
+		}
+		// soft circles for texture
+		for ( $i = 0; $i < 6; $i++ ) {
+			$col = imagecolorallocatealpha( $im, 255, 255, 255, 115 );
+			imagefilledellipse( $im, ( $i * 223 + 90 ) % $w, ( $i * 157 + 120 ) % $h, 180 + $i * 40, 180 + $i * 40, $col );
+		}
+		imagejpeg( $im, $file, 82 );
+		imagedestroy( $im );
+	}
+	$existing = get_posts( array( 'post_type' => 'attachment', 'meta_key' => '_zad_demo_img', 'meta_value' => $slug, 'numberposts' => 1, 'fields' => 'ids' ) );
+	if ( $existing ) {
+		return (int) $existing[0];
+	}
+	$aid = wp_insert_attachment( array( 'post_mime_type' => 'image/jpeg', 'post_title' => 'صورة تجريبية ' . $slug, 'post_content' => '', 'post_status' => 'inherit', 'post_excerpt' => 'صورة تجريبية — استبدلها بصورة حقيقية' ), $file );
+	if ( ! $aid || is_wp_error( $aid ) ) {
+		return 0;
+	}
+	wp_update_attachment_metadata( $aid, wp_generate_attachment_metadata( $aid, $file ) );
+	update_post_meta( $aid, '_zad_demo_img', $slug );
+	return (int) $aid;
+}
+
+/** Fill global theme options that are still empty (never overwrites). */
+function zad_demo_options() {
+	$o = get_option( '_memo_theme_options' );
+	$o = is_array( $o ) ? $o : array();
+	$def = array(
+		'memopt_phone'    => '0500000000',
+		'memopt_whatsapp' => '966500000000',
+		'memopt_mail'     => get_option( 'admin_email' ),
+		'memopt_address'  => 'الرياض، المملكة العربية السعودية',
+		'zad_provider'    => get_bloginfo( 'name' ),
+		'zad_since'       => '2013',
+		'zad_hero_title'  => 'خدمات منزلية احترافية بضمان حقيقي',
+		'zad_clients'     => array( array( 'name' => 'جهة حكومية', 'note' => 'مشاريع صيانة وتشغيل' ), array( 'name' => 'شركة مقاولات', 'note' => 'الرياض' ), array( 'name' => 'مجمع سكني', 'note' => 'جدة' ), array( 'name' => 'مستشفى', 'note' => 'الدمام' ) ),
+		'zad_sectors'     => array( array( 'name' => 'المطاعم والأغذية', 'names' => "مطعم النخبة\nمقهى الراحة\nمخبز الحي", 'note' => '' ), array( 'name' => 'الطبي والصيدلاني', 'names' => '', 'note' => '4+ عملاء — أسماء غير معلنة لحساسية القطاع' ), array( 'name' => 'العقارات', 'names' => "شركة الأفق العقارية\nمجمعات النخيل", 'note' => '' ) ),
+		'zad_testimonials'=> array( array( 'name' => 'أبو خالد', 'city' => 'الرياض', 'text' => 'خدمة ممتازة والتزام بالموعد، والفني شرح كل خطوة قبل التنفيذ.', 'rating' => 5 ), array( 'name' => 'أم سارة', 'city' => 'جدة', 'text' => 'سعر واضح من البداية وضمان مكتوب، أنصح بهم.', 'rating' => 5 ) ),
+		'zad_process'     => array( array( 't' => 'تواصل معنا', 'd' => 'اتصال أو واتساب أو نموذج الطلب.' ), array( 't' => 'معاينة وسعر', 'd' => 'نحدد الحالة ونعطيك سعراً واضحاً.' ), array( 't' => 'تنفيذ', 'd' => 'فني معتمد بمعدات ومواد مرخصة.' ), array( 't' => 'ضمان ومتابعة', 'd' => 'ضمان مكتوب ومتابعة بعد التنفيذ.' ) ),
+		'zad_faq'         => array( array( 'q' => 'هل المعاينة مجانية؟', 'a' => 'نعم، المعاينة والتسعير مجانيان.' ) ),
+	);
+	foreach ( $def as $k => $v ) {
+		if ( empty( $o[ $k ] ) ) {
+			$o[ $k ] = $v;
+		}
+	}
+	update_option( '_memo_theme_options', $o );
+}
+
 function zad_demo_import() {
+	zad_demo_options();
 	$cats = array(
 		'مكافحة الحشرات' => 'bug',
 		'النظافة والتعقيم' => 'sparkle',
@@ -135,6 +206,27 @@ function zad_demo_import() {
 		);
 		foreach ( $meta as $k => $v ) {
 			update_post_meta( $pid, '_zad_' . $k, $v );
+		}
+		// Placeholder images so every section of the design is visible.
+		$pal = array( array( '#0b2e3a', '#1c6a7d' ), array( '#8a5a00', '#f2b134' ), array( '#0d7f70', '#5fd1bf' ), array( '#3a4a6b', '#8ea6d9' ), array( '#6b3a3a', '#d98e8e' ), array( '#35523a', '#8fd99b' ) );
+		$hero = zad_demo_image( 'hero-' . $i, $pal[ $i % 6 ][0], $pal[ $i % 6 ][1], 1600, 900 );
+		if ( $hero ) {
+			set_post_thumbnail( $pid, $hero );
+		}
+		if ( 0 === $i ) {
+			$g = array();
+			foreach ( array( 'work-1' => 2, 'work-2' => 3, 'work-3' => 4, 'work-4' => 5 ) as $slug => $pi ) {
+				$aid = zad_demo_image( $slug, $pal[ $pi ][0], $pal[ $pi ][1], 1200, 900 );
+				if ( $aid ) { $g[] = $aid; }
+			}
+			update_post_meta( $pid, '_zad_gallery', implode( ',', $g ) );
+			$ba = array();
+			foreach ( array( 'before-1' => array( '#5b5b52', '#8d8d7e' ), 'after-1' => array( '#0d7f70', '#6fe0cd' ), 'before-2' => array( '#6a5b4b', '#a89478' ), 'after-2' => array( '#2e6aa8', '#8cc2f2' ) ) as $slug => $cc ) {
+				$aid = zad_demo_image( $slug, $cc[0], $cc[1], 1200, 900 );
+				if ( $aid ) { $ba[] = $aid; }
+			}
+			update_post_meta( $pid, '_zad_ba', implode( ',', $ba ) );
+			update_post_meta( $pid, '_zad_ba_text', "قبل وبعد: منزل في حي الملقا | رش محيطي ووقائي لفيلا مع حديقة\nقبل وبعد: مطعم في حطين | معالجة داخلية موضعية" );
 		}
 	}
 	// Demo FAQ pages linked to the first service.
