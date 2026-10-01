@@ -14,6 +14,7 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_since', 'type' => 'text', 'title' => 'سنة التأسيس', 'default' => '' ),
 		array( 'id' => 'zad_reg', 'type' => 'text', 'title' => 'رقم السجل التجاري (اختياري)' ),
 		array( 'id' => 'zad_rating_text', 'type' => 'text', 'title' => 'نص التقييم أعلى الموقع', 'default' => 'تقييمات حقيقية على Google' ),
+		array( 'id' => 'zad_card_badges', 'type' => 'textarea', 'title' => 'شارات بطاقات الخدمات (سطر لكل شارة)', 'default' => "فحص مجاني\nضمان مكتوب" ),
 		array( 'id' => 'zad_trustindex', 'type' => 'text', 'title' => 'معرّف ودجت Trustindex (اختياري)' ),
 	),
 ) );

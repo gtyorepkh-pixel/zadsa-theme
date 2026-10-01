@@ -10,6 +10,7 @@ $phone = zad_opt( 'memopt_phone' );
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<script>try{var t=localStorage.getItem('zad-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}</script>
 	<?php wp_head(); ?>
 </head>
 <body <?php body_class(); ?>>
@@ -25,6 +26,7 @@ $phone = zad_opt( 'memopt_phone' );
 				<?php if ( zad_opt( 'zad_since' ) ) : ?><span><?php echo zad_icon( 'badge', 16 ); // phpcs:ignore ?> منذ <?php echo esc_html( zad_opt( 'zad_since' ) ); ?></span><?php endif; ?>
 			</span>
 			<span class="topbar__links">
+				<button type="button" class="theme-toggle" data-theme-toggle aria-label="تبديل الوضع الليلي"><span class="sun"><?php echo zad_icon( 'sparkle', 16 ); // phpcs:ignore ?></span><span class="moon"><?php echo zad_icon( 'clock', 16 ); // phpcs:ignore ?></span></button>
 				<?php if ( $phone ) : ?><a href="<?php echo esc_url( zad_tel_href( $phone ) ); ?>" dir="ltr"><?php echo zad_icon( 'phone', 16 ); // phpcs:ignore ?> <?php echo esc_html( $phone ); ?></a><?php endif; ?>
 				<?php if ( zad_opt( 'memopt_mail' ) ) : ?><a href="mailto:<?php echo esc_attr( zad_opt( 'memopt_mail' ) ); ?>"><?php echo zad_icon( 'mail', 16 ); // phpcs:ignore ?> <?php echo esc_html( zad_opt( 'memopt_mail' ) ); ?></a><?php endif; ?>
 			</span>

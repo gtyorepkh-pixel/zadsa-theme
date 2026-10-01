@@ -22,6 +22,9 @@ $wa    = zad_wa_link( 'مرحباً، أرغب بطلب خدمة: ' . get_the_ti
 		<?php if ( $terms && ! is_wp_error( $terms ) ) : ?><span class="scard__cat"><?php echo esc_html( $terms[0]->name ); ?></span><?php endif; ?>
 		<h3 class="scard__title"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
 		<p class="scard__desc"><?php echo esc_html( get_post_meta( $id, '_zad_tagline', true ) ?: wp_trim_words( get_the_excerpt(), 18 ) ); ?></p>
+		<?php $bd = zad_lines( zad_opt( 'zad_card_badges', "فحص مجاني\nضمان مكتوب" ) ); if ( $bd ) : ?>
+			<ul class="scard__badges"><?php foreach ( $bd as $b ) { echo '<li>' . zad_icon( 'check', 14 ) . esc_html( $b ) . '</li>'; } // phpcs:ignore ?></ul>
+		<?php endif; ?>
 		<ul class="scard__meta">
 			<?php if ( $rate ) : ?><li><?php echo zad_icon( 'star', 16 ); // phpcs:ignore ?> <?php echo esc_html( $rate ); ?></li><?php endif; ?>
 			<?php if ( $warr ) : ?><li><?php echo zad_icon( 'shield', 16 ); // phpcs:ignore ?> <?php echo esc_html( $warr ); ?></li><?php endif; ?>

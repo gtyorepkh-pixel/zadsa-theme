@@ -24,6 +24,15 @@
 		});
 	});
 
+	/* Light / dark theme */
+	$$('[data-theme-toggle]').forEach(function (b) {
+		b.addEventListener('click', function () {
+			var cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+			document.documentElement.setAttribute('data-theme', cur);
+			try { localStorage.setItem('zad-theme', cur); } catch (e) {}
+		});
+	});
+
 	/* Back to top */
 	var top = $('[data-totop]');
 	if (top) {

@@ -35,6 +35,7 @@ while ( have_posts() ) :
 	$ba_ids   = array_values( array_filter( array_map( 'intval', explode( ',', (string) $m( 'ba' ) ) ) ) );
 	$ba_text  = zad_lines( $m( 'ba_text' ) );
 	$video    = $m( 'video' );
+	$ctx      = function ( $n ) use ( $gallery ) { $g = array_values( $gallery ); if ( empty( $g[ $n ] ) ) { return; } $cap = wp_get_attachment_caption( $g[ $n ] ) ?: get_post_meta( $g[ $n ], '_wp_attachment_image_alt', true ); echo '<div class="wrap"><figure class="ctximg">' . wp_get_attachment_image( $g[ $n ], 'large', false, array( 'loading' => 'lazy' ) ) . ( $cap ? '<figcaption>' . esc_html( $cap ) . '</figcaption>' : '' ) . '</figure></div>'; };
 	$rating   = $m( 'rating' );
 	$reviews  = (int) $m( 'reviews' );
 	$areas    = get_the_terms( $id, 'service_area' );
@@ -182,7 +183,9 @@ while ( have_posts() ) :
 		<header class="sec__head"><span class="eyebrow">خطوة بخطوة</span><h2>كيف تسير عملية التنفيذ</h2></header>
 		<ol class="hsteps">
 			<?php foreach ( $steps as $i => $s ) : ?>
-				<li><span class="hsteps__n"><?php echo esc_html( $i + 1 ); ?></span><h3><?php echo esc_html( $s['t'] ); ?></h3><p><?php echo esc_html( $s['d'] ); ?></p></li>
+				<?php $sp = array_map( 'trim', explode( '||', $s['d'] ) ); $tags = isset( $sp[1] ) ? array_filter( array_map( 'trim', preg_split( '/[,،]/u', $sp[1] ) ) ) : array(); ?>
+				<li><span class="hsteps__n"><?php echo esc_html( $i + 1 ); ?></span><h3><?php echo esc_html( $s['t'] ); ?></h3><p><?php echo esc_html( $sp[0] ); ?></p>
+				<?php if ( $tags ) : ?><div class="hsteps__tags"><?php foreach ( $tags as $tg ) { echo '<span class="chip">' . esc_html( $tg ) . '</span>'; } ?></div><?php endif; ?></li>
 			<?php endforeach; ?>
 		</ol>
 	</div></section>
@@ -275,6 +278,7 @@ while ( have_posts() ) :
 	</div></section>
 	<?php endif; ?>
 
+	<?php $ctx( 1 ); ?>
 	<!-- 11c. Safety -->
 	<?php if ( $safety || $after ) : ?>
 	<section class="sec"><div class="wrap">
@@ -284,6 +288,7 @@ while ( have_posts() ) :
 	</div></section>
 	<?php endif; ?>
 
+	<?php $ctx( 0 ); ?>
 	<!-- 11d. Packages -->
 	<?php if ( $pkgs ) : ?>
 	<section class="sec sec--tint"><div class="wrap">
@@ -343,7 +348,7 @@ while ( have_posts() ) :
 	<?php if ( $gallery ) : ?>
 	<section class="sec sec--tint"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">من أعمالنا</span><h2>صور من التنفيذ</h2></header>
-		<?php if ( $gallery ) : ?><div class="gal"><?php foreach ( $gallery as $gid ) : ?><a href="<?php echo esc_url( wp_get_attachment_image_url( $gid, 'full' ) ); ?>" target="_blank" rel="noopener"><?php echo wp_get_attachment_image( $gid, 'medium_large', false, array( 'loading' => 'lazy' ) ); ?></a><?php endforeach; ?></div><?php endif; ?>
+		<?php if ( $gallery ) : ?><div class="gal"><?php foreach ( array_slice( array_values( $gallery ), 2 ) ?: $gallery as $gid ) : ?><a href="<?php echo esc_url( wp_get_attachment_image_url( $gid, 'full' ) ); ?>" target="_blank" rel="noopener"><?php echo wp_get_attachment_image( $gid, 'medium_large', false, array( 'loading' => 'lazy' ) ); ?></a><?php endforeach; ?></div><?php endif; ?>
 	</div></section>
 	<?php endif; ?>
 
@@ -385,6 +390,16 @@ while ( have_posts() ) :
 	<section class="sec"><div class="wrap wrap--narrow">
 		<header class="sec__head"><span class="eyebrow">الأسئلة الشائعة</span><h2>كل ما تريد معرفته</h2></header>
 		<?php zad_render_faq( $faq ); ?>
+	</div></section>
+	<?php endif; ?>
+
+	<!-- 15b. Guides -->
+	<?php $gp = new WP_Query( array( 'post_type' => 'post', 'posts_per_page' => 4, 'ignore_sticky_posts' => 1, 'no_found_rows' => true ) );
+	if ( $gp->have_posts() ) : ?>
+	<section class="sec"><div class="wrap">
+		<header class="sec__head"><span class="eyebrow">أدلة تهمّك</span><h2>مقالات ونصائح مفيدة</h2></header>
+		<div class="sgrid"><?php while ( $gp->have_posts() ) { $gp->the_post(); get_template_part( 'template-parts/post-card' ); } wp_reset_postdata(); ?></div>
+		<p class="sec__more"><a class="btn btn--ghost-dark" href="<?php echo esc_url( get_permalink( get_option( 'page_for_posts' ) ) ?: home_url( '/blog/' ) ); ?>">كل المقالات</a></p>
 	</div></section>
 	<?php endif; ?>
 
