@@ -323,19 +323,37 @@
 
 	/* Instant price estimator */
 	$$('[data-est]').forEach(function (box) {
-		var opts = $$('[data-est-opt]', box), out = $('[data-est-price]', box), wa = $('[data-est-wa]', box);
-		opts.forEach(function (o) {
-			o.addEventListener('change', function () {
-				if (!o.checked) { return; }
-				var price = o.getAttribute('data-price'), nm = o.parentNode.querySelector('.est__nm').textContent, g = o.getAttribute('data-group');
-				out.textContent = price;
-				box.classList.add('is-set');
-				if (wa && box.dataset.wa) {
-					var text = 'مرحباً، أرغب بخدمة: ' + box.dataset.title + ' — ' + (g ? g + ': ' : '') + nm + ' (' + price + ')';
-					wa.setAttribute('href', 'https://wa.me/' + box.dataset.wa + '?text=' + encodeURIComponent(text));
-				}
-			});
-		});
+		var opts = $$('[data-est-opt]', box), out = $('[data-est-price]', box), sub = $('[data-est-sub]', box), wa = $('[data-est-wa]', box);
+		var area = $('[data-est-area]', box), qty = $('[data-est-qty]', box), cur = null;
+		var fmt = function (n) { return n.toLocaleString('en-US'); };
+		var q = function () { var v = parseInt(qty.value, 10); return v > 0 ? Math.min(v, 5000) : 1; };
+		function render() {
+			if (!cur) { return; }
+			var price = cur.getAttribute('data-price'), num = parseInt(cur.getAttribute('data-num'), 10) || 0, per = cur.getAttribute('data-per') === '1';
+			var nm = cur.parentNode.querySelector('.est__nm').textContent, g = cur.getAttribute('data-group'), detail = '';
+			box.classList.add('is-set');
+			if (per) {
+				area.hidden = false;
+				var n = q();
+				out.textContent = 'حوالي ' + fmt(num * n) + ' ' + (box.dataset.unit || 'ريال');
+				sub.textContent = n + ' م² × ' + price;
+				detail = ' — المساحة: ' + n + ' م² — التقدير: ' + out.textContent;
+			} else {
+				area.hidden = true;
+				out.textContent = price; sub.textContent = '';
+				detail = ' (' + price + ')';
+			}
+			$$('.est__presets button', box).forEach(function (b) { b.classList.toggle('on', per && b.getAttribute('data-q') === String(q())); });
+			if (wa && box.dataset.wa) {
+				var text = 'مرحباً، أرغب بخدمة: ' + box.dataset.title + ' — ' + (g ? g + ': ' : '') + nm + detail;
+				wa.setAttribute('href', 'https://wa.me/' + box.dataset.wa + '?text=' + encodeURIComponent(text));
+			}
+		}
+		opts.forEach(function (o) { o.addEventListener('change', function () { if (o.checked) { cur = o; render(); } }); });
+		qty.addEventListener('input', render);
+		$('[data-est-dec]', box).addEventListener('click', function () { qty.value = Math.max(1, q() - 5); render(); });
+		$('[data-est-inc]', box).addEventListener('click', function () { qty.value = Math.min(5000, q() + 5); render(); });
+		$$('.est__presets button', box).forEach(function (b) { b.addEventListener('click', function () { qty.value = b.getAttribute('data-q'); render(); }); });
 	});
 
 	/* Video poster -> load on click */

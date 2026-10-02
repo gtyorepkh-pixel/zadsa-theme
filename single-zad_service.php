@@ -88,21 +88,29 @@ while ( have_posts() ) :
 				<div class="shero__side">
 					<?php if ( $prices ) : ?>
 					<div class="est" data-est data-wa="<?php echo esc_attr( zad_whatsapp( $id ) ); ?>" data-title="<?php echo esc_attr( $title ); ?>" data-unit="<?php echo esc_attr( $unit ); ?>">
-						<div class="est__head"><span class="est__ic"><?php echo zad_icon( 'bolt', 20 ); // phpcs:ignore ?></span><div><strong>احسب تكلفة خدمتك</strong><small>اضغط على الخدمة لتظهر أسعارها فوراً</small></div></div>
-						<div class="est__list" role="radiogroup" aria-label="اختر الخدمة">
+						<div class="est__head"><span class="est__step">1</span><div><strong>حدّد خدمتك واعرف سعرها</strong><small>اختر الخدمة المطلوبة من الخيارات</small></div></div>
+						<div class="est__chips" role="radiogroup" aria-label="اختر الخدمة">
 						<?php
 						$by_group = array();
 						foreach ( $prices as $i => $r ) { $by_group[ $r['group'] ][ $i ] = $r; }
 						foreach ( $by_group as $gname => $rows ) :
 							if ( '' !== $gname ) { echo '<div class="est__grp">' . esc_html( $gname ) . '</div>'; }
+							echo '<div class="est__row">';
 							foreach ( $rows as $i => $r ) {
-								echo '<label class="est__opt"><input type="radio" name="est_' . (int) $id . '" value="' . (int) $i . '" data-est-opt data-price="' . esc_attr( $r['price'] ) . '" data-group="' . esc_attr( $gname ) . '"><span class="est__nm">' . esc_html( $r['name'] ) . '</span><span class="est__pr">' . esc_html( $r['price'] ) . '</span></label>';
+								$per = (bool) preg_match( '/م\s*[²2]|متر/u', $r['price'] ) && $r['num'] > 0;
+								echo '<label class="est__chip"><input type="radio" name="est_' . (int) $id . '" value="' . (int) $i . '" data-est-opt data-price="' . esc_attr( $r['price'] ) . '" data-num="' . (int) $r['num'] . '" data-per="' . ( $per ? 1 : 0 ) . '" data-group="' . esc_attr( $gname ) . '"><span class="est__nm">' . esc_html( $r['name'] ) . '</span></label>';
 							}
+							echo '</div>';
 						endforeach;
 						?>
 						</div>
-						<div class="est__out" aria-live="polite"><small>التكلفة التقديرية</small><b data-est-price>اختر خدمة من القائمة</b></div>
-						<a class="btn btn--wa btn--block" data-est-wa href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> ثبّت هذا السعر عبر واتساب</a>
+						<div class="est__area" data-est-area hidden>
+							<div class="est__ahead"><span class="est__step">2</span><strong>كم المساحة؟ (م²)</strong></div>
+							<div class="est__stepper"><button type="button" data-est-dec aria-label="أنقص">−</button><input type="number" inputmode="numeric" min="1" max="5000" value="50" data-est-qty aria-label="المساحة بالمتر المربع"><button type="button" data-est-inc aria-label="زِد">+</button></div>
+							<div class="est__presets"><button type="button" data-q="25">25</button><button type="button" data-q="50">50</button><button type="button" data-q="100">100</button><button type="button" data-q="200">200</button></div>
+						</div>
+						<div class="est__out" aria-live="polite"><small data-est-label>سعرك التقديري</small><b data-est-price>اختر خدمة من الأعلى</b><em data-est-sub></em></div>
+						<a class="btn btn--wa btn--block" data-est-wa href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> اطلب هذه الخدمة عبر واتساب</a>
 						<p class="est__note">السعر تقريبي ويُؤكَّد نهائياً بعد المعاينة.</p>
 					</div>
 					<?php else : ?>
