@@ -482,7 +482,9 @@ add_filter( 'zad_current_crumbs', function ( $c ) {
 	}
 	// Exception: manual parent set → always honour it.
 	$manual = (string) get_post_meta( $id, ZAD_BC_PARENT, true );
-	$simple = is_page() || ( is_singular() && ! zad_is_faq() && ! is_singular( 'post' ) && ! zad_is_service() && ! zad_is_article() );
+	$pto    = get_post_type_object( get_post_type( $id ) );
+	$simple = is_page() || ( is_singular() && ! zad_is_faq() && ! is_singular( 'post' ) && ! zad_is_service() && ! zad_is_article() )
+		|| ( zad_is_service() && $pto && $pto->hierarchical ); // nested pillars: /cleaning/tanks/riyadh/
 	if ( '' === $manual && ! $simple ) {
 		return $c;
 	}
@@ -549,3 +551,73 @@ add_filter( 'do_shortcode_tag', function ( $out, $tag ) {
 		return $d . '<noscript>' . $m[0] . '</noscript>';
 	}, $out, 1 );
 }, PHP_INT_MAX, 2 );
+
+/* =====================================================================
+ * 6. BREADCRUMB SCHEMA GUARD
+ * The visible trail is ours, so BreadcrumbList must come from us too.
+ * Schema Pro's copy is removed (it would disagree with the visible trail);
+ * when the theme does not own the whole schema (mu-plugin zad-schema.php),
+ * we print just the BreadcrumbList. Everything else is left untouched.
+ * ===================================================================== */
+
+function zad_strip_breadcrumb_jsonld( $html ) {
+	if ( false === stripos( $html, 'BreadcrumbList' ) ) {
+		return $html;
+	}
+	return preg_replace_callback( '#<script[^>]*application/ld\+json[^>]*>(.*?)</script>\s*#is', function ( $m ) {
+		$d = json_decode( trim( $m[1] ), true );
+		if ( ! is_array( $d ) ) {
+			return $m[0];
+		}
+		$is_bc = function ( $n ) { return is_array( $n ) && isset( $n['@type'] ) && in_array( 'BreadcrumbList', (array) $n['@type'], true ); };
+		if ( isset( $d['@graph'] ) && is_array( $d['@graph'] ) ) {
+			$left = array_values( array_filter( $d['@graph'], function ( $n ) use ( $is_bc ) { return ! $is_bc( $n ); } ) );
+			if ( count( $left ) === count( $d['@graph'] ) ) { return $m[0]; }
+			if ( ! $left ) { return ''; }
+			$d['@graph'] = $left;
+			return '<script type="application/ld+json">' . wp_json_encode( $d, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG ) . "</script>\n";
+		}
+		return $is_bc( $d ) ? '' : $m[0];
+	}, $html );
+}
+
+add_action( 'wp', function () {
+	if ( is_admin() || ! class_exists( 'BSF_AIOSRS_Pro_Markup' ) || ! method_exists( 'BSF_AIOSRS_Pro_Markup', 'get_instance' ) ) {
+		return;
+	}
+	$inst = BSF_AIOSRS_Pro_Markup::get_instance();
+	foreach ( array( 'wp_head', 'wp_footer' ) as $hook ) {
+		foreach ( array( 'schema_markup', 'global_schemas_markup' ) as $method ) {
+			if ( ! method_exists( $inst, $method ) ) { continue; }
+			$prio = has_action( $hook, array( $inst, $method ) );
+			if ( false === $prio ) { continue; }
+			remove_action( $hook, array( $inst, $method ), $prio );
+			add_action( $hook, function () use ( $inst, $method ) {
+				ob_start();
+				$inst->$method();
+				$h = ob_get_clean();
+				if ( function_exists( 'zad_sc_is_active_request' ) && zad_sc_is_active_request() && function_exists( 'zad_sc_filter_foreign_jsonld' ) ) {
+					$h = zad_sc_filter_foreign_jsonld( $h ); // keep the mu-plugin's own de-duplication
+				}
+				echo zad_strip_breadcrumb_jsonld( $h ); // phpcs:ignore WordPress.Security.EscapeOutput
+			}, $prio );
+		}
+	}
+}, 98 );
+
+add_action( 'wp_head', function () {
+	if ( is_admin() || is_feed() || is_front_page() || 'theme' === zad_schema_owner() || zad_suite_has( 'bc' ) ) {
+		return; // owner=theme prints it inside its graph; the plugin rewrites its own
+	}
+	$crumbs = zad_current_crumbs();
+	if ( count( $crumbs ) < 2 ) {
+		return;
+	}
+	$items = array();
+	foreach ( $crumbs as $i => $c ) {
+		$it = array( '@type' => 'ListItem', 'position' => $i + 1, 'name' => $c[0] );
+		$it['item'] = $c[1] ? $c[1] : ( function_exists( 'zad_current_url' ) ? zad_current_url() : '' );
+		$items[] = $it;
+	}
+	echo '<script type="application/ld+json" class="zad-breadcrumb-schema">' . wp_json_encode( array( '@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'itemListElement' => $items ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG ) . "</script>\n"; // phpcs:ignore WordPress.Security.EscapeOutput
+}, 31 );
