@@ -227,6 +227,11 @@ function zad_adopt_page() {
 		echo '<div class="notice notice-success"><p>تم: تصنيف ' . (int) $res['cats'] . ' خدمة بحسب نوعها، وربط ' . (int) $res['areas'] . ' خدمة بالمدن. الروابط لم تتغير.</p></div>';
 	}
 	$rows = array( 'service' => 'خدمات (تصميم الخدمة)', 'faq' => 'أسئلة (تصميم السؤال)', 'article' => 'مقالات (تصميم المقال)' );
+	$mu = defined( 'WPMU_PLUGIN_DIR' ) ? WPMU_PLUGIN_DIR : WP_CONTENT_DIR . '/mu-plugins';
+	$muf = array_filter( array( 'zad-schema.php', 'zad-cleanup.php', 'zad-core-cpt.php' ), function ( $f ) use ( $mu ) { return file_exists( $mu . '/' . $f ); } );
+	if ( $muf ) {
+		echo '<div class="notice notice-info inline"><p><strong>ملفات mu-plugins مكتشفة:</strong> <code>' . esc_html( implode( '، ', $muf ) ) . '</code>. سكيما الثيم: <strong>' . ( 'theme' === zad_schema_owner() ? 'مفعّلة' : 'متنحّية للإضافة القديمة (لا تكرار)' ) . '</strong>. للتحكم: إعدادات القالب ← الهوية والألوان ← «سكيما وSEO الثيم».</p></div>';
+	}
 	global $zad_legacy_registered;
 	if ( ! empty( $zad_legacy_registered ) ) {
 		echo '<div class="notice notice-warning inline"><p><strong>شبكة الأمان فعّالة:</strong> سجّل القالب تلقائياً هذه الأنواع لأنها غير مسجّلة من أي مصدر آخر: <code>' . esc_html( implode( '، ', $zad_legacy_registered ) ) . '</code>. هذا يعني أن الثيم القديم أو كوداً قديماً كان يسجّلها. حافظ على نسخة احتياطية قبل أي تعديل آخر.</p></div>';

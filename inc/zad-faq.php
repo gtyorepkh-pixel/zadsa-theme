@@ -77,7 +77,7 @@ function zad_service_faqs( $service_id, $limit = 6 ) {
 
 /** QAPage schema on single questions. */
 add_action( 'wp_head', function () {
-	if ( ! zad_is_faq() ) {
+	if ( ! zad_is_faq() || 'theme' !== zad_schema_owner() ) {
 		return;
 	}
 	$ans = wp_strip_all_tags( get_the_excerpt() ?: get_the_content() );

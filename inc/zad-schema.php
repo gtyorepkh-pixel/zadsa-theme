@@ -347,7 +347,7 @@ function zad_service_schema( $id ) {
 }
 
 add_action( 'wp_head', function () {
-	if ( is_404() || is_search() ) {
+	if ( is_404() || is_search() || 'theme' !== zad_schema_owner() ) {
 		return;
 	}
 	zad_print_schema( zad_graph() );

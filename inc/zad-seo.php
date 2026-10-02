@@ -5,7 +5,7 @@
  */
 
 function zad_seo_active() {
-	return defined( 'WPSEO_VERSION' ) || defined( 'RANK_MATH_VERSION' ) || defined( 'AIOSEO_VERSION' );
+	return 'theme' !== zad_schema_owner() || defined( 'WPSEO_VERSION' ) || defined( 'RANK_MATH_VERSION' ) || defined( 'AIOSEO_VERSION' );
 }
 
 /* ---- meta box ---- */

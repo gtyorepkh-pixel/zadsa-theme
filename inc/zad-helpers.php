@@ -283,3 +283,20 @@ function zad_reading_time( $post = null ) {
 function zad_hours_text() {
 	return zad_opt( 'zad_hours', 'من 8 صباحاً إلى 10 مساءً طوال أيام الأسبوع' );
 }
+
+
+/** Who outputs schema + meta tags: 'theme' or 'other' (mu-plugin / SEO plugin) or 'off'. */
+function zad_schema_owner() {
+	$mode = zad_opt( 'zad_schema_mode', 'auto' );
+	if ( 'off' === $mode ) {
+		return 'off';
+	}
+	if ( 'theme' === $mode ) {
+		return 'theme';
+	}
+	$mu = defined( 'WPMU_PLUGIN_DIR' ) ? WPMU_PLUGIN_DIR : WP_CONTENT_DIR . '/mu-plugins';
+	if ( file_exists( $mu . '/zad-schema.php' ) ) {
+		return 'other';
+	}
+	return 'theme';
+}
