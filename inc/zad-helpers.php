@@ -11,7 +11,17 @@ function zad_opt( $key, $default = '' ) {
 			$opts = array();
 		}
 	}
-	return ( isset( $opts[ $key ] ) && '' !== $opts[ $key ] && array() !== $opts[ $key ] ) ? $opts[ $key ] : $default;
+	if ( isset( $opts[ $key ] ) && '' !== $opts[ $key ] && array() !== $opts[ $key ] ) {
+		return $opts[ $key ];
+	}
+	// Company data never saved in the options falls back to the validated values (footer, contact, about, schema).
+	if ( '' === $default && function_exists( 'zsc_opt_defaults' ) ) {
+		$d = zsc_opt_defaults();
+		if ( isset( $d[ $key ] ) ) {
+			return $d[ $key ];
+		}
+	}
+	return $default;
 }
 
 /** Digits only, converts 05xxxxxxxx to 9665xxxxxxxx for wa.me / tel links. */

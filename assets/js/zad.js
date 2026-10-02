@@ -359,4 +359,54 @@
 		var stage = $('.ba__stage', fig), input = $('input', fig);
 		input.addEventListener('input', function () { stage.style.setProperty('--p', input.value + '%'); });
 	});
+
+	/* ---- Services page: category filter + search ---- */
+	$$('[data-svc-filter]').forEach(function (nav) {
+		var groups = $$('.svcs__grp'), input = $('[data-svc-search]'), none = $('[data-svc-none]'), f = '*';
+		function apply() {
+			var q = input ? input.value.trim().toLowerCase() : '', any = false;
+			groups.forEach(function (g) {
+				var show = f === '*' || g.getAttribute('data-grp') === f, n = 0;
+				$$('.svcs__it', g).forEach(function (it) {
+					var ok = !q || (it.getAttribute('data-t') || '').indexOf(q) > -1;
+					it.hidden = !ok; if (ok) { n++; }
+				});
+				g.hidden = !show || n === 0; if (!g.hidden) { any = true; }
+			});
+			if (none) { none.hidden = any; }
+		}
+		nav.addEventListener('click', function (e) {
+			var b = e.target.closest('button'); if (!b) { return; }
+			f = b.getAttribute('data-f');
+			$$('button', nav).forEach(function (x) { x.classList.toggle('is-on', x === b); });
+			apply();
+		});
+		if (input) { input.addEventListener('input', apply); }
+	});
+
+	/* ---- Our work page: filter + show more ---- */
+	var wg = $('[data-work-grid]');
+	if (wg) {
+		var f2 = '*', more = $('[data-work-more]'), revealed = false;
+		function paint() {
+			var shown = 0;
+			$$('.work__it', wg).forEach(function (it) {
+				var okc = f2 === '*' || it.getAttribute('data-cat') === f2;
+				var hide = !okc || (it.hasAttribute('data-more') && !revealed && f2 === '*');
+				it.hidden = hide; if (!hide) { shown++; }
+			});
+			if (more) { more.parentNode.hidden = revealed || f2 !== '*'; }
+		}
+		var nav2 = $('[data-work-filter]');
+		if (nav2) {
+			nav2.addEventListener('click', function (e) {
+				var b = e.target.closest('button'); if (!b) { return; }
+				f2 = b.getAttribute('data-f');
+				$$('button', nav2).forEach(function (x) { x.classList.toggle('is-on', x === b); });
+				paint();
+			});
+		}
+		if (more) { more.addEventListener('click', function () { revealed = true; paint(); }); }
+		paint();
+	}
 })();

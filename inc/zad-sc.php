@@ -48,14 +48,29 @@ function zsc_defaults() {
 			'same_as'       => array( 'https://www.facebook.com/zadksa2', 'https://x.com/zadksa2', 'https://www.instagram.com/zadksa2/', 'https://www.youtube.com/channel/UC5jWpqhaDYs9MO7CMTx-bFA' ),
 			'area_served'   => array( array( 'City', 'الرياض' ), array( 'City', 'جدة' ), array( 'City', 'الدمام' ), array( 'City', 'القطيف' ), array( 'AdministrativeArea', 'القصيم' ), array( 'City', 'نجران' ) ),
 			'hours'         => array(
-				array( array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ), '08:00', '22:00' ),
-				array( array( 'Sunday' ), '07:00', '23:00' ),
+				array( array( 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday' ), '08:00', '22:00' ),
 			),
 			'knows_about'   => array( 'مكافحة الحشرات', 'تنظيف الخزانات', 'تنظيف وصيانة المكيفات', 'تنظيف الكنب والمفروشات', 'تنظيف المنازل', 'نقل الأثاث', 'تخزين الأثاث', 'جلي البلاط والرخام', 'تسليك المجاري' ),
 		),
 	);
 }
 
+
+/** Company values used when the matching theme option was never filled (keeps footer/contact/about in step with the schema). */
+function zsc_opt_defaults() {
+	static $m = null;
+	if ( null === $m ) {
+		$b = zsc_defaults()['business'];
+		$m = array(
+			'zad_legal_name' => $b['legal_name'], 'zad_cr' => $b['cr'], 'zad_vat' => $b['vat'],
+			'zad_street' => '2851 شارع عبدالملك بن مروان', 'zad_district' => 'حي العليا', 'zad_postal' => $b['postal_code'],
+			'zad_lat' => (string) $b['lat'], 'zad_lng' => (string) $b['lng'],
+			'memopt_phone' => '0552744437', 'memopt_mail' => $b['email'], 'zad_site_desc' => $b['description'],
+			'memopt_fb' => $b['same_as'][0], 'memopt_tw' => $b['same_as'][1], 'memopt_insta' => $b['same_as'][2], 'memopt_yt' => $b['same_as'][3],
+		);
+	}
+	return $m;
+}
 
 /** Authors option: one per line  slug | name | job title | credential | topics (; separated) | description */
 function zsc_parse_authors( $text, $fallback ) {
