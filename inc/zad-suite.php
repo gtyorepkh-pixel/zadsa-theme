@@ -408,6 +408,27 @@ function zad_bc_path( $url ) {
 	return '//' === $path ? '/' : $path;
 }
 
+/** Known section paths → short breadcrumb label (carried over from the Suite; filter 'zad_bc_hubs' to extend). */
+function zad_bc_hubs() {
+	return apply_filters( 'zad_bc_hubs', array(
+		'/services/' => 'خدماتنا', '/cleaning/' => 'خدمات التنظيف', '/cleaning/riyadh/' => 'خدمات تنظيف بالرياض',
+		'/cleaning/air-conditioning/' => 'تنظيف المكيفات', '/cleaning/sofa/' => 'تنظيف الكنب والمفروشات', '/cleaning/tanks/' => 'تنظيف الخزانات',
+		'/pest-control/' => 'مكافحة الحشرات', '/guide/' => 'دليل التنظيف والصيانة', '/sections/' => 'دليل مكافحة الحشرات',
+		'/pests-library/' => 'مكتبة الآفات', '/cleaning-sections/tanks/' => 'دليل تنظيف الخزانات',
+		'/best-faqs/pest-control/' => 'أسئلة مكافحة الحشرات', '/best-faqs/tanks-cleaning/' => 'أسئلة تنظيف الخزانات',
+		'/moving/' => 'نقل وتخزين الأثاث', '/faq/' => 'الأسئلة الشائعة',
+	) );
+}
+
+/** Short label from a long SEO title: drop phone numbers and everything after "|", "–", "—", ":". */
+function zad_bc_clean_label( $title ) {
+	$t = wp_strip_all_tags( html_entity_decode( (string) $title, ENT_QUOTES, 'UTF-8' ) );
+	$t = preg_replace( '/(?:\+?966)?0?5\d{8}/u', '', $t );
+	$p = preg_split( '/\s*[|–—]\s*|:\s*/u', $t, 2 );
+	$t = preg_replace( '/\s+/u', ' ', $p[0] ?? $t );
+	return trim( $t, " \t\n\r\0\x0B-|" );
+}
+
 /** Resolve a site path to [label, url] when a live published post exists. */
 function zad_bc_node( $path ) {
 	static $memo = array();
@@ -419,7 +440,11 @@ function zad_bc_node( $path ) {
 	$out = null;
 	if ( $id && 'publish' === get_post_status( $id ) ) {
 		$l   = trim( (string) get_post_meta( $id, ZAD_BC_LABEL, true ) );
-		$out = array( '' !== $l ? $l : wp_strip_all_tags( get_the_title( $id ) ), get_permalink( $id ), $id );
+		$hub = zad_bc_hubs();
+		if ( '' === $l && isset( $hub[ $path ] ) ) {
+			$l = $hub[ $path ];
+		}
+		$out = array( '' !== $l ? $l : zad_bc_clean_label( get_the_title( $id ) ), get_permalink( $id ), $id );
 	}
 	return $memo[ $path ] = $out;
 }
@@ -428,7 +453,7 @@ function zad_bc_node( $path ) {
 function zad_path_crumbs( $post_id ) {
 	$home  = array( 'الرئيسية', home_url( '/' ) );
 	$label = trim( (string) get_post_meta( $post_id, ZAD_BC_LABEL, true ) );
-	$cur   = array( '' !== $label ? $label : wp_strip_all_tags( get_the_title( $post_id ) ), '' );
+	$cur   = array( '' !== $label ? $label : zad_bc_clean_label( get_the_title( $post_id ) ), '' );
 	$trail = array();
 	$seen  = array( zad_bc_path( get_permalink( $post_id ) ) => 1 );
 	$path  = zad_bc_path( (string) get_post_meta( $post_id, ZAD_BC_PARENT, true ) );
@@ -457,7 +482,8 @@ function zad_path_crumbs( $post_id ) {
 			}
 			if ( $pto ) {
 				$map = (array) get_option( ZAD_AC_MAP, array() );
-				$ttl = ! empty( $map[ $pto->name ] ) ? get_the_title( $map[ $pto->name ] ) : $pto->labels->name;
+				$hub = zad_bc_hubs();
+				$ttl = isset( $hub[ $path ] ) ? $hub[ $path ] : ( ! empty( $map[ $pto->name ] ) ? zad_bc_clean_label( get_the_title( $map[ $pto->name ] ) ) : $pto->labels->name );
 				array_unshift( $trail, array( $ttl, get_post_type_archive_link( $pto->name ) ) );
 			}
 		}
