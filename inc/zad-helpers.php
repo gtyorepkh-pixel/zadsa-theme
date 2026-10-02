@@ -258,3 +258,22 @@ function zad_pagination( $q = null ) {
 	$cur = max( 1, (int) get_query_var( 'paged' ), (int) get_query_var( 'page' ) );
 	return '<div class="pagination">' . paginate_links( array( 'total' => $max, 'current' => $cur, 'mid_size' => 1, 'end_size' => 2, 'prev_text' => '›', 'next_text' => '‹' ) ) . '</div>';
 }
+
+
+/** Hub settings row for a post type (matched by rewrite slug or key). */
+function zad_hub_opt( $pt ) {
+	$base = str_replace( '_', '-', strtolower( zad_type_base( $pt ) ) );
+	$key  = str_replace( '_', '-', strtolower( $pt ) );
+	foreach ( (array) zad_opt( 'zad_hubs', array() ) as $h ) {
+		$sl = trim( str_replace( '_', '-', strtolower( (string) ( $h['slug'] ?? '' ) ) ), '/ ' );
+		if ( $sl && ( $sl === $base || $sl === $key ) ) {
+			return $h;
+		}
+	}
+	return array();
+}
+
+function zad_reading_time( $post = null ) {
+	$w = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $post ) ), 0, 'ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىيًٌٍَُِّْ' );
+	return max( 1, (int) ceil( $w / 180 ) );
+}

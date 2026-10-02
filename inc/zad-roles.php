@@ -143,6 +143,11 @@ add_filter( 'template_include', function ( $tpl ) {
 		}
 	}
 	if ( is_post_type_archive() ) {
+		$ex = array_diff( zad_article_types(), array( 'post' ) );
+		if ( $ex && is_post_type_archive( $ex ) ) {
+			$f = locate_template( 'archive-hub-articles.php' );
+			return $f ? $f : $tpl;
+		}
 		if ( zad_is_services_archive() ) {
 			$f = locate_template( 'archive-zad_service.php' );
 			return $f ? $f : $tpl;

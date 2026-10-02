@@ -127,6 +127,23 @@
 		});
 	}
 
+	/* Knowledge-base live filter */
+	var kbIn = $('[data-kb-search]');
+	if (kbIn) {
+		var norm = function (t) { return t.toLowerCase().replace(/[\u064B-\u065F\u0640]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي'); };
+		var items = $$('[data-kb-item]'), groups = $$('[data-kb-group]'), cnt = $('[data-kb-count]'), emp = $('[data-kb-empty]');
+		kbIn.addEventListener('input', function () {
+			var q = norm(kbIn.value.trim()), words = q.split(/\s+/).filter(Boolean), shown = 0;
+			items.forEach(function (it) {
+				var hay = it.getAttribute('data-s') || '', ok = words.every(function (w) { return hay.indexOf(w) > -1; });
+				it.hidden = !ok; if (ok) shown++; if (words.length && ok) it.open = false;
+			});
+			groups.forEach(function (g) { g.hidden = !$$('[data-kb-item]:not([hidden])', g).length; });
+			if (cnt) cnt.textContent = shown;
+			if (emp) emp.hidden = shown > 0;
+		});
+	}
+
 	/* Pest identification */
 	$$('[data-identify]').forEach(function (box) {
 		var rules = []; try { rules = JSON.parse(box.getAttribute('data-rules') || '[]'); } catch (e) {}

@@ -195,3 +195,26 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_rating_count', 'type' => 'text', 'title' => 'ملخص التقييم: عدد التقييمات', 'default' => '' ),
 	),
 ) );
+
+CSF::createSection( $zad_prefix, array(
+	'title'  => 'صفحات الأقسام (Hubs)',
+	'fields' => array(
+		array( 'type' => 'subheading', 'content' => 'صفحة كل قسم (مثل /pest-control/) تُبنى كدليل شامل يشرح القسم ويحيل للخدمات تحته. اكتب «الرابط» كما هو في موقعك. كل ما تتركه فارغاً يُولَّد تلقائياً.' ),
+		array(
+			'id' => 'zad_hubs', 'type' => 'group', 'title' => 'الأقسام', 'button_title' => 'إضافة قسم',
+			'fields' => array(
+				array( 'id' => 'slug', 'type' => 'text', 'title' => 'رابط النوع', 'desc' => 'مثال: pest-control أو cleaning أو moving' ),
+				array( 'id' => 'headline', 'type' => 'text', 'title' => 'العنوان الرئيسي' ),
+				array( 'id' => 'lead', 'type' => 'textarea', 'title' => 'مقدمة قصيرة تحت العنوان' ),
+				array( 'id' => 'body', 'type' => 'wp_editor', 'title' => 'نظرة عامة (نص تحريري)', 'media_buttons' => false ),
+				array( 'id' => 'decide', 'type' => 'textarea', 'title' => 'اختر حسب حالتك', 'desc' => 'سطر لكل حالة: حالتك | عنوان الخدمة كما هو بالضبط. مثال: أرى حشرات في أكثر من غرفة | شركة رش مبيدات بالرياض' ),
+				array( 'id' => 'tips', 'type' => 'textarea', 'title' => 'كيف تختار؟ (نقطة في كل سطر)' ),
+				array( 'id' => 'cta', 'type' => 'text', 'title' => 'نص زر الطلب', 'default' => 'اطلب معاينة مجانية' ),
+			),
+		),
+		array( 'id' => 'zad_kb_title', 'type' => 'text', 'title' => 'قاعدة المعرفة (الأسئلة): العنوان', 'default' => 'مركز المساعدة' ),
+		array( 'id' => 'zad_kb_lead', 'type' => 'textarea', 'title' => 'قاعدة المعرفة: مقدمة', 'default' => 'ابحث عن إجابتك بين مئات الأسئلة، أو تصفّح الأسئلة حسب الخدمة.' ),
+		array( 'id' => 'zad_lib_title', 'type' => 'text', 'title' => 'المكتبة (المقالات والأدلة): العنوان', 'default' => 'مكتبة المعرفة' ),
+		array( 'id' => 'zad_lib_lead', 'type' => 'textarea', 'title' => 'المكتبة: مقدمة', 'default' => 'أدلة عملية ونصائح من خبراء الميدان تساعدك على اتخاذ القرار الصحيح.' ),
+	),
+) );
