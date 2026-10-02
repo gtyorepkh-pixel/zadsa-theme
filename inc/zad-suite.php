@@ -596,8 +596,10 @@ add_action( 'wp', function () {
 				ob_start();
 				$inst->$method();
 				$h = ob_get_clean();
-				if ( function_exists( 'zad_sc_is_active_request' ) && zad_sc_is_active_request() && function_exists( 'zad_sc_filter_foreign_jsonld' ) ) {
-					$h = zad_sc_filter_foreign_jsonld( $h ); // keep the mu-plugin's own de-duplication
+				if ( zsc_is_active_request() ) {
+					$h = zsc_filter_foreign_jsonld( $h ); // theme owns the graph: drop Schema Pro's duplicates
+				} elseif ( function_exists( 'zad_sc_is_active_request' ) && zad_sc_is_active_request() && function_exists( 'zad_sc_filter_foreign_jsonld' ) ) {
+					$h = zad_sc_filter_foreign_jsonld( $h ); // mu-plugin owns it: keep its own de-duplication
 				}
 				echo zad_strip_breadcrumb_jsonld( $h ); // phpcs:ignore WordPress.Security.EscapeOutput
 			}, $prio );

@@ -29,6 +29,7 @@ require_once MEMO_THEME_DIR .'inc/zad-legacy.php';
 require_once MEMO_THEME_DIR .'inc/zad-cpt.php';
 require_once MEMO_THEME_DIR .'inc/zad-leads.php';
 require_once MEMO_THEME_DIR .'inc/zad-city.php';
+require_once MEMO_THEME_DIR .'inc/zad-sc.php';
 require_once MEMO_THEME_DIR .'inc/zad-schema.php';
 require_once MEMO_THEME_DIR .'inc/zad-seo.php';
 require_once MEMO_THEME_DIR .'inc/zad-suite.php';

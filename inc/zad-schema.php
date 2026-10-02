@@ -350,16 +350,46 @@ function zad_service_schema( $id ) {
 	return $s;
 }
 
+/** Print one @graph made of nodes. */
+function zad_print_graph( $nodes ) {
+	zad_print_schema( array( '@context' => 'https://schema.org', '@graph' => array_values( $nodes ) ) );
+}
+
 add_action( 'wp_head', function () {
 	if ( is_404() || is_search() || 'theme' !== zad_schema_owner() ) {
 		return;
 	}
-	zad_print_schema( zad_graph() );
+	$site  = zsc_site_nodes();
+	$nav   = zad_nav_schema();
+	$city  = is_singular() && function_exists( 'zad_current_city' ) ? zad_current_city() : null;
+	$id    = is_singular() ? get_queried_object_id() : 0;
+	$ptype = $id ? get_post_type( $id ) : '';
+
+	if ( is_front_page() ) {
+		$nodes = array_merge( $site, zsc_home_nodes() );
+		if ( $nav ) { $nodes[] = $nav; }
+		zad_print_graph( $nodes );
+	} elseif ( $city && zad_is_service() ) {
+		// virtual service+city page: company graph + city-specific Service
+		$nodes = array_slice( $site, 0, 3 );
+		zad_print_graph( zsc_with_breadcrumb( $nodes, zad_current_url() ) );
+		zad_print_schema( zad_service_schema( $id ) );
+	} elseif ( $id && in_array( $ptype, zad_service_types(), true ) && 'none' !== zsc_meta( $id, 'mode' ) ) {
+		$nodes = zsc_with_breadcrumb( array_merge( $site, zsc_service_nodes( $id ) ), get_permalink( $id ) );
+		if ( $nav ) { $nodes[] = $nav; }
+		zad_print_graph( $nodes );
+	} elseif ( $id && zsc_is_article_page( $id ) ) {
+		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), zsc_article_nodes( $id ) ), get_permalink( $id ) ) );
+	} elseif ( $id ) {
+		$u  = get_permalink( $id );
+		$wp = array( '@type' => 'WebPage', '@id' => $u . '#webpage', 'url' => $u, 'name' => wp_strip_all_tags( get_the_title( $id ) ), 'isPartOf' => array( '@id' => home_url( '/#website' ) ), 'inLanguage' => 'ar', 'datePublished' => get_post_time( 'c', true, $id ), 'dateModified' => get_post_modified_time( 'c', true, $id ) );
+		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), array( $wp ) ), $u ) );
+	} else {
+		zad_print_graph( zsc_with_breadcrumb( array_slice( $site, 0, 2 ), zad_current_url() ) );
+	}
 
 	if ( zad_is_service() ) {
 		$id = get_queried_object_id();
-		zad_print_schema( zad_service_schema( $id ) );
-
 		$faq = array_filter( (array) get_post_meta( $id, '_zad_faq', true ), function ( $f ) { return ! empty( $f['q'] ); } );
 		if ( $faq ) {
 			$ents = array();
@@ -367,14 +397,6 @@ add_action( 'wp_head', function () {
 				$ents[] = array( '@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => $f['a'] ) );
 			}
 			zad_print_schema( array( '@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $ents ) );
-		}
-		$vid = get_post_meta( $id, '_zad_video', true );
-		if ( $vid ) {
-			$v = array( '@context' => 'https://schema.org', '@type' => 'VideoObject', '@id' => get_permalink( $id ) . '#video', 'name' => get_the_title( $id ), 'description' => wp_strip_all_tags( get_the_excerpt( $id ) ?: get_the_title( $id ) ), 'contentUrl' => $vid, 'uploadDate' => get_the_date( 'c', $id ), 'publisher' => array( '@id' => home_url( '/#organization' ) ), 'inLanguage' => 'ar' );
-			$vd = (int) get_post_meta( $id, '_zad_video_duration', true );
-			if ( $vd > 0 ) { $v['duration'] = 'PT' . ( $vd >= 60 ? intdiv( $vd, 60 ) . 'M' : '' ) . ( $vd % 60 ? ( $vd % 60 ) . 'S' : '' ); if ( 'PT' === $v['duration'] ) { $v['duration'] = 'PT0S'; } }
-			if ( has_post_thumbnail( $id ) ) { $v['thumbnailUrl'] = array( get_the_post_thumbnail_url( $id, 'large' ) ); }
-			zad_print_schema( $v );
 		}
 	}
 	if ( is_front_page() ) {
