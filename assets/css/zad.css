@@ -1,7 +1,3 @@
-@font-face{font-family:"Tajawal";font-style:normal;font-weight:400;font-display:swap;src:url(../fonts/tajawal-400.woff2) format("woff2")}
-@font-face{font-family:"Tajawal";font-style:normal;font-weight:500;font-display:swap;src:url(../fonts/tajawal-500.woff2) format("woff2")}
-@font-face{font-family:"Tajawal";font-style:normal;font-weight:700;font-display:swap;src:url(../fonts/tajawal-700.woff2) format("woff2")}
-@font-face{font-family:"Tajawal";font-style:normal;font-weight:800;font-display:swap;src:url(../fonts/tajawal-800.woff2) format("woff2")}
 /* ==========================================================
    Zad Pro — design tokens + components (RTL first)
    ========================================================== */
@@ -743,3 +739,6 @@ tr.tabitem[hidden],.pricebox.tabitem[hidden]{display:none}
 .sbar__grp summary .zi{display:none}
 .sbar li a{font-size:.95rem;color:var(--muted)}
 .sbar li a.is-on{background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent-text);font-weight:800}
+
+/* Every control uses the site font (browsers default to the system font otherwise) */
+button,input,select,textarea,optgroup{font-family:inherit}

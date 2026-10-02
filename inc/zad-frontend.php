@@ -247,3 +247,14 @@ add_action( 'wp_head', function () {
 		echo '<link rel="preload" as="image" href="' . esc_url( $url ) . '" fetchpriority="high">' . "\n"; // phpcs:ignore
 	}
 }, 2 );
+
+
+/** Self-hosted Tajawal. Declared inline with absolute URLs so cache/minify/CDN plugins that move the stylesheet cannot break the font path. */
+add_action( 'wp_head', function () {
+	$u   = trailingslashit( get_template_directory_uri() ) . 'assets/fonts/';
+	$css = '';
+	foreach ( array( 400, 500, 700, 800 ) as $w ) {
+		$css .= '@font-face{font-family:"Tajawal";font-style:normal;font-weight:' . $w . ';font-display:swap;src:url(' . esc_url( $u . 'tajawal-' . $w . '.woff2' ) . ') format("woff2")}';
+	}
+	echo '<style id="zad-fonts">' . $css . "</style>\n"; // phpcs:ignore WordPress.Security.EscapeOutput
+}, 1 );
