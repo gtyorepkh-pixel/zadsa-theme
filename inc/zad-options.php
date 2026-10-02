@@ -154,3 +154,38 @@ CSF::createSection( $zad_prefix, array(
 		),
 	),
 ) );
+
+CSF::createSection( $zad_prefix, array(
+	'title'  => 'الرئيسية: أقسام إضافية',
+	'fields' => array(
+		array(
+			'id' => 'zad_highlights', 'type' => 'group', 'title' => 'شريط المزايا أسفل الهيرو', 'button_title' => 'إضافة ميزة',
+			'fields' => array(
+				array( 'id' => 'icon', 'type' => 'select', 'title' => 'الأيقونة', 'options' => array_combine( zad_icon_keys(), zad_icon_keys() ) ),
+				array( 'id' => 't', 'type' => 'text', 'title' => 'العنوان' ),
+				array( 'id' => 'd', 'type' => 'text', 'title' => 'وصف قصير' ),
+			),
+		),
+		array( 'id' => 'zad_about_eyebrow', 'type' => 'text', 'title' => 'قسم «عنّا»: الوسم', 'default' => 'من نحن' ),
+		array( 'id' => 'zad_about_title', 'type' => 'text', 'title' => 'قسم «عنّا»: العنوان' ),
+		array( 'id' => 'zad_about_text', 'type' => 'textarea', 'title' => 'قسم «عنّا»: النص' ),
+		array( 'id' => 'zad_about_points', 'type' => 'textarea', 'title' => 'قسم «عنّا»: نقاط (سطر لكل نقطة)' ),
+		array( 'id' => 'zad_about_img', 'type' => 'media', 'title' => 'قسم «عنّا»: صورة' ),
+		array( 'id' => 'zad_price_title', 'type' => 'text', 'title' => 'قسم الأسعار: العنوان', 'default' => 'أسعار واضحة تبدأ من' ),
+		array(
+			'id' => 'zad_home_ba', 'type' => 'group', 'title' => 'نتائج قبل / بعد', 'button_title' => 'إضافة مقارنة',
+			'fields' => array(
+				array( 'id' => 'before', 'type' => 'media', 'title' => 'قبل', 'library' => 'image' ),
+				array( 'id' => 'after', 'type' => 'media', 'title' => 'بعد', 'library' => 'image' ),
+				array( 'id' => 'title', 'type' => 'text', 'title' => 'العنوان' ),
+				array( 'id' => 'desc', 'type' => 'text', 'title' => 'وصف' ),
+			),
+		),
+		array( 'id' => 'zad_home_video', 'type' => 'text', 'title' => 'فيديو الرئيسية (YouTube أو mp4)' ),
+		array( 'id' => 'zad_home_video_poster', 'type' => 'media', 'title' => 'صورة غلاف الفيديو', 'library' => 'image' ),
+		array( 'id' => 'zad_guarantee_title', 'type' => 'text', 'title' => 'شريط الضمان: العنوان', 'default' => 'ضمان مكتوب على كل خدمة' ),
+		array( 'id' => 'zad_guarantee_text', 'type' => 'text', 'title' => 'شريط الضمان: النص', 'default' => 'إن عادت المشكلة خلال مدة الضمان نعالجها مجاناً — نحدد المدة كتابةً قبل البدء.' ),
+		array( 'id' => 'zad_rating_score', 'type' => 'text', 'title' => 'ملخص التقييم: الرقم', 'default' => '4.9' ),
+		array( 'id' => 'zad_rating_count', 'type' => 'text', 'title' => 'ملخص التقييم: عدد التقييمات', 'default' => '' ),
+	),
+) );

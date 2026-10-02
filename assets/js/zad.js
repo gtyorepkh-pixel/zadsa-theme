@@ -147,6 +147,51 @@
 		$('[data-id-reset]', box).addEventListener('click', function () { res.hidden = true; s1.hidden = false; });
 	});
 
+	/* Animated counters */
+	var counters = $$('[data-count]');
+	if (counters.length && 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+		var co = new IntersectionObserver(function (es) {
+			es.forEach(function (e) {
+				if (!e.isIntersecting) return;
+				var el = e.target; co.unobserve(el);
+				var txt = el.getAttribute('data-count'), m = txt.match(/^(\D*)([\d,\.]+)(.*)$/);
+				if (!m) return;
+				var end = parseFloat(m[2].replace(/,/g, '')), dec = (m[2].split('.')[1] || '').length, t0 = null, big = m[2].indexOf(',') > -1;
+				function step(ts) {
+					if (!t0) t0 = ts;
+					var p = Math.min((ts - t0) / 1100, 1), v = end * (1 - Math.pow(1 - p, 3));
+					var s2 = v.toFixed(dec); if (big) s2 = Math.round(v).toLocaleString('en-US');
+					el.textContent = m[1] + s2 + m[3];
+					if (p < 1) requestAnimationFrame(step); else el.textContent = txt;
+				}
+				requestAnimationFrame(step);
+			});
+		}, { threshold: 0.4 });
+		counters.forEach(function (c) { co.observe(c); });
+	}
+
+	/* Service tabs */
+	$$('[data-tabs]').forEach(function (tabs) {
+		var items = $$('.tabitem', tabs.parentNode);
+		tabs.addEventListener('click', function (e) {
+			var b = e.target.closest('.tabs__b'); if (!b) return;
+			$$('.tabs__b', tabs).forEach(function (x) { x.classList.toggle('is-on', x === b); });
+			var id = b.getAttribute('data-tab');
+			items.forEach(function (it) { var cs = (it.getAttribute('data-cats') || '').split(','); it.hidden = !(id === 'all' || cs.indexOf(id) > -1); });
+		});
+	});
+
+	/* Testimonial slider */
+	$$('[data-slider]').forEach(function (sl) {
+		var tr = $('[data-track]', sl);
+		$$('[data-slide]', sl).forEach(function (b) {
+			b.addEventListener('click', function () {
+				var dir = +b.getAttribute('data-slide'), w = tr.firstElementChild ? tr.firstElementChild.getBoundingClientRect().width + 18 : 300;
+				tr.scrollBy({ left: dir * w * (document.dir === 'rtl' || getComputedStyle(tr).direction === 'rtl' ? -1 : 1), behavior: 'smooth' });
+			});
+		});
+	});
+
 	/* Floating contact button */
 	var fab = $('[data-fab]');
 	if (fab) {

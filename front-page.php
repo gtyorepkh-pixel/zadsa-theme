@@ -1,27 +1,31 @@
 <?php defined( 'ABSPATH' ) || exit;
 get_header();
 
-$hero_img = zad_opt( 'zad_hero_img' );
-$hero_img = ( is_array( $hero_img ) && ! empty( $hero_img['id'] ) ) ? $hero_img['id'] : 0;
+$img_id = function ( $k ) { $v = zad_opt( $k ); return ( is_array( $v ) && ! empty( $v['id'] ) ) ? (int) $v['id'] : 0; };
+$hero_img = $img_id( 'zad_hero_img' );
 $points   = zad_lines( zad_opt( 'zad_hero_points' ) );
-$stats    = (array) zad_opt( 'zad_stats', array() );
+$stats    = array_filter( (array) zad_opt( 'zad_stats', array() ), function ( $s ) { return ! empty( $s['n'] ); } );
 $process  = (array) zad_opt( 'zad_process', array() );
-$tests    = (array) zad_opt( 'zad_testimonials', array() );
+$tests    = array_filter( (array) zad_opt( 'zad_testimonials', array() ), function ( $t ) { return ! empty( $t['text'] ); } );
 $faq      = (array) zad_opt( 'zad_faq', array() );
 $why      = (array) zad_opt( 'memo_sec4_grp', array() );
+$hl       = array_filter( (array) zad_opt( 'zad_highlights', array() ), function ( $h ) { return ! empty( $h['t'] ); } );
 
-$cats = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'parent' => 0, 'number' => 12 ) );
-$areas = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'number' => 24 ) );
-$featured = new WP_Query( array(
-	'post_type'      => 'zad_service',
-	'posts_per_page' => 6,
-	'no_found_rows'  => true,
-	'meta_query'     => array( array( 'key' => '_zad_featured', 'value' => '1' ) ),
-	'orderby'        => array( 'menu_order' => 'ASC', 'date' => 'DESC' ),
-) );
-if ( ! $featured->have_posts() ) {
-	$featured = new WP_Query( array( 'post_type' => 'zad_service', 'posts_per_page' => 6, 'no_found_rows' => true, 'orderby' => array( 'menu_order' => 'ASC', 'date' => 'DESC' ) ) );
+$cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'parent' => 0, 'number' => 12 ) );
+$areas = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
+$all   = new WP_Query( array( 'post_type' => 'zad_service', 'posts_per_page' => 12, 'no_found_rows' => true, 'orderby' => array( 'menu_order' => 'ASC', 'date' => 'DESC' ) ) );
+
+// price teaser: cheapest services
+$teaser = array();
+foreach ( $all->posts as $sv ) {
+	$min = zad_min_price( zad_parse_prices( get_post_meta( $sv->ID, '_zad_prices', true ) ) ) ?: (int) get_post_meta( $sv->ID, '_zad_price', true );
+	if ( $min ) { $teaser[] = array( $sv, $min ); }
 }
+usort( $teaser, function ( $a, $b ) { return $a[1] <=> $b[1]; } );
+$teaser = array_slice( $teaser, 0, 4 );
+$price_page = zad_page_url( 'temp/zad-prices.php', array( 'price-plans' ) );
+$areas_page = zad_page_url( 'temp/zad-areas.php', array( 'areas' ) );
+$about_page = zad_page_url( 'temp/memo-about.php', array( 'about' ) );
 ?>
 <main id="main">
 
@@ -48,12 +52,60 @@ if ( ! $featured->have_posts() ) {
 	<?php if ( $hero_img ) : ?><div class="hero__img"><?php echo wp_get_attachment_image( $hero_img, 'large', false, array( 'loading' => 'eager', 'alt' => '' ) ); ?></div><?php endif; ?>
 </section>
 
+<?php if ( $hl ) : ?>
+<section class="hl"><div class="wrap hl__grid">
+	<?php foreach ( $hl as $h ) : ?>
+		<div class="hl__item"><span class="hl__ic"><?php echo zad_icon( $h['icon'] ?: 'check', 24 ); // phpcs:ignore ?></span><div><b><?php echo esc_html( $h['t'] ); ?></b><small><?php echo esc_html( $h['d'] ?? '' ); ?></small></div></div>
+	<?php endforeach; ?>
+</div></section>
+<?php endif; ?>
+
 <?php if ( $stats ) : ?>
-<section class="stats">
+<section class="stats stats--home">
 	<div class="wrap stats__grid">
-		<?php foreach ( $stats as $s ) : if ( empty( $s['n'] ) ) { continue; } ?>
-			<div class="stat"><b><?php echo esc_html( $s['n'] ); ?></b><span><?php echo esc_html( $s['l'] ?? '' ); ?></span></div>
+		<?php foreach ( $stats as $s ) : ?>
+			<div class="stat"><b data-count="<?php echo esc_attr( $s['n'] ); ?>"><?php echo esc_html( $s['n'] ); ?></b><span><?php echo esc_html( $s['l'] ?? '' ); ?></span></div>
 		<?php endforeach; ?>
+	</div>
+</section>
+<?php endif; ?>
+
+<?php $about_title = zad_opt( 'zad_about_title' ); $about_img = $img_id( 'zad_about_img' );
+if ( $about_title ) : $ap = zad_lines( zad_opt( 'zad_about_points' ) ); ?>
+<section class="sec">
+	<div class="wrap split">
+		<div>
+			<span class="eyebrow"><?php echo esc_html( zad_opt( 'zad_about_eyebrow', 'من نحن' ) ); ?></span>
+			<h2><?php echo esc_html( $about_title ); ?></h2>
+			<p><?php echo esc_html( zad_opt( 'zad_about_text' ) ); ?></p>
+			<?php if ( $ap ) : ?><ul class="ticks ticks--dark"><?php foreach ( $ap as $x ) : ?><li><?php echo zad_icon( 'check', 18 ); // phpcs:ignore ?> <?php echo esc_html( $x ); ?></li><?php endforeach; ?></ul><?php endif; ?>
+			<p class="hero__btns"><?php if ( $about_page ) : ?><a class="btn btn--primary" href="<?php echo esc_url( $about_page ); ?>">اعرف المزيد عنّا</a><?php endif; ?><button type="button" class="btn btn--accent" data-open-wizard><?php echo zad_icon( 'bolt', 20 ); // phpcs:ignore ?> احجز موعد</button></p>
+		</div>
+		<div class="split__img aboutimg">
+			<?php if ( $about_img ) { echo wp_get_attachment_image( $about_img, 'large', false, array( 'loading' => 'lazy', 'alt' => $about_title ) ); } else { echo '<div class="aboutimg__ph">' . zad_icon( 'shield', 80 ) . '</div>'; } // phpcs:ignore ?>
+			<div class="aboutimg__badge"><b><?php echo esc_html( zad_opt( 'zad_since' ) ? 'منذ ' . zad_opt( 'zad_since' ) : 'خبرة' ); ?></b><small>نخدم عملاءنا بثقة</small></div>
+		</div>
+	</div>
+</section>
+<?php endif; ?>
+
+<?php if ( $all->have_posts() ) : ?>
+<section class="sec sec--tint" id="services">
+	<div class="wrap">
+		<header class="sec__head"><span class="eyebrow">خدماتنا</span><h2>كل ما يحتاجه منزلك في مكان واحد</h2></header>
+		<?php if ( $cats && ! is_wp_error( $cats ) && count( $cats ) > 1 ) : ?>
+			<div class="tabs" role="tablist" data-tabs>
+				<button type="button" class="tabs__b is-on" data-tab="all">الكل</button>
+				<?php foreach ( $cats as $c ) : ?><button type="button" class="tabs__b" data-tab="<?php echo (int) $c->term_id; ?>"><?php echo esc_html( $c->name ); ?></button><?php endforeach; ?>
+			</div>
+		<?php endif; ?>
+		<div class="sgrid" data-tab-items>
+			<?php while ( $all->have_posts() ) { $all->the_post();
+				$tc = wp_get_post_terms( get_the_ID(), 'service_cat', array( 'fields' => 'ids' ) ); ?>
+				<div class="tabitem" data-cats="<?php echo esc_attr( implode( ',', (array) $tc ) ); ?>"><?php get_template_part( 'template-parts/service-card' ); ?></div>
+			<?php } wp_reset_postdata(); ?>
+		</div>
+		<p class="sec__more"><a class="btn btn--primary" href="<?php echo esc_url( get_post_type_archive_link( 'zad_service' ) ); ?>">عرض كل الخدمات <?php echo zad_icon( 'arrow', 18 ); // phpcs:ignore ?></a></p>
 	</div>
 </section>
 <?php endif; ?>
@@ -77,48 +129,33 @@ if ( $rooms ) : ?>
 </section>
 <?php endif; ?>
 
-<?php if ( $cats && ! is_wp_error( $cats ) ) : ?>
-<section class="sec">
-	<div class="wrap">
-		<header class="sec__head"><span class="eyebrow">خدماتنا</span><h2>اختر القسم المناسب لك</h2></header>
-		<div class="catgrid">
-			<?php foreach ( $cats as $c ) : $ic = get_term_meta( $c->term_id, 'zad_icon', true ) ?: 'sparkle'; ?>
-				<a class="cat" href="<?php echo esc_url( get_term_link( $c ) ); ?>">
-					<span class="cat__ic"><?php echo zad_icon( $ic, 32 ); // phpcs:ignore ?></span>
-					<strong><?php echo esc_html( $c->name ); ?></strong>
-					<small><?php echo esc_html( sprintf( '%d خدمة', $c->count ) ); ?></small>
-				</a>
-			<?php endforeach; ?>
-		</div>
-	</div>
-</section>
-<?php endif; ?>
-
-<?php if ( $featured->have_posts() ) : ?>
-<section class="sec sec--tint">
-	<div class="wrap">
-		<header class="sec__head"><span class="eyebrow">الأكثر طلباً</span><h2>خدمات مميزة بأسعار واضحة</h2></header>
-		<div class="sgrid">
-			<?php while ( $featured->have_posts() ) { $featured->the_post(); get_template_part( 'template-parts/service-card' ); } wp_reset_postdata(); ?>
-		</div>
-		<p class="sec__more"><a class="btn btn--primary" href="<?php echo esc_url( get_post_type_archive_link( 'zad_service' ) ); ?>">عرض كل الخدمات <?php echo zad_icon( 'arrow', 18 ); // phpcs:ignore ?></a></p>
-	</div>
-</section>
-<?php endif; ?>
-
 <?php if ( $why ) : ?>
-<section class="sec">
+<section class="sec sec--tint">
 	<div class="wrap">
 		<header class="sec__head"><span class="eyebrow">لماذا نحن</span><h2><?php echo esc_html( wp_strip_all_tags( zad_opt( 'memopt_sec4_h', 'لماذا تختارنا؟' ) ) ); ?></h2></header>
 		<div class="why">
 			<?php foreach ( $why as $w ) : ?>
 				<div class="why__item">
-					<?php if ( ! empty( $w['memo_sec4_grp_img']['id'] ) ) { echo wp_get_attachment_image( $w['memo_sec4_grp_img']['id'], 'thumbnail', false, array( 'loading' => 'lazy', 'alt' => '' ) ); } ?>
+					<?php if ( ! empty( $w['memo_sec4_grp_img']['id'] ) ) { echo wp_get_attachment_image( $w['memo_sec4_grp_img']['id'], 'thumbnail', false, array( 'loading' => 'lazy', 'alt' => '' ) ); } else { echo '<span class="icard__ic">' . zad_icon( 'badge', 26 ) . '</span>'; } // phpcs:ignore ?>
 					<h3><?php echo esc_html( $w['memo_sec4_grp_h'] ?? '' ); ?></h3>
 					<p><?php echo esc_html( $w['memo_sec4_grp_p'] ?? '' ); ?></p>
 				</div>
 			<?php endforeach; ?>
 		</div>
+	</div>
+</section>
+<?php endif; ?>
+
+<?php if ( $teaser ) : ?>
+<section class="sec">
+	<div class="wrap">
+		<header class="sec__head"><span class="eyebrow">الأسعار</span><h2><?php echo esc_html( zad_opt( 'zad_price_title', 'أسعار واضحة تبدأ من' ) ); ?></h2></header>
+		<div class="ptease">
+			<?php foreach ( $teaser as $t ) : ?>
+				<a class="ptease__c" href="<?php echo esc_url( get_permalink( $t[0] ) ); ?>"><small><?php echo esc_html( zad_service_base_name( $t[0]->ID ) ); ?></small><b><?php echo esc_html( number_format_i18n( $t[1] ) ); ?> <i>ريال</i></b><span>التفاصيل <?php echo zad_icon( 'arrow', 14 ); // phpcs:ignore ?></span></a>
+			<?php endforeach; ?>
+		</div>
+		<?php if ( $price_page ) : ?><p class="sec__more"><a class="btn btn--ghost-dark" href="<?php echo esc_url( $price_page ); ?>">كل الأسعار في جدول واحد</a></p><?php endif; ?>
 	</div>
 </section>
 <?php endif; ?>
@@ -136,6 +173,38 @@ if ( $rooms ) : ?>
 </section>
 <?php endif; ?>
 
+<?php $hba = array_filter( (array) zad_opt( 'zad_home_ba', array() ), function ( $b ) { return ! empty( $b['before']['id'] ) && ! empty( $b['after']['id'] ); } );
+if ( $hba ) : ?>
+<section class="sec">
+	<div class="wrap">
+		<header class="sec__head"><span class="eyebrow">قبل وبعد</span><h2>نتائج حقيقية من أعمالنا</h2></header>
+		<div class="sgrid">
+			<?php foreach ( $hba as $b ) : ?>
+				<figure class="ba" data-ba>
+					<div class="ba__stage">
+						<?php echo wp_get_attachment_image( $b['after']['id'], 'large', false, array( 'loading' => 'lazy', 'class' => 'ba__after' ) ); ?>
+						<div class="ba__before"><?php echo wp_get_attachment_image( $b['before']['id'], 'large', false, array( 'loading' => 'lazy' ) ); ?></div>
+						<span class="ba__tag ba__tag--b">قبل</span><span class="ba__tag ba__tag--a">بعد</span>
+						<input type="range" min="0" max="100" value="50" aria-label="مقارنة قبل وبعد">
+					</div>
+					<?php if ( ! empty( $b['title'] ) ) : ?><figcaption><b><?php echo esc_html( $b['title'] ); ?></b><?php if ( ! empty( $b['desc'] ) ) : ?><br><span><?php echo esc_html( $b['desc'] ); ?></span><?php endif; ?></figcaption><?php endif; ?>
+				</figure>
+			<?php endforeach; ?>
+		</div>
+	</div>
+</section>
+<?php endif; ?>
+
+<?php $hv = zad_opt( 'zad_home_video' );
+if ( $hv ) : $poster = $img_id( 'zad_home_video_poster' ); ?>
+<section class="sec sec--dark" id="video"><div class="wrap wrap--narrow">
+	<header class="sec__head"><span class="eyebrow">شاهد الفرق بنفسك</span><h2>شاهد خدماتنا عن قرب</h2></header>
+	<div class="vframe" data-video="<?php echo esc_url( $hv ); ?>"<?php echo $poster ? ' style="--poster:url(\'' . esc_url( wp_get_attachment_image_url( $poster, 'large' ) ) . '\')"' : ''; ?>>
+		<button type="button" class="vframe__play" aria-label="تشغيل الفيديو"><svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M8 5v14l11-7Z"/></svg></button>
+	</div>
+</div></section>
+<?php endif; ?>
+
 <?php $hs = array_filter( (array) zad_opt( 'zad_home_safety', array() ), function ( $r ) { return ! empty( $r['t'] ); } );
 if ( $hs ) : ?>
 <section class="sec sec--tint" id="safety">
@@ -146,30 +215,59 @@ if ( $hs ) : ?>
 </section>
 <?php endif; ?>
 
+<?php if ( zad_opt( 'zad_guarantee_title' ) ) : ?>
+<section class="gband"><div class="wrap gband__in">
+	<span class="gband__ic"><?php echo zad_icon( 'badge', 40 ); // phpcs:ignore ?></span>
+	<div><h2><?php echo esc_html( zad_opt( 'zad_guarantee_title' ) ); ?></h2><p><?php echo esc_html( zad_opt( 'zad_guarantee_text' ) ); ?></p></div>
+	<button type="button" class="btn btn--accent" data-open-wizard>اطلب معاينة مجانية</button>
+</div></section>
+<?php endif; ?>
+
 <?php if ( $areas && ! is_wp_error( $areas ) ) : ?>
 <section class="sec">
 	<div class="wrap">
 		<header class="sec__head"><span class="eyebrow">مناطق الخدمة</span><h2>نغطي مدنكم وأحياءكم</h2></header>
-		<ul class="chips">
-			<?php foreach ( $areas as $t ) : ?><li><a href="<?php echo esc_url( get_term_link( $t ) ); ?>"><?php echo zad_icon( 'pin', 16 ); // phpcs:ignore ?> <?php echo esc_html( $t->name ); ?></a></li><?php endforeach; ?>
-		</ul>
+		<div class="citygrid">
+			<?php foreach ( $areas as $t ) : $d = get_terms( array( 'taxonomy' => 'service_area', 'parent' => $t->term_id, 'hide_empty' => false, 'number' => 6 ) ); ?>
+				<a class="city" href="<?php echo esc_url( $areas_page ? $areas_page . '#' . $t->slug : get_term_link( $t ) ); ?>">
+					<span class="city__ic"><?php echo zad_icon( 'pin', 26 ); // phpcs:ignore ?></span>
+					<strong><?php echo esc_html( $t->name ); ?></strong>
+					<?php if ( $d && ! is_wp_error( $d ) ) : ?><small><?php echo esc_html( implode( '، ', wp_list_pluck( $d, 'name' ) ) ); ?></small><?php endif; ?>
+				</a>
+			<?php endforeach; ?>
+		</div>
+	</div>
+</section>
+<?php endif; ?>
+
+<?php $clients = array_filter( (array) zad_opt( 'zad_clients', array() ), function ( $c ) { return ! empty( $c['name'] ); } );
+if ( $clients ) : ?>
+<section class="sec sec--tint">
+	<div class="wrap">
+		<header class="sec__head"><span class="eyebrow">عملاؤنا</span><h2>جهات وشركات تثق بنا</h2></header>
+		<div class="clients"><?php foreach ( $clients as $c ) : ?><div class="client"><b><?php echo esc_html( $c['name'] ); ?></b><span><?php echo esc_html( $c['note'] ?? '' ); ?></span></div><?php endforeach; ?></div>
 	</div>
 </section>
 <?php endif; ?>
 
 <?php if ( $tests || zad_opt( 'zad_trustindex' ) ) : ?>
-<section class="sec sec--tint">
+<section class="sec">
 	<div class="wrap">
-		<header class="sec__head"><span class="eyebrow">آراء العملاء</span><h2>ثقة عملائنا هي رأس مالنا</h2></header>
+		<header class="sec__head"><span class="eyebrow">آراء العملاء</span><h2>ثقة عملائنا هي رأس مالنا</h2>
+			<?php if ( zad_opt( 'zad_rating_score' ) ) : ?><p class="ratesum"><?php echo zad_stars( (float) zad_opt( 'zad_rating_score' ) ); // phpcs:ignore ?> <b><?php echo esc_html( zad_opt( 'zad_rating_score' ) ); ?></b><?php if ( zad_opt( 'zad_rating_count' ) ) : ?> <span>من <?php echo esc_html( zad_opt( 'zad_rating_count' ) ); ?> تقييم</span><?php endif; ?></p><?php endif; ?></header>
 		<?php if ( $tests ) : ?>
-		<div class="tgrid">
-			<?php foreach ( $tests as $t ) : if ( empty( $t['text'] ) ) { continue; } ?>
-				<figure class="tcard">
-					<?php echo zad_stars( $t['rating'] ?? 5 ); // phpcs:ignore ?>
-					<blockquote><?php echo esc_html( $t['text'] ); ?></blockquote>
-					<figcaption><b><?php echo esc_html( $t['name'] ?? '' ); ?></b><span><?php echo esc_html( $t['city'] ?? '' ); ?></span></figcaption>
-				</figure>
-			<?php endforeach; ?>
+		<div class="slider" data-slider>
+			<button type="button" class="slider__b slider__b--prev" data-slide="-1" aria-label="السابق"><?php echo zad_icon( 'chevron', 22, 'rot-r' ); // phpcs:ignore ?></button>
+			<div class="slider__track" data-track>
+				<?php foreach ( $tests as $t ) : ?>
+					<figure class="tcard">
+						<?php echo zad_stars( $t['rating'] ?? 5 ); // phpcs:ignore ?>
+						<blockquote><?php echo esc_html( $t['text'] ); ?></blockquote>
+						<figcaption><b><?php echo esc_html( $t['name'] ?? '' ); ?></b><span><?php echo esc_html( $t['city'] ?? '' ); ?></span></figcaption>
+					</figure>
+				<?php endforeach; ?>
+			</div>
+			<button type="button" class="slider__b slider__b--next" data-slide="1" aria-label="التالي"><?php echo zad_icon( 'chevron', 22, 'rot-l' ); // phpcs:ignore ?></button>
 		</div>
 		<?php endif; ?>
 		<?php if ( zad_opt( 'zad_trustindex' ) && shortcode_exists( 'trustindex' ) ) { echo do_shortcode( '[trustindex data-widget-id="' . esc_attr( zad_opt( 'zad_trustindex' ) ) . '"]' ); } ?>
@@ -178,10 +276,11 @@ if ( $hs ) : ?>
 <?php endif; ?>
 
 <?php if ( $faq ) : ?>
-<section class="sec">
+<section class="sec sec--tint">
 	<div class="wrap wrap--narrow">
 		<header class="sec__head"><span class="eyebrow">أسئلة شائعة</span><h2>إجابات سريعة قبل أن تسأل</h2></header>
 		<?php zad_render_faq( $faq ); ?>
+		<p class="sec__more"><a class="btn btn--ghost-dark" href="<?php echo esc_url( get_post_type_archive_link( 'zad_faq' ) ); ?>">كل الأسئلة الشائعة</a></p>
 	</div>
 </section>
 <?php endif; ?>
@@ -189,7 +288,7 @@ if ( $hs ) : ?>
 <?php
 $posts = new WP_Query( array( 'post_type' => 'post', 'posts_per_page' => 3, 'ignore_sticky_posts' => 1, 'no_found_rows' => true ) );
 if ( $posts->have_posts() ) : ?>
-<section class="sec sec--tint">
+<section class="sec">
 	<div class="wrap">
 		<header class="sec__head"><span class="eyebrow">المدونة</span><h2>أحدث المقالات والنصائح</h2></header>
 		<div class="sgrid">
