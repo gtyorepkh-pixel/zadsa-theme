@@ -220,3 +220,40 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_lib_lead', 'type' => 'textarea', 'title' => 'المكتبة: مقدمة', 'default' => 'أدلة عملية ونصائح من خبراء الميدان تساعدك على اتخاذ القرار الصحيح.' ),
 	),
 ) );
+
+CSF::createSection( $zad_prefix, array(
+	'title'  => 'صفحة من نحن',
+	'fields' => array(
+		array( 'id' => 'zad_about_tagline', 'type' => 'text', 'title' => 'جملة تحت عنوان الصفحة', 'default' => 'نعرّفك بنا: من نحن، وماذا نؤمن به، وكيف نعمل لخدمتك.' ),
+		array( 'id' => 'zad_story_title', 'type' => 'text', 'title' => 'عنوان «قصتنا»' ),
+		array( 'id' => 'zad_story_text', 'type' => 'wp_editor', 'title' => 'نص «قصتنا»', 'media_buttons' => false ),
+		array( 'id' => 'zad_story_img', 'type' => 'media', 'title' => 'صورة القصة', 'library' => 'image' ),
+		array( 'id' => 'zad_mission', 'type' => 'textarea', 'title' => 'رسالتنا' ),
+		array( 'id' => 'zad_vision', 'type' => 'textarea', 'title' => 'رؤيتنا' ),
+		array(
+			'id' => 'zad_values', 'type' => 'group', 'title' => 'قيمنا', 'button_title' => 'إضافة قيمة',
+			'fields' => array(
+				array( 'id' => 'icon', 'type' => 'select', 'title' => 'الأيقونة', 'options' => array_combine( zad_icon_keys(), zad_icon_keys() ) ),
+				array( 'id' => 't', 'type' => 'text', 'title' => 'العنوان' ),
+				array( 'id' => 'd', 'type' => 'textarea', 'title' => 'الوصف' ),
+			),
+		),
+		array(
+			'id' => 'zad_timeline', 'type' => 'group', 'title' => 'رحلتنا (محطات)', 'button_title' => 'إضافة محطة',
+			'fields' => array(
+				array( 'id' => 'year', 'type' => 'text', 'title' => 'السنة' ),
+				array( 'id' => 't', 'type' => 'text', 'title' => 'العنوان' ),
+				array( 'id' => 'd', 'type' => 'textarea', 'title' => 'الوصف' ),
+			),
+		),
+		array( 'id' => 'zad_commit_points', 'type' => 'textarea', 'title' => 'وعودنا (نقطة في كل سطر)' ),
+		array(
+			'id' => 'zad_team', 'type' => 'group', 'title' => 'الفريق', 'button_title' => 'إضافة عضو',
+			'fields' => array(
+				array( 'id' => 'name', 'type' => 'text', 'title' => 'الاسم' ),
+				array( 'id' => 'role', 'type' => 'text', 'title' => 'المسمى' ),
+				array( 'id' => 'img', 'type' => 'media', 'title' => 'الصورة', 'library' => 'image' ),
+			),
+		),
+	),
+) );
