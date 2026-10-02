@@ -16,5 +16,12 @@ get_template_part( 'template-parts/page-hero', null, array( 'crumbs' => array( a
 		</div>
 		<div id="quote"><?php echo zad_quote_form( array( 'id' => 'cq', 'title' => 'أرسل طلبك' ) ); // phpcs:ignore ?></div>
 	</div>
+	<?php $lat = (float) zad_opt( 'zad_lat' ); $lng = (float) zad_opt( 'zad_lng' );
+	if ( $lat && $lng ) : $bb = ( $lng - 0.012 ) . ',' . ( $lat - 0.007 ) . ',' . ( $lng + 0.012 ) . ',' . ( $lat + 0.007 ); ?>
+	<div class="wrap mapwrap">
+		<iframe title="موقعنا على الخريطة" loading="lazy" referrerpolicy="no-referrer" src="<?php echo esc_url( 'https://www.openstreetmap.org/export/embed.html?bbox=' . $bb . '&layer=mapnik&marker=' . $lat . ',' . $lng ); ?>"></iframe>
+		<?php if ( zad_opt( 'zad_map_url' ) ) : ?><p><a class="btn btn--primary" href="<?php echo esc_url( zad_opt( 'zad_map_url' ) ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'map', 20 ); // phpcs:ignore ?> افتح في خرائط Google</a></p><?php endif; ?>
+	</div>
+	<?php endif; ?>
 </main>
 <?php get_footer(); ?>

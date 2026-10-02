@@ -36,7 +36,7 @@ function zad_demo_page() {
 function zad_demo_delete() {
 	$n      = 0;
 	$titles = array( 'شركة رش مبيدات بالرياض', 'شركة تنظيف مسابح بالرياض', 'كشف تسربات المياه بالرياض', 'كم يدوم أثر الرش الوقائي؟', 'ماذا أغطّي قبل الرش؟', 'هل الرش الضبابي يضر النباتات؟', 'كيف أتحقق من ترخيص شركة المكافحة؟', 'ما الفرق بين الرش والطعم؟' );
-	$ids    = get_posts( array( 'post_type' => array( 'zad_service', 'zad_faq', 'post' ), 'post_status' => 'any', 'meta_key' => '_zad_demo', 'numberposts' => -1, 'fields' => 'ids' ) );
+	$ids    = get_posts( array( 'post_type' => array( 'zad_service', 'zad_faq', 'post', 'page' ), 'post_status' => 'any', 'meta_key' => '_zad_demo', 'numberposts' => -1, 'fields' => 'ids' ) );
 	foreach ( $titles as $t ) {
 		foreach ( array( 'zad_service', 'zad_faq' ) as $pt ) {
 			$p = get_page_by_title( $t, OBJECT, $pt );
@@ -75,6 +75,23 @@ function zad_demo_options() {
 		'memopt_mail'     => get_option( 'admin_email' ),
 		'memopt_address'  => 'الرياض، المملكة العربية السعودية',
 		'zad_provider'    => get_bloginfo( 'name' ),
+		'zad_legal_name'  => get_bloginfo( 'name' ) . ' للخدمات المنزلية',
+		'zad_cr'          => '1010000000',
+		'zad_vat'         => '300000000000003',
+		'zad_street'      => 'شارع الأمير سلطان، مبنى 1000',
+		'zad_district'    => 'حي الملقا',
+		'zad_postal'      => '13521',
+		'zad_lat'         => '24.7743',
+		'zad_lng'         => '46.6385',
+		'zad_site_desc'   => 'خدمات منزلية احترافية: مكافحة حشرات، تنظيف، وصيانة بضمان مكتوب ومعاينة مجانية.',
+		'zad_global_stats'=> array( array( 'n' => '+13', 'l' => 'سنة خبرة' ), array( 'n' => '+15,000', 'l' => 'عميل راضٍ' ), array( 'n' => '12', 'l' => 'فني متخصص' ), array( 'n' => '24/7', 'l' => 'استقبال الطلبات' ) ),
+		'zad_home_safety' => array( array( 't' => 'مواد مرخصة', 'd' => 'مبيدات ومعقمات مسجلة ومعتمدة.' ), array( 't' => 'آمن بعد الجفاف', 'd' => 'نحدد مدة العودة بوضوح.' ), array( 't' => 'آمن مع الحيوانات الأليفة', 'd' => 'طرق تطبيق تراعي القطط والكلاب والأسماك.' ), array( 't' => 'فنيون مدربون', 'd' => 'تنفيذ بمعدات احترافية.' ) ),
+		'zad_identify_rules' => array(
+			array( 'where' => 'المطبخ', 'kind' => 'حشرة زاحفة داكنة', 'title' => 'الصراصير', 'text' => 'ظهورها ليلاً في المطبخ يدل على عش قريب من الرطوبة والطعام. نكشف النوع ونعالج بجل ورش موجّه.', 'service' => '' ),
+			array( 'where' => 'الحمّام والصرف', 'kind' => 'حشرة زاحفة داكنة', 'title' => 'صراصير الصرف', 'text' => 'تدخل من البلاعات والمواسير. تغطية البلاعة ومعالجة موجّهة تمنع عودتها.', 'service' => '' ),
+			array( 'where' => 'غرفة النوم والأرائك', 'kind' => 'حشرة صغيرة تعض', 'title' => 'بق الفراش', 'text' => 'لدغات في الصباح وبقع صغيرة على المرتبة. يلزم معالجة متعددة الزيارات.', 'service' => '' ),
+			array( 'where' => 'الحديقة والمحيط', 'kind' => 'حشرة طائرة', 'title' => 'ذباب وبعوض', 'text' => 'نشاط موسمي قرب المياه والنباتات. الرش المحيطي الوقائي يخفف الإصابة.', 'service' => '' ),
+		),
 		'zad_since'       => '2013',
 		'zad_hero_title'  => 'خدمات منزلية احترافية بضمان حقيقي',
 		'zad_clients'     => array( array( 'name' => 'جهة حكومية', 'note' => 'مشاريع صيانة وتشغيل' ), array( 'name' => 'شركة مقاولات', 'note' => 'الرياض' ), array( 'name' => 'مجمع سكني', 'note' => 'جدة' ), array( 'name' => 'مستشفى', 'note' => 'الدمام' ) ),
@@ -92,21 +109,29 @@ function zad_demo_options() {
 }
 
 function zad_demo_site() {
-	$mk = function ( $title, $tpl, $content ) {
-		$p = get_page_by_title( $title, OBJECT, 'page' );
+	$mk = function ( $slug, $title, $tpl, $content ) {
+		$p = get_page_by_path( $slug );
 		if ( $p ) {
 			return $p->ID;
 		}
-		$id = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => $title, 'post_content' => $content ) );
-		if ( $id && ! is_wp_error( $id ) && $tpl ) {
-			update_post_meta( $id, '_wp_page_template', $tpl );
+		$id = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => $title, 'post_name' => $slug, 'post_content' => $content ) );
+		if ( $id && ! is_wp_error( $id ) ) {
+			update_post_meta( $id, '_zad_demo', '1' );
+			if ( $tpl ) { update_post_meta( $id, '_wp_page_template', $tpl ); }
 		}
 		return $id;
 	};
-	$about   = $mk( 'من نحن', 'temp/memo-about.php', '' );
-	$contact = $mk( 'اتصل بنا', 'temp/memo-contact.php', '' );
+	$note  = '<p><strong>ملاحظة:</strong> هذا نص نموذجي، يجب مراجعته وتعديله ليناسب شركتك قبل النشر.</p>';
+	$about = $mk( 'about', 'من نحن', 'temp/memo-about.php', '' );
+	$contact = $mk( 'contact', 'اتصل بنا', 'temp/memo-contact.php', '' );
+	$areas = $mk( 'areas', 'مناطق التغطية', 'temp/zad-areas.php', '' );
+	$price = $mk( 'price-plans', 'الأسعار', 'temp/zad-prices.php', '' );
+	$smap  = $mk( 'site-map', 'خريطة الموقع', 'temp/zad-sitemap.php', '' );
+	$ident = $mk( 'identify', 'تعرّف على الآفة', 'temp/zad-identify.php', '' );
+	$mk( 'privacy-policy', 'سياسة الخصوصية', '', $note . '<h2>البيانات التي نجمعها</h2><p>نجمع الاسم ورقم الجوال والعنوان عند طلبك للخدمة، ونستخدمها فقط للتواصل معك وتنفيذ الطلب.</p><h2>مشاركة البيانات</h2><p>لا نبيع بياناتك ولا نشاركها مع أطراف خارجية إلا بما يلزم لتنفيذ الخدمة أو بموجب النظام.</p><h2>حقوقك</h2><p>يمكنك طلب تعديل بياناتك أو حذفها في أي وقت عبر التواصل معنا.</p>' );
+	$mk( 'terms', 'الشروط والأحكام', '', $note . '<h2>طلب الخدمة</h2><p>الطلب عبر الموقع مبدئي، ويُؤكَّد الموعد والسعر النهائي بعد المعاينة.</p><h2>الأسعار</h2><p>الأسعار المعروضة تقديرية وقد تختلف حسب الحالة والمساحة.</p><h2>حقوق المحتوى</h2><p>جميع الصور والنصوص مملوكة للشركة، ويمكن طلب ترخيص استخدامها عبر صفحة الاتصال.</p>' );
+	$mk( 'warranty-policy', 'سياسة الضمان', '', $note . '<h2>مدة الضمان</h2><p>تُحدَّد مدة الضمان كتابةً قبل بدء التنفيذ لكل خدمة.</p><h2>ما يشمله الضمان</h2><p>إعادة المعالجة مجاناً إذا عادت المشكلة في المناطق المعالجة خلال مدة الضمان.</p><h2>ما لا يشمله</h2><p>المشكلات الناتجة عن تغييرات لاحقة في المكان أو عدم اتباع التعليمات.</p>' );
 
-	$menu_id = 0;
 	$m = wp_get_nav_menu_object( 'القائمة الرئيسية' );
 	if ( $m ) {
 		return;
@@ -132,22 +157,24 @@ function zad_demo_site() {
 	foreach ( get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => false ) ) as $t ) {
 		$add( $t->name, get_term_link( $t ), $svc );
 	}
+	if ( $price ) { $add( 'الأسعار', '', 0, $price, 'page' ); }
+	if ( $areas ) { $add( 'المناطق', '', 0, $areas, 'page' ); }
 	$add( 'الأسئلة الشائعة', get_post_type_archive_link( 'zad_faq' ) );
+	if ( $ident ) { $add( 'تعرّف على الآفة', '', 0, $ident, 'page' ); }
 	if ( $about ) { $add( 'من نحن', '', 0, $about, 'page' ); }
 	if ( $contact ) { $add( 'اتصل بنا', '', 0, $contact, 'page' ); }
 
 	$f = wp_create_nav_menu( 'قائمة الفوتر' );
 	if ( ! is_wp_error( $f ) ) {
-		foreach ( array( array( 'الرئيسية', home_url( '/' ) ), array( 'الخدمات', get_post_type_archive_link( 'zad_service' ) ), array( 'الأسئلة الشائعة', get_post_type_archive_link( 'zad_faq' ) ) ) as $it ) {
+		foreach ( array( array( 'الرئيسية', home_url( '/' ) ), array( 'الخدمات', get_post_type_archive_link( 'zad_service' ) ), array( 'الأسئلة الشائعة', get_post_type_archive_link( 'zad_faq' ) ), array( 'خريطة الموقع', $smap ? get_permalink( $smap ) : home_url( '/' ) ) ) as $it ) {
 			wp_update_nav_menu_item( $f, 0, array( 'menu-item-title' => $it[0], 'menu-item-url' => $it[1], 'menu-item-type' => 'custom', 'menu-item-status' => 'publish' ) );
 		}
 	}
 	$loc = get_theme_mod( 'nav_menu_locations', array() );
-	$loc['mainmenu']   = $menu_id;
+	$loc['mainmenu'] = $menu_id;
 	if ( ! is_wp_error( $f ) ) { $loc['footermenu'] = $f; }
 	set_theme_mod( 'nav_menu_locations', $loc );
 }
-
 
 function zad_demo_import() {
 	zad_demo_options();
@@ -175,7 +202,7 @@ function zad_demo_import() {
 
 	$services = array(
 		array(
-			'title' => 'شركة رش مبيدات بالرياض', 'slug' => 'pesticide-spraying', 'cat' => 'مكافحة الحشرات', 'icon' => 'bug', 'tag' => 'رش محيطي ووقائي بمواد مرخصة — موجّه لا عشوائي',
+			'title' => 'شركة رش مبيدات بالرياض', 'slug' => 'pesticide-spraying', 'base' => 'شركة رش مبيدات', 'cat' => 'مكافحة الحشرات', 'icon' => 'bug', 'tag' => 'رش محيطي ووقائي بمواد مرخصة — موجّه لا عشوائي',
 			'badge' => 'الأكثر طلباً', 'price' => 150, 'warranty' => 'ضمان مكتوب', 'duration' => '30–90 دقيقة', 'response' => 'نفس اليوم', 'rating' => 4.9, 'reviews' => 320,
 			'content' => '<p>خدمة رش المبيدات تناسب الوقاية العامة ومعالجة الإصابات المنتشرة على أكثر من نوع من الحشرات في وقت واحد. نبدأ دائماً بمعاينة تحدد نوع الإصابة ومصادرها قبل الرش.</p><h3>متى يكون الرش أفضل من الطعم؟</h3><p>حين تكون الإصابة منتشرة في أكثر من غرفة، أو توجد رطوبة عالية، وفي المعالجة الخارجية التي تمنع دخول الحشرات.</p><h3>رش وقائي دوري</h3><p>الرش الوقائي الدوري يمنع الإصابة قبل حدوثها، خاصة للمنازل ذات الحدائق.</p>',
 			'features' => "معاينة وتحديد الإصابة أولاً\nمبيدات مبطّنة طويلة الأثر\nرش محيطي خارجي\nرش داخلي موضعي\nإعادة مجانية خلال الضمان",
@@ -195,7 +222,7 @@ function zad_demo_import() {
 			'faq' => array_merge( array( array( 'q' => 'ما الفرق بين الرش والطعم؟', 'a' => 'الرش للإصابات المنتشرة والرطوبة والمعالجة الخارجية، والطعم للبؤر المحصورة.' ) ), $faq_common ),
 		),
 		array(
-			'title' => 'شركة تنظيف مسابح بالرياض', 'slug' => 'pool-cleaning', 'cat' => 'النظافة والتعقيم', 'icon' => 'drop', 'tag' => 'تكنيس بالفاكيوم بدون تفريغ المياه',
+			'title' => 'شركة تنظيف مسابح بالرياض', 'slug' => 'pool-cleaning', 'base' => 'شركة تنظيف مسابح', 'cat' => 'النظافة والتعقيم', 'icon' => 'drop', 'tag' => 'تكنيس بالفاكيوم بدون تفريغ المياه',
 			'badge' => 'جديد', 'price' => 150, 'warranty' => 'ضمان جودة', 'duration' => '2 – 4 ساعات', 'response' => 'معاينة نفس اليوم', 'rating' => 4.8, 'reviews' => 210,
 			'content' => '<p>نوفر تنظيف المسابح بطريقتين حسب الحالة: تكنيس بالمكنسة الخاصة بدون تفريغ المياه، أو تنظيف عميق شامل للأرضيات والجدران مع التعقيم.</p><h3>لماذا التكنيس بدل التفريغ؟</h3><p>التفريغ الكامل يهدر آلاف اللترات ويحتاج وقتاً لإعادة الملء والموازنة، بينما يحل التكنيس مشكلة الطحالب والرواسب في أغلب الحالات.</p>',
 			'features' => "تكنيس بالفاكيوم بدون تفريغ\nتنظيف عميق شامل\nتعقيم بمواد آمنة\nاستبدال الفلاتر عند الحاجة\nعقود دورية من 4 إلى 8 زيارات",
@@ -223,6 +250,7 @@ function zad_demo_import() {
 		if ( ! $pid || is_wp_error( $pid ) ) { continue; }
 		$created++;
 		update_post_meta( $pid, '_zad_demo', '1' );
+		update_post_meta( $pid, '_zad_base_name', $sv['base'] );
 		wp_set_object_terms( $pid, array( (int) $cat_ids[ $sv['cat'] ] ), 'service_cat' );
 		wp_set_object_terms( $pid, array_filter( $area_ids ), 'service_area' );
 		$meta = array(
@@ -258,6 +286,25 @@ function zad_demo_import() {
 		if ( $bid && ! is_wp_error( $bid ) ) { $created++; update_post_meta( $bid, '_zad_demo', '1' ); }
 	}
 
+	// Rooms map + identify results linked to the created services.
+	$o = get_option( '_memo_theme_options' );
+	$o = is_array( $o ) ? $o : array();
+	$sp = get_page_by_title( 'شركة رش مبيدات بالرياض', OBJECT, 'zad_service' );
+	$sc = get_page_by_title( 'شركة تنظيف مسابح بالرياض', OBJECT, 'zad_service' );
+	if ( empty( $o['zad_rooms'] ) && $sp ) {
+		$o['zad_rooms'] = array(
+			array( 'name' => 'المطبخ', 'icon' => 'bug', 'desc' => 'أكثر الأماكن عرضة للصراصير والنمل', 'services' => array( (string) $sp->ID ) ),
+			array( 'name' => 'الحديقة والمحيط', 'icon' => 'home', 'desc' => 'رش محيطي يمنع دخول الحشرات', 'services' => array( (string) $sp->ID ) ),
+			array( 'name' => 'المسبح', 'icon' => 'drop', 'desc' => 'مياه نقية وتعقيم آمن', 'services' => $sc ? array( (string) $sc->ID ) : array() ),
+			array( 'name' => 'غرف النوم والأرائك', 'icon' => 'sparkle', 'desc' => 'حماية من بق الفراش والغبار', 'services' => array( (string) $sp->ID ) ),
+		);
+	}
+	if ( $sp && ! empty( $o['zad_identify_rules'] ) ) {
+		foreach ( $o['zad_identify_rules'] as $i => $r ) {
+			if ( empty( $r['service'] ) ) { $o['zad_identify_rules'][ $i ]['service'] = (string) $sp->ID; }
+		}
+	}
+	update_option( '_memo_theme_options', $o );
 	zad_demo_site();
 	return $created;
 }

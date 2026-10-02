@@ -3,7 +3,7 @@ get_header();
 get_template_part( 'template-parts/page-hero', null, array(
 	'title'  => is_home() ? 'المدونة' : get_the_archive_title(),
 	'sub'    => is_archive() ? get_the_archive_description() : '',
-	'crumbs' => array( array( 'الرئيسية', home_url( '/' ) ), array( is_home() ? 'المدونة' : wp_strip_all_tags( get_the_archive_title() ), '' ) ),
+	'crumbs' => zad_current_crumbs() ?: array( array( 'الرئيسية', home_url( '/' ) ), array( is_home() ? 'المدونة' : wp_strip_all_tags( get_the_archive_title() ), '' ) ),
 ) );
 ?>
 <main id="main" class="sec">

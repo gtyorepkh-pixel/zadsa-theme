@@ -58,6 +58,25 @@ if ( ! $featured->have_posts() ) {
 </section>
 <?php endif; ?>
 
+<?php $rooms = array_filter( (array) zad_opt( 'zad_rooms', array() ), function ( $r ) { return ! empty( $r['name'] ); } );
+if ( $rooms ) : ?>
+<section class="sec" id="rooms">
+	<div class="wrap">
+		<header class="sec__head"><span class="eyebrow">خريطة المنزل</span><h2>أين تحتاج الخدمة؟</h2><p>اختر المكان لنقترح عليك الخدمة المناسبة.</p></header>
+		<div class="rooms">
+			<?php foreach ( $rooms as $r ) : $ids = array_filter( array_map( 'intval', (array) ( $r['services'] ?? array() ) ) ); ?>
+				<div class="room">
+					<span class="icard__ic"><?php echo zad_icon( $r['icon'] ?: 'home', 26 ); // phpcs:ignore ?></span>
+					<h3><?php echo esc_html( $r['name'] ); ?></h3>
+					<?php if ( ! empty( $r['desc'] ) ) : ?><p><?php echo esc_html( $r['desc'] ); ?></p><?php endif; ?>
+					<?php if ( $ids ) : ?><ul><?php foreach ( $ids as $sid ) : if ( 'publish' === get_post_status( $sid ) ) : ?><li><a href="<?php echo esc_url( get_permalink( $sid ) ); ?>"><?php echo zad_icon( 'arrow', 14 ); // phpcs:ignore ?> <?php echo esc_html( get_the_title( $sid ) ); ?></a></li><?php endif; endforeach; ?></ul><?php endif; ?>
+				</div>
+			<?php endforeach; ?>
+		</div>
+	</div>
+</section>
+<?php endif; ?>
+
 <?php if ( $cats && ! is_wp_error( $cats ) ) : ?>
 <section class="sec">
 	<div class="wrap">
@@ -113,6 +132,16 @@ if ( ! $featured->have_posts() ) {
 				<li><span class="steps__n"><?php echo esc_html( $i + 1 ); ?></span><h3><?php echo esc_html( $st['t'] ); ?></h3><p><?php echo esc_html( $st['d'] ?? '' ); ?></p></li>
 			<?php endforeach; ?>
 		</ol>
+	</div>
+</section>
+<?php endif; ?>
+
+<?php $hs = array_filter( (array) zad_opt( 'zad_home_safety', array() ), function ( $r ) { return ! empty( $r['t'] ); } );
+if ( $hs ) : ?>
+<section class="sec sec--tint" id="safety">
+	<div class="wrap">
+		<header class="sec__head"><span class="eyebrow"><?php echo zad_icon( 'shield', 14 ); // phpcs:ignore ?> الأمان أولاً</span><h2><?php echo esc_html( zad_opt( 'zad_home_safety_title', 'آمن لمن تحب' ) ); ?></h2></header>
+		<div class="cardgrid"><?php foreach ( $hs as $x ) : ?><div class="icard"><span class="icard__ic"><?php echo zad_icon( 'shield', 26 ); // phpcs:ignore ?></span><h3><?php echo esc_html( $x['t'] ); ?></h3><p><?php echo esc_html( $x['d'] ?? '' ); ?></p></div><?php endforeach; ?></div>
 	</div>
 </section>
 <?php endif; ?>

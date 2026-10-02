@@ -115,6 +115,15 @@ function zad_current_crumbs() {
 	if ( is_tax( 'faq_cat' ) ) {
 		return array( $h, array( 'الأسئلة', get_post_type_archive_link( 'zad_faq' ) ), array( single_term_title( '', false ), '' ) );
 	}
+	if ( is_home() && ! is_front_page() ) {
+		return array( $h, array( 'المدونة', '' ) );
+	}
+	if ( is_category() || is_tag() ) {
+		return array( $h, array( 'المدونة', get_option( 'page_for_posts' ) ? get_permalink( get_option( 'page_for_posts' ) ) : '' ), array( single_term_title( '', false ), '' ) );
+	}
+	if ( is_author() ) {
+		return array( $h, array( get_the_author_meta( 'display_name', get_queried_object_id() ), '' ) );
+	}
 	if ( is_singular( 'post' ) ) {
 		$c = array( $h );
 		$cat = get_the_category();
@@ -227,6 +236,7 @@ function zad_graph() {
 		'url'       => $home,
 	);
 	if ( $c['logo'] ) { $lb['image'] = $org['logo']; }
+	if ( zad_opt( 'zad_price_range', '100–500 ر.س' ) ) { $lb['priceRange'] = zad_opt( 'zad_price_range', '100–500 ر.س' ); }
 	if ( $c['phone'] ) { $lb['telephone'] = $c['phone']; }
 	if ( $c['email'] ) { $lb['email'] = $c['email']; }
 	$addr = array( '@type' => 'PostalAddress', 'addressCountry' => 'SA' );
@@ -350,6 +360,8 @@ add_action( 'wp_head', function () {
 		$vid = get_post_meta( $id, '_zad_video', true );
 		if ( $vid ) {
 			$v = array( '@context' => 'https://schema.org', '@type' => 'VideoObject', '@id' => get_permalink( $id ) . '#video', 'name' => get_the_title( $id ), 'description' => wp_strip_all_tags( get_the_excerpt( $id ) ?: get_the_title( $id ) ), 'contentUrl' => $vid, 'uploadDate' => get_the_date( 'c', $id ), 'publisher' => array( '@id' => home_url( '/#organization' ) ), 'inLanguage' => 'ar' );
+			$vd = (int) get_post_meta( $id, '_zad_video_duration', true );
+			if ( $vd > 0 ) { $v['duration'] = 'PT' . ( $vd >= 60 ? intdiv( $vd, 60 ) . 'M' : '' ) . ( $vd % 60 ? ( $vd % 60 ) . 'S' : '' ); if ( 'PT' === $v['duration'] ) { $v['duration'] = 'PT0S'; } }
 			if ( has_post_thumbnail( $id ) ) { $v['thumbnailUrl'] = array( get_the_post_thumbnail_url( $id, 'large' ) ); }
 			zad_print_schema( $v );
 		}

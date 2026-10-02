@@ -127,3 +127,46 @@ add_filter( 'wp_get_attachment_image_attributes', function ( $a ) {
 	}
 	return $a;
 } );
+
+
+/* Post → related service (CTA card on the article) */
+add_action( 'add_meta_boxes', function () {
+	add_meta_box( 'zad_post_service', 'ربط المقال بخدمة', function ( $post ) {
+		wp_nonce_field( 'zad_post_service', 'zad_ps_nonce' );
+		$cur = (int) get_post_meta( $post->ID, '_zad_post_service', true );
+		echo '<select name="zad_post_service" style="width:100%"><option value="">—</option>';
+		foreach ( get_posts( array( 'post_type' => 'zad_service', 'numberposts' => 200, 'orderby' => 'title', 'order' => 'ASC' ) ) as $s ) {
+			echo '<option value="' . (int) $s->ID . '"' . selected( $cur, $s->ID, false ) . '>' . esc_html( $s->post_title ) . '</option>';
+		}
+		echo '</select><p class="description">تظهر بطاقة الخدمة تحت المقال.</p>';
+	}, 'post', 'side' );
+} );
+add_action( 'save_post_post', function ( $id ) {
+	if ( ! isset( $_POST['zad_ps_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['zad_ps_nonce'] ) ), 'zad_post_service' ) || ! current_user_can( 'edit_post', $id ) ) {
+		return;
+	}
+	update_post_meta( $id, '_zad_post_service', isset( $_POST['zad_post_service'] ) ? absint( $_POST['zad_post_service'] ) : '' );
+} );
+
+/* Table of contents for articles with 3+ headings */
+add_filter( 'the_content', function ( $content ) {
+	if ( ! is_singular( array( 'post', 'zad_faq' ) ) || ! in_the_loop() || ! is_main_query() ) {
+		return $content;
+	}
+	$n   = 0;
+	$toc = array();
+	$content = preg_replace_callback( '#<h([23])([^>]*)>(.*?)</h\1>#is', function ( $m ) use ( &$n, &$toc ) {
+		$n++;
+		$id = 'h' . $n . '-' . substr( md5( wp_strip_all_tags( $m[3] ) ), 0, 5 );
+		$toc[] = array( (int) $m[1], $id, wp_strip_all_tags( $m[3] ) );
+		return '<h' . $m[1] . $m[2] . ' id="' . $id . '">' . $m[3] . '</h' . $m[1] . '>';
+	}, $content );
+	if ( count( $toc ) < 3 ) {
+		return $content;
+	}
+	$html = '<nav class="toc" aria-label="محتويات المقال"><strong>محتويات المقال</strong><ol>';
+	foreach ( $toc as $t ) {
+		$html .= '<li class="toc--' . (int) $t[0] . '"><a href="#' . esc_attr( $t[1] ) . '">' . esc_html( $t[2] ) . '</a></li>';
+	}
+	return $html . '</ol></nav>' . $content;
+}, 9 );

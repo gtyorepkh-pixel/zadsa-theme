@@ -216,6 +216,7 @@ function zad_service_metabox( $post ) {
 			</span>
 		</p>
 		<p><label>رابط فيديو (YouTube / mp4)<input type="url" name="zad[video]" value="<?php echo esc_attr( $g( 'video' ) ); ?>" style="width:100%" dir="ltr"></label></p>
+		<p><label>مدة الفيديو بالثواني (للسكيما)<input type="number" min="0" name="zad[video_duration]" value="<?php echo esc_attr( $g( 'video_duration' ) ); ?>" style="width:140px"></label></p>
 
 		<h4>تواصل مخصص لهذه الخدمة <small>(اتركه فارغاً لاستخدام الأرقام العامة)</small></h4>
 		<div class="zad-grid">
@@ -271,6 +272,7 @@ add_action( 'save_post_zad_service', function ( $post_id ) {
 	update_post_meta( $post_id, '_zad_featured', ! empty( $in['featured'] ) ? '1' : '' );
 	update_post_meta( $post_id, '_zad_features', isset( $in['features'] ) ? sanitize_textarea_field( $in['features'] ) : '' );
 	update_post_meta( $post_id, '_zad_video', isset( $in['video'] ) ? esc_url_raw( $in['video'] ) : '' );
+	update_post_meta( $post_id, '_zad_video_duration', isset( $in['video_duration'] ) && '' !== $in['video_duration'] ? absint( $in['video_duration'] ) : '' );
 
 	$gal = isset( $in['gallery'] ) ? implode( ',', array_filter( array_map( 'absint', explode( ',', $in['gallery'] ) ) ) ) : '';
 	update_post_meta( $post_id, '_zad_gallery', $gal );

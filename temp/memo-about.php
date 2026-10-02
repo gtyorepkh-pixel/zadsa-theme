@@ -10,6 +10,9 @@ $groups = (array) zad_opt( 'memopt_about_sec2_grp', array() );
 			<div class="split__img"><?php echo wp_get_attachment_image( zad_opt( 'memopt_about_sec1_img', array() )['id'] ?? 0, 'large', false, array( 'loading' => 'lazy' ) ); ?></div>
 		</div>
 	</section>
+	<?php $gs = array_filter( (array) zad_opt( 'zad_global_stats', array() ), function ( $x ) { return ! empty( $x['n'] ); } ); if ( $gs ) : ?>
+	<section class="stats stats--svc"><div class="wrap stats__grid"><?php foreach ( $gs as $x ) : ?><div class="stat"><b><?php echo esc_html( $x['n'] ); ?></b><span><?php echo esc_html( $x['l'] ?? '' ); ?></span></div><?php endforeach; ?></div></section>
+	<?php endif; ?>
 	<?php if ( $groups ) : ?>
 	<section class="sec sec--tint">
 		<div class="wrap why">

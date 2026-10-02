@@ -127,6 +127,26 @@
 		});
 	}
 
+	/* Pest identification */
+	$$('[data-identify]').forEach(function (box) {
+		var rules = []; try { rules = JSON.parse(box.getAttribute('data-rules') || '[]'); } catch (e) {}
+		var w = '', s1 = $('[data-id-step="1"]', box), s2 = $('[data-id-step="2"]', box), res = $('[data-id-result]', box);
+		$$('[data-id-where]', box).forEach(function (b) { b.addEventListener('click', function () { w = b.getAttribute('data-id-where'); s1.hidden = true; s2.hidden = false; }); });
+		$('[data-id-back]', box).addEventListener('click', function () { s2.hidden = true; s1.hidden = false; });
+		$$('[data-id-kind]', box).forEach(function (b) {
+			b.addEventListener('click', function () {
+				var k = b.getAttribute('data-id-kind');
+				var r = rules.filter(function (x) { return x.where === w && x.kind === k; })[0] || rules.filter(function (x) { return x.kind === k; })[0] || rules.filter(function (x) { return x.where === w; })[0] || rules[0];
+				s2.hidden = true; res.hidden = false;
+				if (!r) { $('[data-id-title]', res).textContent = 'تعذّر تحديد الآفة'; $('[data-id-text]', res).textContent = 'اتصل بنا لفحص مجاني.'; return; }
+				$('[data-id-title]', res).textContent = r.title; $('[data-id-text]', res).textContent = r.text;
+				var a = $('[data-id-service]', res); a.hidden = !r.url; if (r.url) { a.href = r.url; a.textContent = 'الحل: ' + r.service; }
+				var wa = $('[data-id-wa]', res); wa.hidden = !r.wa; if (r.wa) wa.href = r.wa;
+			});
+		});
+		$('[data-id-reset]', box).addEventListener('click', function () { res.hidden = true; s1.hidden = false; });
+	});
+
 	/* Floating contact button */
 	var fab = $('[data-fab]');
 	if (fab) {

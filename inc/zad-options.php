@@ -96,6 +96,7 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_lng', 'type' => 'text', 'title' => 'خط الطول (Longitude)', 'desc' => 'مثال: 46.8421882' ),
 		array( 'id' => 'zad_map_url', 'type' => 'text', 'title' => 'رابط موقعك في خرائط Google (hasMap)' ),
 		array( 'id' => 'zad_hours_spec', 'type' => 'textarea', 'title' => 'ساعات العمل للسكيما', 'desc' => 'سطر لكل فترة: الأيام بالإنجليزية مفصولة بفاصلة | من | إلى', 'default' => "Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday | 09:00 | 22:30\nFriday | 16:00 | 22:30" ),
+		array( 'id' => 'zad_price_range', 'type' => 'text', 'title' => 'نطاق الأسعار (priceRange)', 'desc' => 'مثال: 100–500 ر.س — يظهر في بيانات Google ويزيل تنبيه «priceRange غير مضمّن».', 'default' => '100–500 ر.س' ),
 		array( 'id' => 'zad_linkedin', 'type' => 'text', 'title' => 'لينكدإن' ),
 		array( 'id' => 'zad_pinterest', 'type' => 'text', 'title' => 'بينترست' ),
 		array( 'id' => 'zad_tiktok', 'type' => 'text', 'title' => 'تيك توك' ),
