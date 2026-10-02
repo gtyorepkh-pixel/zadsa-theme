@@ -7,7 +7,7 @@ $list = function ( $items ) { echo '<ul class="smap">'; foreach ( $items as $u =
 	<?php
 	$cats = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true ) );
 	if ( $cats && ! is_wp_error( $cats ) ) : foreach ( $cats as $c ) :
-		$q = get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => -1, 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) ) ) );
+		$q = get_posts( array( 'post_type' => zad_service_types(), 'zad_all' => true, 'numberposts' => -1, 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) ) ) );
 		if ( ! $q ) { continue; }
 		$it = array();
 		foreach ( $q as $sv ) {

@@ -242,6 +242,15 @@ function zad_adopt_page() {
 		}
 	}
 	echo '</tbody></table>';
+	$ar = zad_area_page_ids();
+	echo '<h2>صفحات الأحياء المكتشفة (تُستثنى من القوائم)</h2>';
+	if ( $ar ) {
+		echo '<p>' . count( $ar ) . ' صفحة. أول عشر صفحات للتأكد:</p><ul style="list-style:disc;padding-inline-start:20px">';
+		foreach ( array_slice( $ar, 0, 10 ) as $i ) { echo '<li><a href="' . esc_url( get_edit_post_link( $i ) ) . '">' . esc_html( get_the_title( $i ) ) . '</a> <code>' . esc_html( urldecode( get_post_field( 'post_name', $i ) ) ) . '</code></li>'; }
+		echo '</ul>';
+	} else {
+		echo '<p>لم تُكتشف صفحات أحياء. إن كانت لديك، عدّل «كلمات تدل على صفحات الأحياء» في إعدادات القالب، أو حدّد الصفحة يدوياً من شاشة تحريرها (صندوق «نوع الصفحة»).</p>';
+	}
 	echo '<form method="post" style="margin-top:20px">';
 	wp_nonce_field( 'zad_adopt' );
 	echo '<h2>الخطوة التالية</h2><p>يضيف تصنيف «القسم» لكل خدمة (باسم نوعها: مكافحة، تنظيف، نقل…)، ويربط الخدمات التي بلا مدن بالمدن التالية لتظهر صفحات «خدمة + مدينة» والمناطق. لا يحذف شيئاً ولا يغيّر الروابط.</p>';
@@ -270,3 +279,99 @@ function zad_adopt_run( $cities_text ) {
 	}
 	return $res;
 }
+
+/* ------------------------------------------------------------------ */
+/* Main services vs neighbourhood (district) pages                      */
+/* ------------------------------------------------------------------ */
+
+/** True when a service-type post is a neighbourhood page (excluded from lists). Override: meta _zad_page_kind = main|area. */
+function zad_is_area_page( $id ) {
+	$kind = get_post_meta( $id, '_zad_page_kind', true );
+	if ( 'area' === $kind ) {
+		return true;
+	}
+	if ( 'main' === $kind ) {
+		return false;
+	}
+	$p = get_post( $id );
+	if ( ! $p ) {
+		return false;
+	}
+	if ( zad_opt( 'zad_area_children', true ) && $p->post_parent && is_post_type_hierarchical( $p->post_type ) ) {
+		return true;
+	}
+	$title = zad_ar_norm( $p->post_title );
+	$slug  = strtolower( urldecode( $p->post_name ) );
+	foreach ( explode( ',', (string) zad_opt( 'zad_area_keywords', 'حي,hay-,district,neighborhood' ) ) as $kw ) {
+		$kw = trim( $kw );
+		if ( '' === $kw ) {
+			continue;
+		}
+		if ( preg_match( '/[a-z]/i', $kw ) ) {
+			if ( false !== strpos( $slug, strtolower( $kw ) ) ) {
+				return true;
+			}
+		} elseif ( preg_match( '/(^|\s)' . preg_quote( zad_ar_norm( $kw ), '/' ) . '(\s|$)/u', $title ) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/** IDs of neighbourhood pages (cached). */
+function zad_area_page_ids() {
+	$ids = get_transient( 'zad_area_ids' );
+	if ( false !== $ids ) {
+		return $ids;
+	}
+	$ids = array();
+	foreach ( get_posts( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids', 'zad_all' => true ) ) as $id ) {
+		if ( zad_is_area_page( $id ) ) {
+			$ids[] = (int) $id;
+		}
+	}
+	set_transient( 'zad_area_ids', $ids, 12 * HOUR_IN_SECONDS );
+	return $ids;
+}
+add_action( 'save_post', function () { delete_transient( 'zad_area_ids' ); } );
+add_action( 'deleted_post', function () { delete_transient( 'zad_area_ids' ); } );
+add_action( 'update_option__memo_theme_options', function () { delete_transient( 'zad_area_ids' ); } );
+
+/** Hide neighbourhood pages from every front-end listing of services (unless the query sets zad_all). */
+add_action( 'pre_get_posts', function ( $q ) {
+	static $busy = false;
+	if ( $busy || is_admin() || $q->get( 'zad_all' ) || $q->is_singular() || $q->get( 'p' ) || $q->get( 'name' ) || $q->get( 'pagename' ) ) {
+		return;
+	}
+	if ( $q->is_main_query() && ! ( $q->is_post_type_archive() || $q->is_tax( array( 'service_cat', 'service_area' ) ) || $q->is_search() ) ) {
+		return;
+	}
+	$pt  = $q->get( 'post_type' );
+	$svc = zad_service_types();
+	$pts = is_array( $pt ) ? $pt : ( $pt ? array( $pt ) : array() );
+	if ( ! $pts || array_diff( $pts, $svc ) ) {
+		return;
+	}
+	$busy = true;
+	$ex   = zad_area_page_ids();
+	$busy = false;
+	if ( $ex ) {
+		$q->set( 'post__not_in', array_unique( array_merge( (array) $q->get( 'post__not_in' ), $ex ) ) );
+	}
+}, 30 );
+
+/* Page kind meta box (service types) */
+add_action( 'add_meta_boxes', function () {
+	add_meta_box( 'zad_page_kind', 'نوع الصفحة (رئيسية / حي)', function ( $post ) {
+		wp_nonce_field( 'zad_page_kind', 'zad_pk_nonce' );
+		$v = get_post_meta( $post->ID, '_zad_page_kind', true );
+		echo '<select name="zad_page_kind" style="width:100%"><option value="">تلقائي (' . ( zad_is_area_page( $post->ID ) ? 'حي' : 'رئيسية' ) . ')</option><option value="main"' . selected( $v, 'main', false ) . '>خدمة رئيسية — تظهر في القوائم</option><option value="area"' . selected( $v, 'area', false ) . '>صفحة حي — لا تظهر في القوائم</option></select>';
+	}, zad_service_types(), 'side', 'default' );
+} );
+add_action( 'save_post', function ( $id ) {
+	if ( ! isset( $_POST['zad_pk_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['zad_pk_nonce'] ) ), 'zad_page_kind' ) || ! current_user_can( 'edit_post', $id ) ) {
+		return;
+	}
+	$v = isset( $_POST['zad_page_kind'] ) ? sanitize_key( wp_unslash( $_POST['zad_page_kind'] ) ) : '';
+	update_post_meta( $id, '_zad_page_kind', in_array( $v, array( 'main', 'area' ), true ) ? $v : '' );
+} );

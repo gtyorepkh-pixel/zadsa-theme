@@ -11,6 +11,9 @@ add_filter( 'query_vars', function ( $v ) {
 
 add_action( 'init', function () {
 	foreach ( zad_service_types() as $pt ) {
+		if ( is_post_type_hierarchical( $pt ) ) {
+			continue; // nested URLs (/type/parent/child/) would clash; city pages use term archives there
+		}
 		$base = zad_type_base( $pt );
 		add_rewrite_rule( '^' . preg_quote( $base, '#' ) . '/([^/]+)/(?!attachment|feed|embed|page|trackback|comment-page)([^/]+)/?$', 'index.php?post_type=' . $pt . '&name=$matches[1]&zad_city=$matches[2]', 'top' );
 	}
@@ -48,6 +51,9 @@ add_action( 'template_redirect', function () {
 }, 1 );
 
 function zad_city_url( $service_id, $term ) {
+	if ( is_post_type_hierarchical( get_post_type( $service_id ) ) ) {
+		return get_term_link( $term );
+	}
 	return trailingslashit( get_permalink( $service_id ) ) . $term->slug . '/';
 }
 

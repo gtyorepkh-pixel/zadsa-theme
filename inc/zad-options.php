@@ -10,6 +10,8 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_color_accent', 'type' => 'color', 'title' => 'لون الأزرار (التمييز)', 'default' => '#f2b134' ),
 		array( 'type' => 'subheading', 'content' => 'ربط الأنواع الحالية بالتصميم (للمواقع القائمة). الروابط الحالية لا تتغير أبداً — نكتب فقط «رابط» كل نوع كما هو في موقعك.' ),
 		array( 'id' => 'zad_service_slugs', 'type' => 'text', 'title' => 'أنواع تُعرض بتصميم «الخدمة»', 'default' => 'pest-control,cleaning,moving', 'desc' => 'روابط الأنواع (CPT) مفصولة بفاصلة. مثال: pest-control,cleaning,moving' ),
+		array( 'id' => 'zad_area_keywords', 'type' => 'text', 'title' => 'كلمات تدل على صفحات الأحياء', 'default' => 'حي,hay-,district,neighborhood', 'desc' => 'الصفحات التي يحوي عنوانها أو رابطها إحدى هذه الكلمات تُعتبر «صفحة حي» وتُستثنى من القوائم (الفهارس، المقارنة، الرئيسية، القائمة، الأسعار…). فاصلة بين الكلمات. ويمكنك تحديد صفحة بعينها يدوياً من شاشة تحريرها.' ),
+		array( 'id' => 'zad_area_children', 'type' => 'switcher', 'title' => 'اعتبار الصفحات الفرعية صفحات أحياء', 'default' => true, 'desc' => 'إن كان النوع هرمياً (صفحة أب وصفحات أبناء مثل /cleaning/sofa/malqa/) فالأبناء تُعتبر صفحات أحياء.' ),
 		array( 'id' => 'zad_faq_slugs', 'type' => 'text', 'title' => 'أنواع تُعرض بتصميم «السؤال»', 'default' => 'faq' ),
 		array( 'id' => 'zad_article_slugs', 'type' => 'text', 'title' => 'أنواع تُعرض بتصميم «المقال»', 'default' => 'sections,guide' ),
 		array( 'id' => 'zad_faq_autolink', 'type' => 'switcher', 'title' => 'ربط الأسئلة بالخدمات تلقائياً', 'default' => true, 'desc' => 'عند حفظ سؤال غير مربوط يُربط بأقرب خدمة بحسب الكلمات المتشابهة. وللأسئلة الموجودة استخدم: الأدوات ← ربط الأسئلة بالخدمات.' ),
