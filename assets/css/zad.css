@@ -604,3 +604,13 @@ ul,ol{margin:0;padding:0}
 .libcard{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;transition:.18s}.libcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-3px)}
 .libcard__img{display:block;aspect-ratio:16/9;background:var(--primary-50);overflow:hidden}.libcard__img img{width:100%;height:100%;object-fit:cover}.libcard__img .scard__ph{display:grid;place-items:center;height:100%}
 .libcard__b{padding:16px 18px 18px;display:grid;gap:6px;align-content:start}.libcard h3{margin:0;font-size:1.1rem}.libcard h3 a{text-decoration:none;color:var(--ink)}.libcard h3 a:hover{color:var(--primary)}.libcard p{margin:0;color:var(--muted);font-size:.93rem}
+
+/* ---- price plans page ---- */
+.eyebrow-inv{display:inline-block;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:2px 14px;font-weight:800;font-size:.85rem;color:#fff}
+.pricewrap .tabs{justify-content:flex-start}
+.tbl--sum{margin-bottom:10px}.tbl--sum td:first-child a{text-decoration:none;color:var(--primary)}.tbl--sum td:first-child a:hover{text-decoration:underline}
+.pricenum{font-size:1.25rem;color:var(--primary)}
+.btn--sm{padding:9px 16px;min-height:40px;font-size:.9rem}
+.pricebox{margin-top:46px;scroll-margin-top:110px}.pricebox__links{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+tr.tabitem[hidden],.pricebox.tabitem[hidden]{display:none}
+.pricebox.tabitem{display:block}
