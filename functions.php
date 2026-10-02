@@ -36,6 +36,7 @@ require_once MEMO_THEME_DIR .'inc/zad-suite.php';
 require_once MEMO_THEME_DIR .'inc/zad-frontend.php';
 require_once MEMO_THEME_DIR .'inc/zad-faq.php';
 require_once MEMO_THEME_DIR .'inc/zad-wizard.php';
+require_once MEMO_THEME_DIR .'inc/zad-ix.php';
 require_once MEMO_THEME_DIR .'inc/zad-demo.php';
 require_once MEMO_THEME_DIR .'inc/zad-diag.php';
 require_once get_theme_file_path() .'/_inc/_admin/admin-options.php';

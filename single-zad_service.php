@@ -121,7 +121,12 @@ while ( have_posts() ) :
 			<div class="slayout__main">
 				<h2 class="h-line"><?php echo esc_html( $title ); ?></h2>
 				<?php if ( $city ) : ?><div class="cityblock"><?php echo zad_icon( 'pin', 22 ); // phpcs:ignore ?><p><?php echo esc_html( zad_city_text( $id, $city ) ); ?></p></div><?php endif; ?>
-				<div class="prose entry-content"><?php the_content(); ?></div>
+				<?php
+				ob_start();
+				the_content();
+				list( $ix_before, $ix_after ) = zad_ix_split( ob_get_clean(), $id );
+				?>
+				<div class="prose entry-content"><?php echo $ix_before; // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 				<p><a class="btn btn--accent" href="#quote" data-scroll-quote><?php echo zad_icon( 'bolt', 20 ); // phpcs:ignore ?> <?php echo esc_html( $cta ); ?></a></p>
 			</div>
 			<aside class="slayout__side">
@@ -131,6 +136,14 @@ while ( have_posts() ) :
 			</aside>
 		</div>
 	</section>
+
+	<?php if ( zad_ix_enabled( $id ) ) : ?>
+		<!-- 3b. Interactive modules (optional) + content that follows the "Read more" tag -->
+		<?php echo zad_ix_render( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+		<?php if ( '' !== trim( wp_strip_all_tags( $ix_after ) ) ) : ?>
+		<section class="sec"><div class="wrap wrap--narrow"><div class="prose entry-content"><?php echo $ix_after; // phpcs:ignore WordPress.Security.EscapeOutput ?></div></div></section>
+		<?php endif; ?>
+	<?php endif; ?>
 
 	<!-- 4. What's included -->
 	<?php if ( $features ) : ?>
