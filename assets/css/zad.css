@@ -831,3 +831,13 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .est.is-set .est__out b{font-size:1.6rem;color:#ffd58a}
 .est>.btn{margin:12px 12px 0;width:auto}
 .est__note{padding:4px 12px 14px}
+
+/* Trust rail v2 — one glass bar under the estimator (replaces the floating cards) */
+.shero__side{padding-block:0}
+.fcards{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin:14px 0 0;padding:0;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);border-radius:18px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);overflow:hidden}
+.fcard,.fcard--1,.fcard--2,.fcard--3{position:static;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;background:transparent;box-shadow:none;border-radius:0;padding:14px 8px;color:#fff;inset:auto}
+.fcard+.fcard{border-inline-start:1px solid rgba(255,255,255,.2)}
+.fcard__ic,.fcard--2 .fcard__ic,.fcard--3 .fcard__ic{width:38px;height:38px;border-radius:50%;background:transparent;border:1.5px solid var(--sky);color:var(--sky)}
+.fcard--3 .fcard__ic{border-color:#ffc266;color:#ffc266}
+.fcard__tx b{font-size:.92rem;font-weight:800;color:#fff}.fcard__tx small{color:rgba(255,255,255,.75);font-size:.76rem}
+@media (max-width:480px){.fcard__tx b{font-size:.82rem}.fcard__tx small{font-size:.7rem}}
