@@ -2,7 +2,7 @@
 /** Pillar/hub page for one service post type (e.g. /pest-control/): explains the category and points to the services under it. */
 $pt     = get_query_var( 'post_type' );
 $pto    = get_post_type_object( $pt );
-$label  = $pto ? $pto->labels->name : 'الخدمات';
+$label  = zad_ac_title( $pto ? $pto->labels->name : 'الخدمات' );
 $hub    = zad_hub_opt( $pt );
 $q      = new WP_Query( array( 'post_type' => $pt, 'post_status' => 'publish', 'posts_per_page' => 60, 'no_found_rows' => true, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
 $svcs   = $q->posts;
@@ -81,6 +81,7 @@ if ( $faqs ) { $toc['faq'] = 'أسئلة شائعة'; }
 			</div>
 		</div>
 	</section>
+	<?php zad_archive_source(); ?>
 
 	<div class="wrap hublayout">
 		<aside class="hubnav"><div class="sticky">

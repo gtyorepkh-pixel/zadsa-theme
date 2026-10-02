@@ -150,7 +150,7 @@ add_action( 'save_post_post', function ( $id ) {
 
 /* Table of contents for articles with 3+ headings */
 add_filter( 'the_content', function ( $content ) {
-	if ( ! ( is_singular( 'post' ) || zad_is_faq() || zad_is_article() ) || ! in_the_loop() || ! is_main_query() ) {
+	if ( zad_suite_has( 'toc' ) || ! ( is_singular( 'post' ) || zad_is_faq() || zad_is_article() ) || ! in_the_loop() || ! is_main_query() ) {
 		return $content;
 	}
 	$n   = 0;
@@ -164,9 +164,17 @@ add_filter( 'the_content', function ( $content ) {
 	if ( count( $toc ) < 3 ) {
 		return $content;
 	}
-	$html = '<nav class="toc" aria-label="محتويات المقال"><strong>محتويات المقال</strong><ol>';
+	$html = '<nav class="toc" aria-label="محتويات المقال"><details><summary><span>محتويات المقال</span><span class="toc__btn" aria-hidden="true">عرض العناوين</span></summary><ol>';
 	foreach ( $toc as $t ) {
 		$html .= '<li class="toc--' . (int) $t[0] . '"><a href="#' . esc_attr( $t[1] ) . '">' . esc_html( $t[2] ) . '</a></li>';
 	}
-	return $html . '</ol></nav>' . $content;
+	$html .= '</ol></details></nav>';
+	// Place the collapsed TOC right after the first H2 (not before it).
+	$done = false;
+	$out  = preg_replace_callback( '#</h2>#i', function ( $m ) use ( &$done, $html ) {
+		if ( $done ) { return $m[0]; }
+		$done = true;
+		return $m[0] . $html;
+	}, $content, 1 );
+	return $done ? $out : $html . $content;
 }, 9 );

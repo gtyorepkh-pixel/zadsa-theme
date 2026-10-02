@@ -32,6 +32,7 @@ if ( $term && 'service_area' === $term->taxonomy ) {
 get_template_part( 'template-parts/page-hero', null, array( 'title' => $title, 'sub' => wpautop( esc_html( $sub ) ), 'crumbs' => $crumbs ) );
 ?>
 <main id="main" class="sec">
+	<?php zad_archive_source(); ?>
 	<div class="wrap">
 		<div class="filters">
 			<?php if ( $cats && ! is_wp_error( $cats ) ) : ?>

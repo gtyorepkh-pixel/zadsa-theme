@@ -627,3 +627,15 @@ tr.tabitem[hidden],.pricebox.tabitem[hidden]{display:none}
 .member{text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:24px 16px;display:grid;gap:4px;justify-items:center}
 .member__img{display:grid;place-items:center;width:112px;height:112px;border-radius:50%;background:var(--primary-50);color:var(--primary);overflow:hidden;margin-bottom:8px}.member__img img{width:100%;height:100%;object-fit:cover}
 .member h3{margin:0;font-size:1.1rem}.member p{margin:0;color:var(--muted);font-size:.92rem}
+
+/* Collapsible article TOC (after first H2) */
+.toc details{margin:0}
+.toc summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none;font-weight:800}
+.toc summary::-webkit-details-marker{display:none}
+.toc__btn{font-size:.82rem;font-weight:700;padding:.35em .9em;border-radius:999px;background:var(--zad-accent,#f49300);color:#1a1a1a;white-space:nowrap}
+.toc details[open] .toc__btn{background:transparent;border:1px solid currentColor}
+.toc details[open] .toc__btn::before{content:"إخفاء العناوين";font-size:.82rem}
+.toc details[open] .toc__btn{font-size:0}
+.toc details[open] ol{margin-top:.9rem}
+.zad-archive-content{padding-block:2rem}
+.zad-site-map .smap{columns:2;list-style:none;padding:0}

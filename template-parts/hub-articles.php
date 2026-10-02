@@ -2,7 +2,7 @@
 /** Content-library hub for article types (e.g. /guide/, /sections/): featured guide + topic filters + editorial grid. */
 $pt    = get_query_var( 'post_type' );
 $pto   = get_post_type_object( is_string( $pt ) ? $pt : 'post' );
-$label = $pto ? $pto->labels->name : 'المقالات';
+$label = zad_ac_title( $pto ? $pto->labels->name : 'المقالات' );
 $hub   = zad_hub_opt( is_string( $pt ) ? $pt : '' );
 $title = ! empty( $hub['headline'] ) ? $hub['headline'] : ( zad_opt( 'zad_lib_title', 'مكتبة المعرفة' ) . ' — ' . $label );
 $lead  = ! empty( $hub['lead'] ) ? $hub['lead'] : zad_opt( 'zad_lib_lead', 'أدلة عملية ونصائح من خبراء الميدان.' );
@@ -21,6 +21,7 @@ $first = ( 1 === $paged && have_posts() ) ? $GLOBALS['wp_query']->posts[0] : nul
 			<p><?php echo esc_html( $lead ); ?></p>
 		</div>
 	</section>
+	<?php zad_archive_source(); ?>
 	<div class="wrap libbody">
 		<?php if ( $terms && ! is_wp_error( $terms ) ) : ?>
 			<nav class="chips chips--filter" aria-label="المواضيع"><a class="is-on" href="<?php echo esc_url( get_post_type_archive_link( $pt ) ); ?>">الكل</a><?php foreach ( $terms as $t ) : ?><a href="<?php echo esc_url( get_term_link( $t ) ); ?>"><?php echo esc_html( $t->name ); ?></a><?php endforeach; ?></nav>

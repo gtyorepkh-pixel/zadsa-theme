@@ -73,6 +73,12 @@ function zad_seo_title() {
 }
 
 function zad_seo_desc() {
+	if ( function_exists( 'zad_ac_seo' ) && ! is_singular() && ! is_front_page() ) {
+		$a = zad_ac_seo( 'description' );
+		if ( $a ) {
+			return $a;
+		}
+	}
 	if ( is_front_page() ) {
 		return zad_opt( 'zad_site_desc', zad_opt( 'zad_hero_sub', get_bloginfo( 'description' ) ) );
 	}

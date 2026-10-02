@@ -82,6 +82,10 @@ function zad_current_url() {
 
 /** Breadcrumb trail for the current request: [ [label, url|''], ... ]. */
 function zad_current_crumbs() {
+	return apply_filters( 'zad_current_crumbs', zad_current_crumbs_base() );
+}
+
+function zad_current_crumbs_base() {
 	$h = array( 'الرئيسية', home_url( '/' ) );
 	if ( is_front_page() ) {
 		return array();

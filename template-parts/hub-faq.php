@@ -28,6 +28,7 @@ $total = count( $all->posts );
 			<?php endif; ?>
 		</div>
 	</section>
+	<?php zad_archive_source(); ?>
 
 	<div class="wrap kbbody">
 		<?php if ( $total ) : foreach ( $groups as $sid => $list ) : ?>
