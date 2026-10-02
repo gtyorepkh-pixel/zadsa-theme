@@ -53,7 +53,6 @@ if ( ! class_exists( 'MemoSetupTheme' ) ) :
         wp_deregister_style('wp-mediaelement');
         wp_dequeue_style('global-styles');
 
-        wp_enqueue_style('zad-fonts', 'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap', array(), null);
         wp_enqueue_style('zad-main', MEMO_THEME_URI . 'assets/css/zad.css', array(), ZAD_VERSION);
 
         wp_enqueue_script('zad-main', MEMO_THEME_URI . 'assets/js/zad.js', array(), ZAD_VERSION, true);

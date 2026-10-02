@@ -22,6 +22,9 @@ function zad_build_id() {
 }
 
 add_action( 'wp_footer', function () {
+	if ( ! ( ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || current_user_can( 'manage_options' ) ) ) {
+		return; // do not reveal build/commit to visitors
+	}
 	echo "\n<!-- Zad Pro build " . esc_html( zad_build_id() ) . " -->\n"; // phpcs:ignore
 }, 99 );
 

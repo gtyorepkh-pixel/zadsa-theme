@@ -8,8 +8,8 @@ $phone = zad_opt( 'memopt_phone' );
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="preload" href="<?php echo esc_url( MEMO_THEME_URI . 'assets/fonts/tajawal-400.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
+	<link rel="preload" href="<?php echo esc_url( MEMO_THEME_URI . 'assets/fonts/tajawal-800.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
 	<script>try{var t=localStorage.getItem('zad-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}</script>
 	<?php wp_head(); ?>
 </head>

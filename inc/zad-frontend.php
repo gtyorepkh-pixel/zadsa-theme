@@ -44,23 +44,34 @@ add_filter( 'excerpt_length', function () { return 24; } );
 add_filter( 'excerpt_more', function () { return '…'; } );
 
 /** "All our services" sidebar grouped by category, current page highlighted. */
-function zad_services_sidebar( $current_id = 0 ) {
+function zad_services_sidebar_data() {
+	$data = get_transient( 'zad_sbar_data' );
+	if ( is_array( $data ) ) {
+		return $data;
+	}
+	$data = array();
 	$cats = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true ) );
-	echo '<nav class="sbar" aria-label="كل خدماتنا"><h3>كل خدماتنا</h3>';
 	if ( $cats && ! is_wp_error( $cats ) ) {
 		foreach ( $cats as $c ) {
-			$q = new WP_Query( array( 'post_type' => zad_service_types(), 'posts_per_page' => 30, 'no_found_rows' => true, 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) ), 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
-			if ( ! $q->have_posts() ) {
-				continue;
+			$items = array();
+			foreach ( get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 30, 'no_found_rows' => true, 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) ), 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) ) as $p ) {
+				$items[] = array( (int) $p->ID, get_permalink( $p ), get_the_title( $p ) );
 			}
-			echo '<details class="sbar__grp"' . ( has_term( $c->term_id, 'service_cat', $current_id ) ? ' open' : '' ) . '><summary>' . esc_html( $c->name ) . zad_icon( 'chevron', 16 ) . '</summary><ul>'; // phpcs:ignore
-			while ( $q->have_posts() ) {
-				$q->the_post();
-				echo '<li><a href="' . esc_url( get_permalink() ) . '"' . ( get_the_ID() === (int) $current_id ? ' class="is-on" aria-current="page"' : '' ) . '>' . esc_html( get_the_title() ) . '</a></li>';
-			}
-			echo '</ul></details>';
-			wp_reset_postdata();
+			if ( $items ) { $data[] = array( 'term' => (int) $c->term_id, 'name' => $c->name, 'items' => $items ); }
 		}
+	}
+	set_transient( 'zad_sbar_data', $data, 12 * HOUR_IN_SECONDS );
+	return $data;
+}
+
+function zad_services_sidebar( $current_id = 0 ) {
+	echo '<nav class="sbar" aria-label="كل خدماتنا"><h3>كل خدماتنا</h3>';
+	foreach ( zad_services_sidebar_data() as $g ) {
+		echo '<details class="sbar__grp"' . ( has_term( $g['term'], 'service_cat', $current_id ) ? ' open' : '' ) . '><summary>' . esc_html( $g['name'] ) . zad_icon( 'chevron', 16 ) . '</summary><ul>'; // phpcs:ignore
+		foreach ( $g['items'] as $it ) {
+			echo '<li><a href="' . esc_url( $it[1] ) . '"' . ( (int) $it[0] === (int) $current_id ? ' class="is-on" aria-current="page"' : '' ) . '>' . esc_html( $it[2] ) . '</a></li>';
+		}
+		echo '</ul></details>';
 	}
 	echo '</nav>';
 	$phone = zad_phone( $current_id );
@@ -71,7 +82,29 @@ function zad_services_sidebar( $current_id = 0 ) {
 
 
 /** Mega menu: categories with their services. */
+/** Drop cached menus/lists when content or terms change. */
+function zad_flush_nav_cache() {
+	delete_transient( 'zad_mega_html' );
+	delete_transient( 'zad_sbar_data' );
+	delete_transient( 'zad_wiz_map' );
+}
+add_action( 'save_post', 'zad_flush_nav_cache' );
+add_action( 'deleted_post', 'zad_flush_nav_cache' );
+add_action( 'created_term', 'zad_flush_nav_cache' );
+add_action( 'edited_term', 'zad_flush_nav_cache' );
+add_action( 'delete_term', 'zad_flush_nav_cache' );
+
 function zad_mega_html() {
+	$cached = get_transient( 'zad_mega_html' );
+	if ( is_string( $cached ) ) {
+		return $cached;
+	}
+	$html = zad_mega_html_build();
+	set_transient( 'zad_mega_html', $html, 12 * HOUR_IN_SECONDS );
+	return $html;
+}
+
+function zad_mega_html_build() {
 	$cats = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'parent' => 0 ) );
 	if ( ! $cats || is_wp_error( $cats ) ) {
 		return '';
@@ -185,3 +218,16 @@ add_filter( 'the_content', function ( $content ) {
 	}, $content, 1 );
 	return $done ? $out : $html . $content;
 }, 9 );
+
+
+/** Hero photo of a service page is a CSS background (invisible to the preload scanner): preload it. */
+add_action( 'wp_head', function () {
+	if ( ! is_singular() || ! function_exists( 'zad_is_service' ) || ! zad_is_service() ) {
+		return;
+	}
+	$tid = get_post_thumbnail_id( get_queried_object_id() );
+	$url = $tid ? wp_get_attachment_image_url( $tid, 'full' ) : '';
+	if ( $url ) {
+		echo '<link rel="preload" as="image" href="' . esc_url( $url ) . '" fetchpriority="high">' . "\n"; // phpcs:ignore
+	}
+}, 2 );

@@ -1,19 +1,29 @@
 <?php defined( 'ABSPATH' ) || exit;
 /** Booking wizard (3 steps) shown in a drawer; opened by any [data-open-wizard]. */
 
+/** Services list for the booking drawer: built once, cached until content changes. */
+function zad_wiz_map() {
+	$map = get_transient( 'zad_wiz_map' );
+	if ( is_array( $map ) ) {
+		return $map;
+	}
+	$map = array();
+	foreach ( get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 100, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) ) as $s ) {
+		$t = get_the_terms( $s->ID, 'service_cat' );
+		$map[ $s->ID ] = array( 'id' => $s->ID, 'name' => $s->post_title, 'cat' => ( $t && ! is_wp_error( $t ) ) ? $t[0]->term_id : 0 );
+	}
+	set_transient( 'zad_wiz_map', $map, 12 * HOUR_IN_SECONDS );
+	return $map;
+}
+
 add_action( 'wp_footer', function () {
-	$services = get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 100, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
-	if ( ! $services ) {
+	$map = zad_wiz_map();
+	if ( ! $map ) {
 		return;
 	}
 	$cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true ) );
 	$areas = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
 	$cur   = zad_is_service() ? get_the_ID() : 0;
-	$map   = array();
-	foreach ( $services as $s ) {
-		$t = get_the_terms( $s->ID, 'service_cat' );
-		$map[ $s->ID ] = array( 'id' => $s->ID, 'name' => $s->post_title, 'cat' => ( $t && ! is_wp_error( $t ) ) ? $t[0]->term_id : 0 );
-	}
 	$icons = array( 'phone', 'shield', 'clock' );
 	?>
 <div class="wiz" id="zad-wizard" aria-hidden="true" data-current="<?php echo (int) $cur; ?>" data-area="<?php echo esc_attr( ( function_exists( 'zad_current_city' ) && zad_current_city() ) ? zad_current_city()->name : '' ); ?>" data-services="<?php echo esc_attr( wp_json_encode( array_values( $map ) ) ); ?>">

@@ -113,6 +113,12 @@ function zad_handle_quote() {
 		$fail( 'تم إرسال عدد كبير من الطلبات، حاول لاحقاً أو اتصل بنا مباشرة.' );
 	}
 
+	// Sitewide safety valve against floods from many IPs.
+	$hour_key = 'zad_rl_all_' . gmdate( 'YmdH' );
+	if ( (int) get_transient( $hour_key ) >= 150 ) {
+		$fail( 'الخدمة مشغولة حالياً، يرجى الاتصال بنا مباشرة.' );
+	}
+
 	$name    = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
 	$phone   = zad_normalize_phone( isset( $_POST['phone'] ) ? wp_unslash( $_POST['phone'] ) : '' );
 	$sid     = isset( $_POST['service'] ) ? absint( $_POST['service'] ) : 0;
@@ -137,6 +143,14 @@ function zad_handle_quote() {
 		$fail( 'اختر الخدمة المطلوبة.' );
 	}
 
+	// Same phone + service within 10 minutes = double click / resend: confirm without a second lead.
+	$dup_key = 'zad_dup_' . md5( $phone . '|' . $sid );
+	if ( get_transient( $dup_key ) ) {
+		$ajax ? wp_send_json_success( array( 'message' => 'وصل طلبك يا ' . $name . '، سنتصل بك قريباً.', 'whatsapp' => zad_wa_link( 'مرحباً، أنا ' . $name, $sid ) ) ) : wp_safe_redirect( add_query_arg( 'zad_sent', 'ok', wp_get_referer() ?: home_url( '/' ) ) );
+		exit;
+	}
+	set_transient( $dup_key, 1, 10 * MINUTE_IN_SECONDS );
+	set_transient( $hour_key, (int) get_transient( $hour_key ) + 1, HOUR_IN_SECONDS );
 	set_transient( $key, $cnt + 1, HOUR_IN_SECONDS );
 
 	$lead_id = wp_insert_post( array(
