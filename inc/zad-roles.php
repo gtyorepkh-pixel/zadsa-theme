@@ -26,7 +26,7 @@ function zad_role_slugs() {
 	return array(
 		'service' => zad_slug_list( 'zad_service_slugs', 'pest-control,cleaning,moving' ),
 		'faq'     => zad_slug_list( 'zad_faq_slugs', 'faq' ),
-		'article' => zad_slug_list( 'zad_article_slugs', 'sections,guide' ),
+		'article' => zad_slug_list( 'zad_article_slugs', 'sections,guide,pests-library' ),
 	);
 }
 
