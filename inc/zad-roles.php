@@ -227,6 +227,14 @@ function zad_adopt_page() {
 		echo '<div class="notice notice-success"><p>تم: تصنيف ' . (int) $res['cats'] . ' خدمة بحسب نوعها، وربط ' . (int) $res['areas'] . ' خدمة بالمدن. الروابط لم تتغير.</p></div>';
 	}
 	$rows = array( 'service' => 'خدمات (تصميم الخدمة)', 'faq' => 'أسئلة (تصميم السؤال)', 'article' => 'مقالات (تصميم المقال)' );
+	global $zad_legacy_registered;
+	if ( ! empty( $zad_legacy_registered ) ) {
+		echo '<div class="notice notice-warning inline"><p><strong>شبكة الأمان فعّالة:</strong> سجّل القالب تلقائياً هذه الأنواع لأنها غير مسجّلة من أي مصدر آخر: <code>' . esc_html( implode( '، ', $zad_legacy_registered ) ) . '</code>. هذا يعني أن الثيم القديم أو كوداً قديماً كان يسجّلها. حافظ على نسخة احتياطية قبل أي تعديل آخر.</p></div>';
+	}
+	$orph = function_exists( 'zad_db_orphan_types' ) ? zad_db_orphan_types() : array();
+	if ( $orph ) {
+		echo '<div class="notice notice-info inline"><p>أنواع موجودة في قاعدة البيانات وغير مسجّلة (لم تُطابق أي رابط مضبوط): <code>' . esc_html( implode( '، ', $orph ) ) . '</code>. إن كانت من أنواعك، أضف روابطها في إعدادات القالب ← الهوية والألوان.</p></div>';
+	}
 	echo '<p>القالب يطبّق التصميم الجديد على الأنواع الموجودة في موقعك <strong>دون تغيير أي رابط</strong>. يتم الربط بحسب رابط كل نوع، وتعدّله من إعدادات القالب ← الهوية والألوان.</p>';
 	echo '<table class="widefat striped" style="max-width:820px"><thead><tr><th>الدور</th><th>الأنواع المكتشفة</th><th>الروابط</th><th>عدد المنشورات</th></tr></thead><tbody>';
 	foreach ( $rows as $role => $label ) {

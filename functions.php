@@ -25,6 +25,7 @@ require_once MEMO_THEME_DIR .'_inc/_memo.setup.php';
 require_once MEMO_THEME_DIR .'_inc/_memo_icons.php';
 require_once MEMO_THEME_DIR .'inc/zad-helpers.php';
 require_once MEMO_THEME_DIR .'inc/zad-roles.php';
+require_once MEMO_THEME_DIR .'inc/zad-legacy.php';
 require_once MEMO_THEME_DIR .'inc/zad-cpt.php';
 require_once MEMO_THEME_DIR .'inc/zad-leads.php';
 require_once MEMO_THEME_DIR .'inc/zad-city.php';
