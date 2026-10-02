@@ -60,14 +60,30 @@ function zad_services_sidebar_data() {
 			if ( $items ) { $data[] = array( 'term' => (int) $c->term_id, 'name' => $c->name, 'items' => $items ); }
 		}
 	}
+	// Services that were never given a category (existing content) are grouped by their type, so the list is never empty.
+	foreach ( zad_service_types() as $pt ) {
+		$items = array();
+		foreach ( get_posts( array( 'post_type' => $pt, 'numberposts' => 60, 'no_found_rows' => true, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ), 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'operator' => 'NOT EXISTS' ) ) ) ) as $p ) {
+			$items[] = array( (int) $p->ID, get_permalink( $p ), get_the_title( $p ) );
+		}
+		$o = get_post_type_object( $pt );
+		if ( $items && $o ) { $data[] = array( 'term' => 0, 'pt' => $pt, 'name' => $o->labels->name, 'items' => $items ); }
+	}
 	set_transient( 'zad_sbar_data', $data, 12 * HOUR_IN_SECONDS );
 	return $data;
 }
 
 function zad_services_sidebar( $current_id = 0 ) {
-	echo '<nav class="sbar" aria-label="كل خدماتنا"><h3>كل خدماتنا</h3>';
+	$wa = zad_wa_link( 'مرحباً، أرغب بمعاينة مجانية' . ( $current_id ? ' — ' . wp_strip_all_tags( get_the_title( $current_id ) ) : '' ), $current_id );
+	echo '<nav class="sbar" aria-label="كل خدماتنا">';
+	if ( $wa ) {
+		echo '<a class="sbar__cta" href="' . esc_url( $wa ) . '" target="_blank" rel="noopener">' . zad_icon( 'whatsapp', 20 ) . ' اطلب معاينة مجانية</a>'; // phpcs:ignore
+	} else {
+		echo '<button type="button" class="sbar__cta" data-open-wizard>' . zad_icon( 'bolt', 20 ) . ' اطلب معاينة مجانية</button>'; // phpcs:ignore
+	}
 	foreach ( zad_services_sidebar_data() as $g ) {
-		echo '<details class="sbar__grp"' . ( has_term( $g['term'], 'service_cat', $current_id ) ? ' open' : '' ) . '><summary>' . esc_html( $g['name'] ) . zad_icon( 'chevron', 16 ) . '</summary><ul>'; // phpcs:ignore
+		$open = ! empty( $g['term'] ) ? has_term( $g['term'], 'service_cat', $current_id ) : ( ! empty( $g['pt'] ) && get_post_type( $current_id ) === $g['pt'] );
+		echo '<details class="sbar__grp"' . ( $open ? ' open' : '' ) . '><summary><span>' . esc_html( $g['name'] ) . '</span></summary><ul>'; // phpcs:ignore
 		foreach ( $g['items'] as $it ) {
 			echo '<li><a href="' . esc_url( $it[1] ) . '"' . ( (int) $it[0] === (int) $current_id ? ' class="is-on" aria-current="page"' : '' ) . '>' . esc_html( $it[2] ) . '</a></li>';
 		}

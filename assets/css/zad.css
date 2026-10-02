@@ -732,3 +732,14 @@ tr.tabitem[hidden],.pricebox.tabitem[hidden]{display:none}
 /* Body content in pure black (dark mode keeps its own ink) */
 .prose,.prose p,.prose li,.prose td,.entry-content,.entry-content p,.entry-content li{color:#000}
 [data-theme=dark] .prose,[data-theme=dark] .prose p,[data-theme=dark] .prose li,[data-theme=dark] .prose td,[data-theme=dark] .entry-content,[data-theme=dark] .entry-content p,[data-theme=dark] .entry-content li{color:var(--ink)}
+
+/* Services sidebar: top CTA + plus/minus groups */
+.sbar{padding:18px 16px;border-radius:var(--r-lg);background:color-mix(in srgb,var(--tint) 70%,var(--surface))}
+.sbar__cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px 18px;margin-bottom:14px;border:0;border-radius:var(--r);background:linear-gradient(135deg,var(--accent-700),var(--accent));color:#1a1200;font:800 1rem var(--font);text-decoration:none;cursor:pointer;box-shadow:0 10px 24px rgba(0,0,0,.12)}
+.sbar__cta:hover{filter:brightness(.96);color:#1a1200}
+.sbar__grp summary{gap:10px;color:var(--ink);font-size:1rem}
+.sbar__grp summary::after{content:"+";flex:none;font-weight:800;font-size:1.3rem;line-height:1;color:var(--accent-text)}
+.sbar__grp[open] summary::after{content:"−"}
+.sbar__grp summary .zi{display:none}
+.sbar li a{font-size:.95rem;color:var(--muted)}
+.sbar li a.is-on{background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent-text);font-weight:800}
