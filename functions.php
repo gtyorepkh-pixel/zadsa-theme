@@ -24,6 +24,7 @@ add_filter( 'robots_txt', function( $output, $public ) {
 require_once MEMO_THEME_DIR .'_inc/_memo.setup.php';
 require_once MEMO_THEME_DIR .'_inc/_memo_icons.php';
 require_once MEMO_THEME_DIR .'inc/zad-helpers.php';
+require_once MEMO_THEME_DIR .'inc/zad-roles.php';
 require_once MEMO_THEME_DIR .'inc/zad-cpt.php';
 require_once MEMO_THEME_DIR .'inc/zad-leads.php';
 require_once MEMO_THEME_DIR .'inc/zad-city.php';
@@ -101,7 +102,7 @@ add_filter('the_content', 'add_enhanced_seo_dates_to_cpt');
 function add_enhanced_seo_dates_to_cpt($content) {
     $target_post_types = array('pest_control', 'cleaning', 'sections', 'pests-library', 'guide'); 
 
-    if (is_singular($target_post_types) && is_main_query()) {
+    if (is_singular($target_post_types) && !zad_is_service() && !zad_is_faq() && is_main_query()) {
         $publish_date = get_the_date();
         $modified_date = get_the_modified_date();
         $u_time = get_the_time('U');
@@ -124,7 +125,7 @@ add_filter( 'do_redirect_guess_404_permalink', '__return_false' );
  */
 add_filter('the_content', 'add_author_box_to_all_site_content');
 function add_author_box_to_all_site_content($content) {
-    if (is_singular() && !is_singular('zad_service') && is_main_query()) {
+    if (is_singular() && !zad_is_service() && !zad_is_faq() && is_main_query()) {
         $author_id    = get_the_author_meta('ID');
         $author_name  = get_the_author_meta('display_name');
         $author_bio   = get_the_author_meta('description');

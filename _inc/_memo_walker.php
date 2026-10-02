@@ -9,7 +9,7 @@ class memo_walker extends Walker_Nav_Menu {
 
 		$class_names = ( ! empty( $item->current ) || ! empty( $item->current_item_ancestor ) ) ? 'current ' : '';
 		$class_names .= @$args->walker->has_children  ? 'has-children ' : '' ;
-		$is_mega = ( 0 === $depth && ! empty( $args->theme_location ) && 'mainmenu' === $args->theme_location && function_exists( 'zad_mega_html' ) && ! empty( $item->url ) && untrailingslashit( $item->url ) === untrailingslashit( (string) get_post_type_archive_link( 'zad_service' ) ) );
+		$is_mega = ( 0 === $depth && ! empty( $args->theme_location ) && 'mainmenu' === $args->theme_location && function_exists( 'zad_mega_html' ) && ! empty( $item->url ) && ( untrailingslashit( $item->url ) === untrailingslashit( (string) zad_services_url() ) || in_array( 'zad-mega', (array) $item->classes, true ) ) );
 		if ( $is_mega ) { $class_names .= 'has-mega '; }
 		$class_names  = trim( $class_names );
 		$class_names = ! empty( $class_names ) ? ' class="'.$class_names.'" ' : '';

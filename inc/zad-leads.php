@@ -12,7 +12,7 @@ function zad_quote_form( $args = array() ) {
 		'id'         => 'q' . wp_rand( 100, 999 ),
 		'compact'    => false,
 	) );
-	$services = get_posts( array( 'post_type' => 'zad_service', 'numberposts' => 100, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
+	$services = get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 100, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
 	$areas    = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
 	$sel_area = $a['area'];
 	$status   = isset( $_GET['zad_sent'] ) ? sanitize_key( wp_unslash( $_GET['zad_sent'] ) ) : ''; // phpcs:ignore
@@ -133,7 +133,7 @@ function zad_handle_quote() {
 		$fail( 'رقم الجوال غير صحيح.' );
 	}
 	$service = $sid ? get_post( $sid ) : null;
-	if ( ! $service || 'zad_service' !== $service->post_type ) {
+	if ( ! $service || ! in_array( $service->post_type, zad_service_types(), true ) ) {
 		$fail( 'اختر الخدمة المطلوبة.' );
 	}
 

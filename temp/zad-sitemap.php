@@ -7,7 +7,7 @@ $list = function ( $items ) { echo '<ul class="smap">'; foreach ( $items as $u =
 	<?php
 	$cats = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true ) );
 	if ( $cats && ! is_wp_error( $cats ) ) : foreach ( $cats as $c ) :
-		$q = get_posts( array( 'post_type' => 'zad_service', 'numberposts' => -1, 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) ) ) );
+		$q = get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => -1, 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) ) ) );
 		if ( ! $q ) { continue; }
 		$it = array();
 		foreach ( $q as $sv ) {
@@ -19,9 +19,9 @@ $list = function ( $items ) { echo '<ul class="smap">'; foreach ( $items as $u =
 		<section><h2><a href="<?php echo esc_url( get_term_link( $c ) ); ?>"><?php echo esc_html( $c->name ); ?></a></h2><?php $list( $it ); ?></section>
 	<?php endforeach; endif; ?>
 
-	<?php $faqs = get_posts( array( 'post_type' => 'zad_faq', 'numberposts' => 100, 'orderby' => 'title', 'order' => 'ASC' ) );
+	<?php $faqs = get_posts( array( 'post_type' => zad_faq_types(), 'numberposts' => 100, 'orderby' => 'title', 'order' => 'ASC' ) );
 	if ( $faqs ) : $it = array(); foreach ( $faqs as $f ) { $it[ get_permalink( $f ) ] = $f->post_title; } ?>
-		<section><h2><a href="<?php echo esc_url( get_post_type_archive_link( 'zad_faq' ) ); ?>">الأسئلة الشائعة</a></h2><?php $list( $it ); ?></section>
+		<section><h2><a href="<?php echo esc_url( zad_faq_url() ); ?>">الأسئلة الشائعة</a></h2><?php $list( $it ); ?></section>
 	<?php endif; ?>
 
 	<?php $posts = get_posts( array( 'numberposts' => 60 ) );

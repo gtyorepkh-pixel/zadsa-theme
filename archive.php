@@ -1,7 +1,7 @@
 <?php defined( 'ABSPATH' ) || exit;
 get_header();
 get_template_part( 'template-parts/page-hero', null, array(
-	'title'  => is_home() ? 'المدونة' : get_the_archive_title(),
+	'title'  => is_home() ? 'المدونة' : ( is_post_type_archive() ? post_type_archive_title( '', false ) : get_the_archive_title() ),
 	'sub'    => is_archive() ? get_the_archive_description() : '',
 	'crumbs' => zad_current_crumbs() ?: array( array( 'الرئيسية', home_url( '/' ) ), array( is_home() ? 'المدونة' : wp_strip_all_tags( get_the_archive_title() ), '' ) ),
 ) );

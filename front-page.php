@@ -13,7 +13,7 @@ $hl       = array_filter( (array) zad_opt( 'zad_highlights', array() ), function
 
 $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'parent' => 0, 'number' => 12 ) );
 $areas = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
-$all   = new WP_Query( array( 'post_type' => 'zad_service', 'posts_per_page' => 12, 'no_found_rows' => true, 'orderby' => array( 'menu_order' => 'ASC', 'date' => 'DESC' ) ) );
+$all   = new WP_Query( array( 'post_type' => zad_service_types(), 'posts_per_page' => 12, 'no_found_rows' => true, 'orderby' => array( 'menu_order' => 'ASC', 'date' => 'DESC' ) ) );
 
 // price teaser: cheapest services
 $teaser = array();
@@ -105,7 +105,7 @@ if ( $about_title ) : $ap = zad_lines( zad_opt( 'zad_about_points' ) ); ?>
 				<div class="tabitem" data-cats="<?php echo esc_attr( implode( ',', (array) $tc ) ); ?>"><?php get_template_part( 'template-parts/service-card' ); ?></div>
 			<?php } wp_reset_postdata(); ?>
 		</div>
-		<p class="sec__more"><a class="btn btn--primary" href="<?php echo esc_url( get_post_type_archive_link( 'zad_service' ) ); ?>">عرض كل الخدمات <?php echo zad_icon( 'arrow', 18 ); // phpcs:ignore ?></a></p>
+		<p class="sec__more"><a class="btn btn--primary" href="<?php echo esc_url( zad_services_url() ); ?>">عرض كل الخدمات <?php echo zad_icon( 'arrow', 18 ); // phpcs:ignore ?></a></p>
 	</div>
 </section>
 <?php endif; ?>
@@ -280,7 +280,7 @@ if ( $clients ) : ?>
 	<div class="wrap wrap--narrow">
 		<header class="sec__head"><span class="eyebrow">أسئلة شائعة</span><h2>إجابات سريعة قبل أن تسأل</h2></header>
 		<?php zad_render_faq( $faq ); ?>
-		<p class="sec__more"><a class="btn btn--ghost-dark" href="<?php echo esc_url( get_post_type_archive_link( 'zad_faq' ) ); ?>">كل الأسئلة الشائعة</a></p>
+		<p class="sec__more"><a class="btn btn--ghost-dark" href="<?php echo esc_url( zad_faq_url() ); ?>">كل الأسئلة الشائعة</a></p>
 	</div>
 </section>
 <?php endif; ?>

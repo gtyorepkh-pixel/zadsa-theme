@@ -9,11 +9,11 @@ get_template_part( 'template-parts/page-hero', null, array(
 	<div class="wrap">
 		<?php if ( have_posts() ) : ?>
 			<div class="sgrid">
-				<?php while ( have_posts() ) { the_post(); get_template_part( 'template-parts/' . ( 'zad_service' === get_post_type() ? 'service-card' : 'post-card' ) ); } ?>
+				<?php while ( have_posts() ) { the_post(); get_template_part( 'template-parts/' . ( in_array( get_post_type(), zad_service_types(), true ) ? 'service-card' : 'post-card' ) ); } ?>
 			</div>
 			<?php echo memo_pagination(); // phpcs:ignore ?>
 		<?php else : ?>
-			<p class="empty">لم نجد نتائج. جرّب كلمات أخرى أو <a href="<?php echo esc_url( get_post_type_archive_link( 'zad_service' ) ); ?>">تصفح الخدمات</a>.</p>
+			<p class="empty">لم نجد نتائج. جرّب كلمات أخرى أو <a href="<?php echo esc_url( zad_services_url() ); ?>">تصفح الخدمات</a>.</p>
 		<?php endif; ?>
 	</div>
 </main>

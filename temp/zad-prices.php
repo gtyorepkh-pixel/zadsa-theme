@@ -1,7 +1,7 @@
 <?php defined( 'ABSPATH' ) || exit; /* Template Name: الأسعار الشاملة */
 get_header();
 get_template_part( 'template-parts/page-hero', null, array( 'sub' => '<p>أسعار كل خدماتنا في مكان واحد. السعر النهائي يُؤكَّد بعد المعاينة المجانية.</p>', 'crumbs' => array( array( 'الرئيسية', home_url( '/' ) ), array( get_the_title(), '' ) ) ) );
-$svcs = get_posts( array( 'post_type' => 'zad_service', 'numberposts' => -1, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
+$svcs = get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => -1, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
 $rows = array();
 foreach ( $svcs as $sv ) {
 	$p = zad_parse_prices( get_post_meta( $sv->ID, '_zad_prices', true ) );

@@ -10,7 +10,7 @@ function zad_seo_active() {
 
 /* ---- meta box ---- */
 add_action( 'add_meta_boxes', function () {
-	foreach ( array( 'zad_service', 'zad_faq', 'page', 'post' ) as $pt ) {
+	foreach ( array_unique( array_merge( zad_service_types(), zad_faq_types(), zad_article_types(), array( 'page', 'post' ) ) ) as $pt ) {
 		add_meta_box( 'zad_seo', 'SEO — محركات البحث', 'zad_seo_metabox', $pt, 'normal', 'default' );
 	}
 } );
@@ -26,7 +26,7 @@ function zad_seo_metabox( $post ) {
 	<p><label>صورة المشاركة (OG) — رقم الصورة في المكتبة، أو اتركه لتُستخدم الصورة البارزة
 		<input type="number" name="zad_seo[img]" value="<?php echo esc_attr( $g( 'img' ) ); ?>" style="width:140px"></label></p>
 	<p><label><input type="checkbox" name="zad_seo[noindex]" value="1" <?php checked( $g( 'noindex' ), '1' ); ?>> عدم الفهرسة (noindex)</label></p>
-	<?php if ( 'zad_service' === $post->post_type ) : ?>
+	<?php if ( in_array( $post->post_type, zad_service_types(), true ) ) : ?>
 	<hr>
 	<p><label>اسم الخدمة بدون المدينة <small>— يُستخدم لعناوين صفحات «خدمة + مدينة»، مثال: شركة رش مبيدات</small>
 		<input type="text" name="zad_seo[base]" value="<?php echo esc_attr( get_post_meta( $post->ID, '_zad_base_name', true ) ); ?>" style="width:100%"></label></p>
@@ -44,7 +44,7 @@ add_action( 'save_post', function ( $id ) {
 	update_post_meta( $id, '_zad_seo_desc', isset( $in['desc'] ) ? sanitize_textarea_field( $in['desc'] ) : '' );
 	update_post_meta( $id, '_zad_seo_img', isset( $in['img'] ) ? absint( $in['img'] ) : '' );
 	update_post_meta( $id, '_zad_seo_noindex', ! empty( $in['noindex'] ) ? '1' : '' );
-	if ( 'zad_service' === get_post_type( $id ) ) {
+	if ( in_array( get_post_type( $id ), zad_service_types(), true ) ) {
 		update_post_meta( $id, '_zad_base_name', isset( $in['base'] ) ? sanitize_text_field( $in['base'] ) : '' );
 		update_post_meta( $id, '_zad_city_text', isset( $in['city_text'] ) ? sanitize_textarea_field( $in['city_text'] ) : '' );
 	}
@@ -148,7 +148,7 @@ add_action( 'wp_head', function () {
 	$url  = zad_current_url();
 	$desc = zad_seo_desc();
 	$ttl  = zad_seo_title() ?: wp_get_document_title();
-	$type = is_singular( array( 'post', 'zad_faq' ) ) ? 'article' : 'website';
+	$type = ( is_singular( 'post' ) || zad_is_faq() || zad_is_article() ) ? 'article' : 'website';
 	if ( $desc ) {
 		echo '<meta name="description" content="' . esc_attr( $desc ) . '">' . "\n";
 	}
@@ -173,7 +173,7 @@ add_action( 'wp_head', function () {
 	echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
 	echo '<meta name="twitter:title" content="' . esc_attr( $ttl ) . '">' . "\n";
 	if ( $desc ) { echo '<meta name="twitter:description" content="' . esc_attr( $desc ) . '">' . "\n"; }
-	if ( is_singular( 'post' ) || is_singular( 'zad_faq' ) ) {
+	if ( is_singular( 'post' ) || zad_is_faq() || zad_is_article() ) {
 		echo '<meta property="article:modified_time" content="' . esc_attr( get_the_modified_date( 'c' ) ) . '">' . "\n";
 	}
 	$lat = zad_opt( 'zad_lat' );

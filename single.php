@@ -2,10 +2,7 @@
 get_header();
 while ( have_posts() ) :
 	the_post();
-	$cat = get_the_category();
-	$cr  = array( array( 'الرئيسية', home_url( '/' ) ) );
-	if ( $cat ) { $cr[] = array( $cat[0]->name, get_category_link( $cat[0] ) ); }
-	$cr[] = array( get_the_title(), '' );
+	$cr = zad_current_crumbs();
 	get_template_part( 'template-parts/page-hero', null, array( 'crumbs' => $cr ) );
 	$opts = get_post_meta( get_the_ID(), '_memo_metabox_options', true );
 	$wa   = zad_wa_link( 'مرحباً، أرغب بالاستفسار عن: ' . get_the_title() );

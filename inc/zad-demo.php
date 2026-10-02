@@ -10,11 +10,11 @@ add_action( 'admin_menu', function () {
 
 function zad_demo_page() {
 	echo '<div class="wrap"><h1>بيانات تجريبية</h1>';
-	if ( isset( $_POST['zad_demo_go'] ) && check_admin_referer( 'zad_demo' ) && current_user_can( 'manage_options' ) ) {
+	if ( isset( $_POST['zad_demo_go'] ) && ! ( zad_existing_types( 'service' ) || zad_existing_types( 'faq' ) ) && check_admin_referer( 'zad_demo' ) && current_user_can( 'manage_options' ) ) {
 		$n = zad_demo_import();
 		flush_rewrite_rules();
 		echo '<div class="notice notice-success"><p>تم إنشاء ' . (int) $n . ' عناصر تجريبية.</p><p>';
-		foreach ( get_posts( array( 'post_type' => 'zad_service', 'meta_key' => '_zad_demo', 'numberposts' => 5 ) ) as $p ) {
+		foreach ( get_posts( array( 'post_type' => zad_service_types(), 'meta_key' => '_zad_demo', 'numberposts' => 5 ) ) as $p ) {
 			echo '<a class="button button-primary" target="_blank" href="' . esc_url( get_permalink( $p ) ) . '">' . esc_html( $p->post_title ) . '</a> ';
 		}
 		foreach ( get_posts( array( 'post_type' => array( 'zad_faq', 'post' ), 'meta_key' => '_zad_demo', 'numberposts' => 5 ) ) as $p ) {
@@ -25,10 +25,14 @@ function zad_demo_page() {
 	if ( isset( $_POST['zad_demo_del'] ) && check_admin_referer( 'zad_demo' ) && current_user_can( 'manage_options' ) ) {
 		echo '<div class="notice notice-warning"><p>تم حذف ' . (int) zad_demo_delete() . ' عنصراً تجريبياً.</p></div>';
 	}
+	$live = zad_existing_types( 'service' ) || zad_existing_types( 'faq' );
+	if ( $live ) {
+		echo '<div class="notice notice-error"><p><strong>تنبيه:</strong> موقعك فيه أنواع محتوى قائمة (' . esc_html( implode( '، ', array_merge( array_values( zad_existing_types( 'service' ) ), array_values( zad_existing_types( 'faq' ) ) ) ) ) . '). لا تنشئ بيانات تجريبية على موقع فعلي؛ استخدم «تبنّي المحتوى الحالي» من قائمة الأدوات.</p></div>';
+	}
 	echo '<p>ينشئ خدمتين مكتملتين (بكل الأقسام) وسؤالاً ومقالاً، <strong>بدون صور</strong> لتضيف صورك. الصور تُضاف من: الصورة البارزة، ومعرض الصور، وقبل/بعد داخل شاشة تحرير الخدمة.</p>';
 	echo '<form method="post">';
 	wp_nonce_field( 'zad_demo' );
-	echo '<p><button class="button button-primary" name="zad_demo_go" value="1">إنشاء البيانات التجريبية</button> ';
+	echo '<p>' . ( $live ? '' : '<button class="button button-primary" name="zad_demo_go" value="1">إنشاء البيانات التجريبية</button> ' );
 	echo '<button class="button" name="zad_demo_del" value="1" onclick="return confirm(\'حذف كل العناصر التجريبية؟\');">حذف البيانات التجريبية</button></p></form></div>';
 }
 
@@ -159,20 +163,20 @@ function zad_demo_site() {
 		return wp_update_nav_menu_item( $menu_id, 0, $args );
 	};
 	$add( 'الرئيسية', home_url( '/' ) );
-	$svc = $add( 'الخدمات', get_post_type_archive_link( 'zad_service' ) );
+	$svc = $add( 'الخدمات', zad_services_url() );
 	foreach ( get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => false ) ) as $t ) {
 		$add( $t->name, get_term_link( $t ), $svc );
 	}
 	if ( $price ) { $add( 'الأسعار', '', 0, $price, 'page' ); }
 	if ( $areas ) { $add( 'المناطق', '', 0, $areas, 'page' ); }
-	$add( 'الأسئلة الشائعة', get_post_type_archive_link( 'zad_faq' ) );
+	$add( 'الأسئلة الشائعة', zad_faq_url() );
 	if ( $ident ) { $add( 'تعرّف على الآفة', '', 0, $ident, 'page' ); }
 	if ( $about ) { $add( 'من نحن', '', 0, $about, 'page' ); }
 	if ( $contact ) { $add( 'اتصل بنا', '', 0, $contact, 'page' ); }
 
 	$f = wp_create_nav_menu( 'قائمة الفوتر' );
 	if ( ! is_wp_error( $f ) ) {
-		foreach ( array( array( 'الرئيسية', home_url( '/' ) ), array( 'الخدمات', get_post_type_archive_link( 'zad_service' ) ), array( 'الأسئلة الشائعة', get_post_type_archive_link( 'zad_faq' ) ), array( 'خريطة الموقع', $smap ? get_permalink( $smap ) : home_url( '/' ) ) ) as $it ) {
+		foreach ( array( array( 'الرئيسية', home_url( '/' ) ), array( 'الخدمات', zad_services_url() ), array( 'الأسئلة الشائعة', zad_faq_url() ), array( 'خريطة الموقع', $smap ? get_permalink( $smap ) : home_url( '/' ) ) ) as $it ) {
 			wp_update_nav_menu_item( $f, 0, array( 'menu-item-title' => $it[0], 'menu-item-url' => $it[1], 'menu-item-type' => 'custom', 'menu-item-status' => 'publish' ) );
 		}
 	}
@@ -252,7 +256,7 @@ function zad_demo_import() {
 	$created = 0;
 	foreach ( $services as $i => $sv ) {
 		if ( get_page_by_title( $sv['title'], OBJECT, 'zad_service' ) ) { continue; }
-		$pid = wp_insert_post( array( 'post_type' => 'zad_service', 'post_status' => 'publish', 'post_title' => $sv['title'], 'post_name' => $sv['slug'], 'post_content' => $sv['content'], 'post_excerpt' => $sv['tag'], 'menu_order' => $i ) );
+		$pid = wp_insert_post( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'post_title' => $sv['title'], 'post_name' => $sv['slug'], 'post_content' => $sv['content'], 'post_excerpt' => $sv['tag'], 'menu_order' => $i ) );
 		if ( ! $pid || is_wp_error( $pid ) ) { continue; }
 		$created++;
 		update_post_meta( $pid, '_zad_demo', '1' );
@@ -274,7 +278,7 @@ function zad_demo_import() {
 	$fcat  = zad_demo_term( 'الرش والمبيدات', 'faq_cat' );
 	$q     = 'كم يدوم أثر الرش الوقائي؟';
 	if ( ! get_page_by_title( $q, OBJECT, 'zad_faq' ) ) {
-		$fid = wp_insert_post( array( 'post_type' => 'zad_faq', 'post_status' => 'publish', 'post_title' => $q, 'post_name' => 'spray-effect-duration', 'post_excerpt' => 'يمتد الأثر الوقائي أسابيع، ونحدد موعد الرش التالي حسب الموسم ونوع الإصابة.',
+		$fid = wp_insert_post( array( 'post_type' => zad_faq_types(), 'post_status' => 'publish', 'post_title' => $q, 'post_name' => 'spray-effect-duration', 'post_excerpt' => 'يمتد الأثر الوقائي أسابيع، ونحدد موعد الرش التالي حسب الموسم ونوع الإصابة.',
 			'post_content' => '<p>المبيدات المبطّنة تثبت على الأسطح وتقاوم الرطوبة، لذلك يطول أثرها مقارنة بالمبيدات العادية.</p><h3>ما الذي يقلّل مدة الأثر؟</h3><p>التنظيف المتكرر للأسطح المعالجة، والرطوبة العالية جداً، وتعرّض المحيط الخارجي لأشعة الشمس المباشرة.</p><h3>متى أعيد الرش؟</h3><p>نجدول المتابعة بعد المعاينة حسب الموسم ونوع الإصابة، وغالباً مرة كل موسم للمنازل ذات الحدائق.</p>' ) );
 		if ( $fid && ! is_wp_error( $fid ) ) {
 			$created++;

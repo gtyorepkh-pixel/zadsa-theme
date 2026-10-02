@@ -8,7 +8,7 @@ function zad_slug( $opt, $default ) {
 
 /** Re-flush rewrite rules automatically when a URL base option changes. */
 add_action( 'init', function () {
-	$h = md5( zad_slug( 'zad_services_slug', 'services' ) . '|' . zad_slug( 'zad_areas_slug', 'areas' ) . '|' . zad_slug( 'zad_faq_slug', 'faq' ) );
+	$h = md5( zad_slug( 'zad_services_slug', 'services' ) . '|' . zad_slug( 'zad_areas_slug', 'areas' ) . '|' . zad_slug( 'zad_faq_slug', 'faq' ) . '|' . implode( ',', zad_service_types() ) . '|' . implode( ',', zad_faq_types() ) . '|' . implode( ',', zad_article_types() ) );
 	if ( get_option( 'zad_rw_hash' ) !== $h ) {
 		flush_rewrite_rules( false );
 		update_option( 'zad_rw_hash', $h, false );
@@ -20,11 +20,14 @@ add_action( 'init', function () {
  * leads CPT (zad_lead) that stores quote requests.
  */
 
-add_action( 'init', 'zad_register_content_types' );
+add_action( 'init', 'zad_register_content_types', 50 );
 function zad_register_content_types() {
-	$slug = zad_slug( 'zad_services_slug', 'services' );
-	$area = zad_slug( 'zad_areas_slug', 'areas' );
+	$slug     = zad_slug( 'zad_services_slug', 'services' );
+	$area     = zad_slug( 'zad_areas_slug', 'areas' );
+	$existing = zad_existing_types( 'service' );
+	$types    = $existing ? array_keys( $existing ) : array( 'zad_service' );
 
+	if ( ! $existing ) {
 	register_post_type( 'zad_service', array(
 		'labels'        => array(
 			'name'               => 'الخدمات',
@@ -47,8 +50,9 @@ function zad_register_content_types() {
 		'show_in_rest'  => true,
 		'supports'      => array( 'title', 'editor', 'excerpt', 'thumbnail', 'page-attributes', 'revisions', 'author' ),
 	) );
+	}
 
-	register_taxonomy( 'service_cat', 'zad_service', array(
+	register_taxonomy( 'service_cat', $types, array(
 		'labels'            => array( 'name' => 'أقسام الخدمات', 'singular_name' => 'قسم', 'add_new_item' => 'إضافة قسم', 'menu_name' => 'الأقسام' ),
 		'hierarchical'      => true,
 		'public'            => true,
@@ -57,7 +61,7 @@ function zad_register_content_types() {
 		'rewrite'           => array( 'slug' => $slug . '-category', 'with_front' => false ),
 	) );
 
-	register_taxonomy( 'service_area', 'zad_service', array(
+	register_taxonomy( 'service_area', $types, array(
 		'labels'            => array( 'name' => 'مناطق الخدمة', 'singular_name' => 'منطقة', 'add_new_item' => 'إضافة مدينة / حي', 'menu_name' => 'المدن والأحياء' ),
 		'hierarchical'      => true,
 		'public'            => true,
@@ -82,11 +86,7 @@ function zad_register_content_types() {
 }
 
 add_action( 'after_switch_theme', function () {
-	zad_register_content_types();
-	if ( function_exists( 'zad_register_faq' ) ) {
-		zad_register_faq();
-	}
-	flush_rewrite_rules();
+	delete_option( 'zad_rw_hash' ); // flushed automatically on the next request
 } );
 
 /* ------------------------------------------------------------------ */
@@ -94,7 +94,7 @@ add_action( 'after_switch_theme', function () {
 /* ------------------------------------------------------------------ */
 
 add_action( 'add_meta_boxes', function () {
-	add_meta_box( 'zad_service_meta', 'تفاصيل الخدمة', 'zad_service_metabox', 'zad_service', 'normal', 'high' );
+	add_meta_box( 'zad_service_meta', 'تفاصيل الخدمة', 'zad_service_metabox', zad_service_types(), 'normal', 'high' );
 	add_meta_box( 'zad_lead_meta', 'بيانات الطلب', 'zad_lead_metabox', 'zad_lead', 'normal', 'high' );
 } );
 
@@ -127,7 +127,7 @@ function zad_service_metabox( $post ) {
 	$gallery = (string) $g( 'gallery', '' );
 	$related = array_map( 'intval', (array) $g( 'related', array() ) );
 	$icon    = $g( 'icon', 'sparkle' );
-	$services = get_posts( array( 'post_type' => 'zad_service', 'numberposts' => 200, 'post__not_in' => array( $post->ID ), 'orderby' => 'title', 'order' => 'ASC' ) );
+	$services = get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 200, 'post__not_in' => array( $post->ID ), 'orderby' => 'title', 'order' => 'ASC' ) );
 	?>
 	<div class="zad-mb">
 		<h4>الأساسيات</h4>
@@ -236,14 +236,17 @@ function zad_service_metabox( $post ) {
 
 add_action( 'admin_enqueue_scripts', function ( $hook ) {
 	$screen = get_current_screen();
-	if ( $screen && in_array( $screen->post_type, array( 'zad_service' ), true ) && in_array( $hook, array( 'post.php', 'post-new.php' ), true ) ) {
+	if ( $screen && in_array( $screen->post_type, zad_service_types(), true ) && in_array( $hook, array( 'post.php', 'post-new.php' ), true ) ) {
 		wp_enqueue_media();
 		wp_enqueue_style( 'zad-admin', get_template_directory_uri() . '/assets/css/admin.css', array(), ZAD_VERSION );
 		wp_enqueue_script( 'zad-admin', get_template_directory_uri() . '/assets/js/admin.js', array(), ZAD_VERSION, true );
 	}
 } );
 
-add_action( 'save_post_zad_service', function ( $post_id ) {
+add_action( 'save_post', function ( $post_id ) {
+	if ( ! in_array( get_post_type( $post_id ), zad_service_types(), true ) ) {
+		return;
+	}
 	if ( ! isset( $_POST['zad_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['zad_service_nonce'] ) ), 'zad_service_save' ) ) {
 		return;
 	}
@@ -418,10 +421,11 @@ add_action( 'pre_get_posts', function ( $q ) {
 	if ( is_admin() || ! $q->is_main_query() ) {
 		return;
 	}
-	if ( $q->is_post_type_archive( 'zad_service' ) || $q->is_tax( array( 'service_cat', 'service_area' ) ) ) {
+	if ( $q->is_post_type_archive( zad_service_types() ) || $q->is_tax( array( 'service_cat', 'service_area' ) ) ) {
+		$q->set( 'post_type', zad_service_types() );
 		$q->set( 'posts_per_page', 12 );
 		$q->set( 'orderby', array( 'menu_order' => 'ASC', 'date' => 'DESC' ) );
-		if ( $q->is_post_type_archive( 'zad_service' ) && ! empty( $_GET['q'] ) ) { // phpcs:ignore
+		if ( $q->is_post_type_archive( zad_service_types() ) && ! empty( $_GET['q'] ) ) { // phpcs:ignore
 			$q->set( 's', sanitize_text_field( wp_unslash( $_GET['q'] ) ) ); // phpcs:ignore
 		}
 	}
@@ -430,7 +434,7 @@ add_action( 'pre_get_posts', function ( $q ) {
 
 function zad_related_services( $post_id, $limit = 3 ) {
 	$ids = array_filter( array_map( 'intval', (array) get_post_meta( $post_id, '_zad_related', true ) ) );
-	$args = array( 'post_type' => 'zad_service', 'posts_per_page' => $limit, 'post__not_in' => array( $post_id ), 'no_found_rows' => true );
+	$args = array( 'post_type' => zad_service_types(), 'posts_per_page' => $limit, 'post__not_in' => array( $post_id ), 'no_found_rows' => true );
 	if ( $ids ) {
 		$args['post__in'] = $ids;
 		$args['orderby']  = 'post__in';
@@ -443,3 +447,32 @@ function zad_related_services( $post_id, $limit = 3 ) {
 	}
 	return new WP_Query( $args );
 }
+
+
+/** Every service gets a category named after its post type when it has none (adopted content). */
+function zad_type_category( $post_id ) {
+	$pt = get_post_type( $post_id );
+	$o  = get_post_type_object( $pt );
+	if ( ! $o || 'zad_service' === $pt ) {
+		return;
+	}
+	if ( has_term( '', 'service_cat', $post_id ) ) {
+		return;
+	}
+	$name = $o->labels->name;
+	$t    = term_exists( $name, 'service_cat' );
+	if ( ! $t ) {
+		$t = wp_insert_term( $name, 'service_cat', array( 'slug' => sanitize_title( zad_type_base( $pt ) ) ?: $pt ) );
+	}
+	if ( ! is_wp_error( $t ) ) {
+		wp_set_object_terms( $post_id, array( (int) ( is_array( $t ) ? $t['term_id'] : $t ) ), 'service_cat' );
+	}
+}
+add_action( 'save_post', function ( $id ) {
+	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+		return;
+	}
+	if ( in_array( get_post_type( $id ), zad_service_types(), true ) && 'publish' === get_post_status( $id ) ) {
+		zad_type_category( $id );
+	}
+}, 30 );

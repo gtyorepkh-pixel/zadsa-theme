@@ -1,0 +1,267 @@
+<?php defined( 'ABSPATH' ) || exit;
+/**
+ * Role mapping ("adapter mode").
+ *
+ * The theme can run on a site that already has its own custom post types (e.g. /pest-control/, /cleaning/,
+ * /faq/, /sections/, /guide/). Existing URLs are kept untouched; each type is assigned a design role:
+ *   service  → full service page design (+ prices, FAQ, city pages…)
+ *   faq      → single question design
+ *   article  → blog article design
+ * Types are matched by post-type key OR rewrite slug. When a role has no existing type, the theme registers
+ * its own (zad_service / zad_faq).
+ */
+
+function zad_slug_list( $opt, $default ) {
+	$out = array();
+	foreach ( explode( ',', (string) zad_opt( $opt, $default ) ) as $s ) {
+		$s = trim( str_replace( '_', '-', strtolower( $s ) ), " \t\n\r/" );
+		if ( '' !== $s ) {
+			$out[] = $s;
+		}
+	}
+	return $out;
+}
+
+function zad_role_slugs() {
+	return array(
+		'service' => zad_slug_list( 'zad_service_slugs', 'pest-control,cleaning,moving' ),
+		'faq'     => zad_slug_list( 'zad_faq_slugs', 'faq' ),
+		'article' => zad_slug_list( 'zad_article_slugs', 'sections,guide' ),
+	);
+}
+
+/** Non-native registered public post types mapped to a role (key => label). */
+function zad_existing_types( $role ) {
+	static $cache = array();
+	$final = did_action( 'init' ) > 0 && ( doing_action( 'init' ) ? false : true );
+	if ( $final && isset( $cache[ $role ] ) ) {
+		return $cache[ $role ];
+	}
+	$want = zad_role_slugs();
+	$want = isset( $want[ $role ] ) ? $want[ $role ] : array();
+	$out  = array();
+	foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $k => $o ) {
+		if ( in_array( $k, array( 'zad_service', 'zad_faq', 'zad_lead', 'post', 'page', 'attachment' ), true ) ) {
+			continue;
+		}
+		$norm = str_replace( '_', '-', strtolower( $k ) );
+		$slug = ( is_array( $o->rewrite ) && ! empty( $o->rewrite['slug'] ) ) ? str_replace( '_', '-', strtolower( trim( $o->rewrite['slug'], '/' ) ) ) : $norm;
+		if ( in_array( $norm, $want, true ) || in_array( $slug, $want, true ) ) {
+			$out[ $k ] = $o->labels->name;
+		}
+	}
+	if ( $final ) {
+		$cache[ $role ] = $out;
+	}
+	return $out;
+}
+
+function zad_service_types() {
+	$t = array_keys( zad_existing_types( 'service' ) );
+	if ( post_type_exists( 'zad_service' ) ) {
+		$t[] = 'zad_service';
+	}
+	return $t ? $t : array( 'zad_service' );
+}
+
+function zad_faq_types() {
+	$t = array_keys( zad_existing_types( 'faq' ) );
+	if ( post_type_exists( 'zad_faq' ) ) {
+		$t[] = 'zad_faq';
+	}
+	return $t ? $t : array( 'zad_faq' );
+}
+
+function zad_article_types() {
+	return array_merge( array( 'post' ), array_keys( zad_existing_types( 'article' ) ) );
+}
+
+function zad_is_service( $post = null ) {
+	$pt = $post ? get_post_type( $post ) : get_post_type();
+	return $post ? in_array( $pt, zad_service_types(), true ) : is_singular( zad_service_types() );
+}
+function zad_is_faq( $post = null ) {
+	$pt = $post ? get_post_type( $post ) : get_post_type();
+	return $post ? in_array( $pt, zad_faq_types(), true ) : is_singular( zad_faq_types() );
+}
+function zad_is_article() {
+	return is_singular( zad_article_types() );
+}
+function zad_is_services_archive() {
+	return is_post_type_archive( zad_service_types() );
+}
+function zad_is_faq_archive() {
+	return is_post_type_archive( zad_faq_types() );
+}
+
+/** URL of "all services": native archive, a hub page, or the first service type archive. */
+function zad_services_url() {
+	if ( post_type_exists( 'zad_service' ) && ! zad_existing_types( 'service' ) ) {
+		return get_post_type_archive_link( 'zad_service' );
+	}
+	$q = get_posts( array( 'post_type' => 'page', 'numberposts' => 1, 'meta_key' => '_wp_page_template', 'meta_value' => 'temp/memo-services.php', 'fields' => 'ids' ) );
+	if ( $q ) {
+		return get_permalink( $q[0] );
+	}
+	foreach ( zad_service_types() as $t ) {
+		$l = get_post_type_archive_link( $t );
+		if ( $l ) {
+			return $l;
+		}
+	}
+	return home_url( '/' );
+}
+function zad_faq_url() {
+	foreach ( zad_faq_types() as $t ) {
+		$l = get_post_type_archive_link( $t );
+		if ( $l ) {
+			return $l;
+		}
+	}
+	return home_url( '/' );
+}
+
+/** Rewrite slug (URL base) of a post type. */
+function zad_type_base( $pt ) {
+	$o = get_post_type_object( $pt );
+	if ( $o && is_array( $o->rewrite ) && ! empty( $o->rewrite['slug'] ) ) {
+		return trim( $o->rewrite['slug'], '/' );
+	}
+	return $pt;
+}
+
+/** Use our single/archive templates for adopted types. */
+add_filter( 'template_include', function ( $tpl ) {
+	if ( is_singular() ) {
+		if ( zad_is_service() ) {
+			$f = locate_template( 'single-zad_service.php' );
+			return $f ? $f : $tpl;
+		}
+		if ( zad_is_faq() ) {
+			$f = locate_template( 'single-zad_faq.php' );
+			return $f ? $f : $tpl;
+		}
+	}
+	if ( is_post_type_archive() ) {
+		if ( zad_is_services_archive() ) {
+			$f = locate_template( 'archive-zad_service.php' );
+			return $f ? $f : $tpl;
+		}
+		if ( zad_is_faq_archive() ) {
+			$f = locate_template( 'archive-zad_faq.php' );
+			return $f ? $f : $tpl;
+		}
+	}
+	return $tpl;
+}, 20 );
+
+/**
+ * Old posts keep their data in the framework metabox (_memo_metabox_options). Map it onto the new fields
+ * when the new field is empty, so adopted content looks right without re-entering anything.
+ */
+add_filter( 'get_post_metadata', function ( $v, $id, $key, $single ) {
+	static $busy = false;
+	if ( null !== $v || $busy || ! is_string( $key ) ) {
+		return $v;
+	}
+	$map = array( '_zad_tagline', '_zad_phone', '_zad_whatsapp', '_zad_video', '_zad_related', '_thumbnail_id' );
+	if ( ! in_array( $key, $map, true ) ) {
+		return $v;
+	}
+	$pt = get_post_type( $id );
+	if ( ! $pt || 'zad_service' === $pt || ! in_array( $pt, array_merge( zad_service_types(), zad_article_types() ), true ) ) {
+		return $v;
+	}
+	$busy = true;
+	$real = get_post_meta( $id, $key, true );
+	$o    = get_post_meta( $id, '_memo_metabox_options', true );
+	$busy = false;
+	if ( ( '' !== $real && array() !== $real && false !== $real ) || ! is_array( $o ) ) {
+		return $v;
+	}
+	$val = '';
+	switch ( $key ) {
+		case '_zad_tagline':
+			$val = wp_trim_words( wp_strip_all_tags( (string) ( $o['memo_single_desc'] ?? '' ) ), 26, '…' );
+			break;
+		case '_zad_phone':
+			$val = trim( (string) ( $o['memo_single_phone'] ?? '' ) );
+			break;
+		case '_zad_whatsapp':
+			$val = trim( (string) ( $o['memo_single_whatss'] ?? '' ) );
+			break;
+		case '_zad_video':
+			$val = (string) ( $o['memo_single_video']['url'] ?? '' );
+			break;
+		case '_zad_related':
+			$val = array_map( 'intval', (array) ( $o['memo_single_related'] ?? array() ) );
+			break;
+		case '_thumbnail_id':
+			$val = (int) ( $o['memo_single_img']['id'] ?? 0 );
+			break;
+	}
+	if ( '' === $val || array() === $val || 0 === $val ) {
+		return $v;
+	}
+	return array( $val );
+}, 10, 4 );
+
+/* ------------------------------------------------------------------ */
+/* Admin: "Adopt existing content"                                     */
+/* ------------------------------------------------------------------ */
+
+add_action( 'admin_menu', function () {
+	add_management_page( 'تبنّي المحتوى الحالي', 'تبنّي المحتوى الحالي', 'manage_options', 'zad-adopt', 'zad_adopt_page' );
+} );
+
+function zad_adopt_page() {
+	echo '<div class="wrap"><h1>تبنّي المحتوى الحالي</h1>';
+	if ( isset( $_POST['zad_adopt_go'] ) && check_admin_referer( 'zad_adopt' ) && current_user_can( 'manage_options' ) ) {
+		$res = zad_adopt_run( isset( $_POST['zad_cities'] ) ? sanitize_textarea_field( wp_unslash( $_POST['zad_cities'] ) ) : '' );
+		flush_rewrite_rules( false );
+		echo '<div class="notice notice-success"><p>تم: تصنيف ' . (int) $res['cats'] . ' خدمة بحسب نوعها، وربط ' . (int) $res['areas'] . ' خدمة بالمدن. الروابط لم تتغير.</p></div>';
+	}
+	$rows = array( 'service' => 'خدمات (تصميم الخدمة)', 'faq' => 'أسئلة (تصميم السؤال)', 'article' => 'مقالات (تصميم المقال)' );
+	echo '<p>القالب يطبّق التصميم الجديد على الأنواع الموجودة في موقعك <strong>دون تغيير أي رابط</strong>. يتم الربط بحسب رابط كل نوع، وتعدّله من إعدادات القالب ← الهوية والألوان.</p>';
+	echo '<table class="widefat striped" style="max-width:820px"><thead><tr><th>الدور</th><th>الأنواع المكتشفة</th><th>الروابط</th><th>عدد المنشورات</th></tr></thead><tbody>';
+	foreach ( $rows as $role => $label ) {
+		$types = 'article' === $role ? zad_existing_types( 'article' ) : zad_existing_types( $role );
+		if ( ! $types ) {
+			echo '<tr><td>' . esc_html( $label ) . '</td><td colspan="3">— لا يوجد نوع قائم (سيُستخدم نوع القالب الخاص به إن لزم)</td></tr>';
+			continue;
+		}
+		foreach ( $types as $k => $name ) {
+			$cnt = wp_count_posts( $k );
+			$link = get_post_type_archive_link( $k );
+			echo '<tr><td>' . esc_html( $label ) . '</td><td>' . esc_html( $name ) . ' <code>' . esc_html( $k ) . '</code></td><td>' . ( $link ? '<a href="' . esc_url( $link ) . '" target="_blank">' . esc_html( $link ) . '</a>' : '—' ) . '</td><td>' . (int) ( $cnt->publish ?? 0 ) . '</td></tr>';
+		}
+	}
+	echo '</tbody></table>';
+	echo '<form method="post" style="margin-top:20px">';
+	wp_nonce_field( 'zad_adopt' );
+	echo '<h2>الخطوة التالية</h2><p>يضيف تصنيف «القسم» لكل خدمة (باسم نوعها: مكافحة، تنظيف، نقل…)، ويربط الخدمات التي بلا مدن بالمدن التالية لتظهر صفحات «خدمة + مدينة» والمناطق. لا يحذف شيئاً ولا يغيّر الروابط.</p>';
+	echo '<p><label><strong>المدن (مدينة في كل سطر)</strong><br><textarea name="zad_cities" rows="4" cols="40" placeholder="الرياض&#10;جدة"></textarea></label></p>';
+	echo '<p><button class="button button-primary" name="zad_adopt_go" value="1">تنفيذ</button></p></form></div>';
+}
+
+function zad_adopt_run( $cities_text ) {
+	$res = array( 'cats' => 0, 'areas' => 0 );
+	$city_ids = array();
+	foreach ( zad_lines( $cities_text ) as $c ) {
+		$t = term_exists( $c, 'service_area' );
+		if ( ! $t ) { $t = wp_insert_term( $c, 'service_area' ); }
+		if ( ! is_wp_error( $t ) ) { $city_ids[] = (int) ( is_array( $t ) ? $t['term_id'] : $t ); }
+	}
+	$ids = get_posts( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids' ) );
+	foreach ( $ids as $id ) {
+		if ( ! has_term( '', 'service_cat', $id ) ) {
+			zad_type_category( $id );
+			$res['cats']++;
+		}
+		if ( $city_ids && ! has_term( '', 'service_area', $id ) ) {
+			wp_set_object_terms( $id, $city_ids, 'service_area' );
+			$res['areas']++;
+		}
+	}
+	return $res;
+}

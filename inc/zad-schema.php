@@ -86,7 +86,7 @@ function zad_current_crumbs() {
 	if ( is_front_page() ) {
 		return array();
 	}
-	if ( is_singular( 'zad_service' ) ) {
+	if ( zad_is_service() ) {
 		$id = get_queried_object_id();
 		$c  = zad_service_crumbs( $id );
 		$city = zad_current_city();
@@ -96,24 +96,24 @@ function zad_current_crumbs() {
 		}
 		return $c;
 	}
-	if ( is_singular( 'zad_faq' ) ) {
-		$c = array( $h, array( 'الأسئلة', get_post_type_archive_link( 'zad_faq' ) ) );
+	if ( zad_is_faq() ) {
+		$c = array( $h, array( 'الأسئلة', zad_faq_url() ) );
 		$t = get_the_terms( get_queried_object_id(), 'faq_cat' );
 		if ( $t && ! is_wp_error( $t ) ) { $c[] = array( $t[0]->name, get_term_link( $t[0] ) ); }
 		$c[] = array( get_the_title(), '' );
 		return $c;
 	}
-	if ( is_post_type_archive( 'zad_service' ) ) {
+	if ( zad_is_services_archive() ) {
 		return array( $h, array( 'الخدمات', '' ) );
 	}
-	if ( is_post_type_archive( 'zad_faq' ) ) {
+	if ( zad_is_faq_archive() ) {
 		return array( $h, array( 'الأسئلة', '' ) );
 	}
 	if ( is_tax( 'service_cat' ) || is_tax( 'service_area' ) ) {
-		return array( $h, array( 'الخدمات', get_post_type_archive_link( 'zad_service' ) ), array( single_term_title( '', false ), '' ) );
+		return array( $h, array( 'الخدمات', zad_services_url() ), array( single_term_title( '', false ), '' ) );
 	}
 	if ( is_tax( 'faq_cat' ) ) {
-		return array( $h, array( 'الأسئلة', get_post_type_archive_link( 'zad_faq' ) ), array( single_term_title( '', false ), '' ) );
+		return array( $h, array( 'الأسئلة', zad_faq_url() ), array( single_term_title( '', false ), '' ) );
 	}
 	if ( is_home() && ! is_front_page() ) {
 		return array( $h, array( 'المدونة', '' ) );
@@ -123,6 +123,13 @@ function zad_current_crumbs() {
 	}
 	if ( is_author() ) {
 		return array( $h, array( get_the_author_meta( 'display_name', get_queried_object_id() ), '' ) );
+	}
+	if ( zad_is_article() && ! is_singular( 'post' ) ) {
+		$o = get_post_type_object( get_post_type() );
+		return array( $h, array( $o ? $o->labels->name : '', get_post_type_archive_link( get_post_type() ) ?: '' ), array( get_the_title(), '' ) );
+	}
+	if ( is_post_type_archive( zad_article_types() ) ) {
+		return array( $h, array( post_type_archive_title( '', false ), '' ) );
 	}
 	if ( is_singular( 'post' ) ) {
 		$c = array( $h );
@@ -345,7 +352,7 @@ add_action( 'wp_head', function () {
 	}
 	zad_print_schema( zad_graph() );
 
-	if ( is_singular( 'zad_service' ) ) {
+	if ( zad_is_service() ) {
 		$id = get_queried_object_id();
 		zad_print_schema( zad_service_schema( $id ) );
 

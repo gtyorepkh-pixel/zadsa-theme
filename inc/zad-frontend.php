@@ -42,7 +42,7 @@ function zad_services_sidebar( $current_id = 0 ) {
 	echo '<nav class="sbar" aria-label="كل خدماتنا"><h3>كل خدماتنا</h3>';
 	if ( $cats && ! is_wp_error( $cats ) ) {
 		foreach ( $cats as $c ) {
-			$q = new WP_Query( array( 'post_type' => 'zad_service', 'posts_per_page' => 30, 'no_found_rows' => true, 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) ), 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
+			$q = new WP_Query( array( 'post_type' => zad_service_types(), 'posts_per_page' => 30, 'no_found_rows' => true, 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) ), 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
 			if ( ! $q->have_posts() ) {
 				continue;
 			}
@@ -71,7 +71,7 @@ function zad_mega_html() {
 	}
 	$out = '<div class="mega"><div class="mega__grid">';
 	foreach ( $cats as $c ) {
-		$q = new WP_Query( array( 'post_type' => 'zad_service', 'posts_per_page' => 8, 'no_found_rows' => true, 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) ), 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
+		$q = new WP_Query( array( 'post_type' => zad_service_types(), 'posts_per_page' => 8, 'no_found_rows' => true, 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) ), 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
 		if ( ! $q->have_posts() ) { continue; }
 		$ic   = get_term_meta( $c->term_id, 'zad_icon', true ) ?: 'sparkle';
 		$out .= '<div class="mega__col"><a class="mega__cat" href="' . esc_url( get_term_link( $c ) ) . '">' . zad_icon( $ic, 20 ) . esc_html( $c->name ) . '</a><ul>';
@@ -82,7 +82,7 @@ function zad_mega_html() {
 		$out .= '</ul></div>';
 		wp_reset_postdata();
 	}
-	$out .= '</div><a class="mega__all" href="' . esc_url( get_post_type_archive_link( 'zad_service' ) ) . '">كل الخدمات ' . zad_icon( 'arrow', 16 ) . '</a></div>';
+	$out .= '</div><a class="mega__all" href="' . esc_url( zad_services_url() ) . '">كل الخدمات ' . zad_icon( 'arrow', 16 ) . '</a></div>';
 	return $out;
 }
 
@@ -135,7 +135,7 @@ add_action( 'add_meta_boxes', function () {
 		wp_nonce_field( 'zad_post_service', 'zad_ps_nonce' );
 		$cur = (int) get_post_meta( $post->ID, '_zad_post_service', true );
 		echo '<select name="zad_post_service" style="width:100%"><option value="">—</option>';
-		foreach ( get_posts( array( 'post_type' => 'zad_service', 'numberposts' => 200, 'orderby' => 'title', 'order' => 'ASC' ) ) as $s ) {
+		foreach ( get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 200, 'orderby' => 'title', 'order' => 'ASC' ) ) as $s ) {
 			echo '<option value="' . (int) $s->ID . '"' . selected( $cur, $s->ID, false ) . '>' . esc_html( $s->post_title ) . '</option>';
 		}
 		echo '</select><p class="description">تظهر بطاقة الخدمة تحت المقال.</p>';
@@ -150,7 +150,7 @@ add_action( 'save_post_post', function ( $id ) {
 
 /* Table of contents for articles with 3+ headings */
 add_filter( 'the_content', function ( $content ) {
-	if ( ! is_singular( array( 'post', 'zad_faq' ) ) || ! in_the_loop() || ! is_main_query() ) {
+	if ( ! ( is_singular( 'post' ) || zad_is_faq() || zad_is_article() ) || ! in_the_loop() || ! is_main_query() ) {
 		return $content;
 	}
 	$n   = 0;

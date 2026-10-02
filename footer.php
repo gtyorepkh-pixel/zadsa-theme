@@ -1,6 +1,6 @@
 <?php defined( 'ABSPATH' ) || exit;
-$phone = zad_phone( is_singular( 'zad_service' ) ? get_the_ID() : 0 );
-$wa    = zad_wa_link( is_singular( 'zad_service' ) ? 'مرحباً، أرغب بطلب خدمة: ' . get_the_title() : 'مرحباً، أرغب بطلب خدمة', is_singular( 'zad_service' ) ? get_the_ID() : 0 );
+$phone = zad_phone( zad_is_service() ? get_the_ID() : 0 );
+$wa    = zad_wa_link( zad_is_service() ? 'مرحباً، أرغب بطلب خدمة: ' . get_the_title() : 'مرحباً، أرغب بطلب خدمة', zad_is_service() ? get_the_ID() : 0 );
 $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'number' => 8, 'parent' => 0 ) );
 ?>
 <footer class="ftr">

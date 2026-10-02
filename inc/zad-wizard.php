@@ -2,13 +2,13 @@
 /** Booking wizard (3 steps) shown in a drawer; opened by any [data-open-wizard]. */
 
 add_action( 'wp_footer', function () {
-	$services = get_posts( array( 'post_type' => 'zad_service', 'numberposts' => 100, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
+	$services = get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 100, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
 	if ( ! $services ) {
 		return;
 	}
 	$cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true ) );
 	$areas = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
-	$cur   = is_singular( 'zad_service' ) ? get_the_ID() : 0;
+	$cur   = zad_is_service() ? get_the_ID() : 0;
 	$map   = array();
 	foreach ( $services as $s ) {
 		$t = get_the_terms( $s->ID, 'service_cat' );

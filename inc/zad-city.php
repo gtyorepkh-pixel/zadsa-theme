@@ -10,15 +10,17 @@ add_filter( 'query_vars', function ( $v ) {
 } );
 
 add_action( 'init', function () {
-	$base = zad_slug( 'zad_services_slug', 'services' );
-	add_rewrite_rule( '^' . preg_quote( $base, '#' ) . '/([^/]+)/(?!attachment|feed|embed|page|trackback|comment-page)([^/]+)/?$', 'index.php?post_type=zad_service&zad_service=$matches[1]&zad_city=$matches[2]', 'top' );
-}, 12 );
+	foreach ( zad_service_types() as $pt ) {
+		$base = zad_type_base( $pt );
+		add_rewrite_rule( '^' . preg_quote( $base, '#' ) . '/([^/]+)/(?!attachment|feed|embed|page|trackback|comment-page)([^/]+)/?$', 'index.php?post_type=' . $pt . '&name=$matches[1]&zad_city=$matches[2]', 'top' );
+	}
+}, 60 );
 
 /** Current city term for a city landing page, or null. */
 function zad_current_city() {
 	static $cache = array();
 	$slug = get_query_var( 'zad_city' );
-	if ( ! $slug || ! is_singular( 'zad_service' ) ) {
+	if ( ! $slug || ! zad_is_service() ) {
 		return null;
 	}
 	$id = get_queried_object_id();
@@ -37,7 +39,7 @@ function zad_current_city() {
 
 /** 404 when the city does not belong to the service. */
 add_action( 'template_redirect', function () {
-	if ( get_query_var( 'zad_city' ) && is_singular( 'zad_service' ) && ! zad_current_city() ) {
+	if ( get_query_var( 'zad_city' ) && zad_is_service() && ! zad_current_city() ) {
 		global $wp_query;
 		$wp_query->set_404();
 		status_header( 404 );

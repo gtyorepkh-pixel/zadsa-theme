@@ -165,13 +165,24 @@ function zad_business_schema() {
 
 /** Breadcrumb trail as [ [label, url], ... ] for service pages. */
 function zad_service_crumbs( $post_id ) {
-	$crumbs = array( array( 'الرئيسية', home_url( '/' ) ), array( 'الخدمات', get_post_type_archive_link( 'zad_service' ) ) );
-	$terms  = get_the_terms( $post_id, 'service_cat' );
-	if ( $terms && ! is_wp_error( $terms ) ) {
-		$crumbs[] = array( $terms[0]->name, get_term_link( $terms[0] ) );
+	$pt    = get_post_type( $post_id );
+	$crumb = array( array( 'الرئيسية', home_url( '/' ) ) );
+	if ( 'zad_service' === $pt ) {
+		$crumb[] = array( 'الخدمات', zad_services_url() );
+		$terms   = get_the_terms( $post_id, 'service_cat' );
+		if ( $terms && ! is_wp_error( $terms ) ) {
+			$crumb[] = array( $terms[0]->name, get_term_link( $terms[0] ) );
+		}
+	} else {
+		// Adopted type: Home > Type (archive) > Service.
+		$o = get_post_type_object( $pt );
+		$l = get_post_type_archive_link( $pt );
+		if ( $o ) {
+			$crumb[] = array( $o->labels->name, $l ? $l : '' );
+		}
 	}
-	$crumbs[] = array( get_the_title( $post_id ), '' );
-	return $crumbs;
+	$crumb[] = array( get_the_title( $post_id ), '' );
+	return $crumb;
 }
 
 function zad_render_crumbs( $crumbs ) {
@@ -235,4 +246,15 @@ function zad_min_price( $rows ) {
 		}
 	}
 	return $min;
+}
+
+/** Pagination for a given query (falls back to the main one). */
+function zad_pagination( $q = null ) {
+	$q   = $q ? $q : $GLOBALS['wp_query'];
+	$max = (int) $q->max_num_pages;
+	if ( $max < 2 ) {
+		return '';
+	}
+	$cur = max( 1, (int) get_query_var( 'paged' ), (int) get_query_var( 'page' ) );
+	return '<div class="pagination">' . paginate_links( array( 'total' => $max, 'current' => $cur, 'mid_size' => 1, 'end_size' => 2, 'prev_text' => '›', 'next_text' => '‹' ) ) . '</div>';
 }
