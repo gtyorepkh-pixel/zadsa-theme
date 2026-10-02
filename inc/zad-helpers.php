@@ -281,7 +281,13 @@ function zad_reading_time( $post = null ) {
 
 /** Working hours text shown in header/footer/contact/about. */
 function zad_hours_text() {
-	return zad_opt( 'zad_hours', 'من 8 صباحاً إلى 10 مساءً طوال أيام الأسبوع' );
+	$def = 'من 8 صباحاً إلى 10 مساءً طوال أيام الأسبوع';
+	$v   = trim( (string) zad_opt( 'zad_hours', $def ) );
+	// An older saved default ("نخدمكم 24 ساعة…") must not keep overriding the real hours.
+	if ( '' === $v || false !== mb_strpos( $v, 'نخدمكم 24', 0, 'UTF-8' ) ) {
+		return $def;
+	}
+	return $v;
 }
 
 
