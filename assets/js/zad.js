@@ -409,4 +409,16 @@
 		if (more) { more.addEventListener('click', function () { revealed = true; paint(); }); }
 		paint();
 	}
+
+	/* ---- Sitemap: live search ---- */
+	$$('[data-smx]').forEach(function (box) {
+		var input = $('[data-smx-search]', box), none = $('[data-smx-none]', box);
+		if (!input) { return; }
+		input.addEventListener('input', function () {
+			var q = input.value.trim().toLowerCase(), any = false;
+			$$('.smx__row', box).forEach(function (r) { var ok = !q || r.textContent.toLowerCase().indexOf(q) > -1; r.hidden = !ok; if (ok) { any = true; } });
+			$$('.smx__sec', box).forEach(function (sec) { sec.hidden = !!q && !$$('.smx__row:not([hidden])', sec).length; });
+			if (none) { none.hidden = any; }
+		});
+	});
 })();

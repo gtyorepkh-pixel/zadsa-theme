@@ -529,25 +529,7 @@ add_action( 'init', function () {
 		return;
 	}
 	add_shortcode( 'zad_site_map', function () {
-		$out = '';
-		$sec = function ( $title, $items ) use ( &$out ) {
-			if ( ! $items ) { return; }
-			$out .= '<section><h2>' . esc_html( $title ) . '</h2><ul class="smap">';
-			foreach ( $items as $u => $l ) { $out .= '<li><a href="' . esc_url( $u ) . '">' . esc_html( $l ) . '</a></li>'; }
-			$out .= '</ul></section>';
-		};
-		$pages = array();
-		foreach ( get_pages( array( 'sort_column' => 'menu_order,post_title' ) ) as $p ) { $pages[ get_permalink( $p ) ] = $p->post_title; }
-		$sec( 'الصفحات الأساسية', $pages );
-		$types = array_merge( zad_service_types(), zad_faq_types(), zad_article_types(), array( 'post' ) );
-		foreach ( array_unique( $types ) as $pt ) {
-			$o = get_post_type_object( $pt );
-			if ( ! $o ) { continue; }
-			$it = array();
-			foreach ( get_posts( array( 'post_type' => $pt, 'numberposts' => 500, 'orderby' => 'title', 'order' => 'ASC' ) ) as $p ) { $it[ get_permalink( $p ) ] = $p->post_title; }
-			$sec( $o->labels->name, $it );
-		}
-		return '<div class="zad-site-map">' . $out . '</div>';
+		return zad_sitemap_html();
 	} );
 } );
 
