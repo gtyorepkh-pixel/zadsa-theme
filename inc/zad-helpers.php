@@ -14,6 +14,13 @@ function zad_opt( $key, $default = '' ) {
 	if ( isset( $opts[ $key ] ) && '' !== $opts[ $key ] && array() !== $opts[ $key ] ) {
 		return $opts[ $key ];
 	}
+	// Home-page content that is true for any site on this theme (computed live; see zad-home-defaults.php).
+	if ( function_exists( 'zad_home_default' ) ) {
+		$hd = zad_home_default( $key );
+		if ( null !== $hd ) {
+			return $hd;
+		}
+	}
 	// Company data never saved in the options falls back to the validated values (footer, contact, about, schema).
 	if ( '' === $default && function_exists( 'zsc_opt_defaults' ) ) {
 		$d = zsc_opt_defaults();
