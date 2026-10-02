@@ -12,6 +12,8 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_service_slugs', 'type' => 'text', 'title' => 'أنواع تُعرض بتصميم «الخدمة»', 'default' => 'pest-control,cleaning,moving', 'desc' => 'روابط الأنواع (CPT) مفصولة بفاصلة. مثال: pest-control,cleaning,moving' ),
 		array( 'id' => 'zad_faq_slugs', 'type' => 'text', 'title' => 'أنواع تُعرض بتصميم «السؤال»', 'default' => 'faq' ),
 		array( 'id' => 'zad_article_slugs', 'type' => 'text', 'title' => 'أنواع تُعرض بتصميم «المقال»', 'default' => 'sections,guide' ),
+		array( 'id' => 'zad_faq_autolink', 'type' => 'switcher', 'title' => 'ربط الأسئلة بالخدمات تلقائياً', 'default' => true, 'desc' => 'عند حفظ سؤال غير مربوط يُربط بأقرب خدمة بحسب الكلمات المتشابهة. وللأسئلة الموجودة استخدم: الأدوات ← ربط الأسئلة بالخدمات.' ),
+		array( 'id' => 'zad_faq_default_service', 'type' => 'select', 'title' => 'خدمة افتراضية للأسئلة غير المطابقة', 'options' => 'posts', 'query_args' => array( 'post_type' => zad_service_types(), 'posts_per_page' => -1 ), 'placeholder' => 'بدون' ),
 		array( 'id' => 'zad_services_slug', 'type' => 'text', 'title' => 'رابط الخدمات', 'default' => 'services', 'desc' => 'مثال: yourdomain.com/<b>services</b>/اسم-الخدمة — أحرف إنجليزية وشرطات فقط. يتحدّث الرابط تلقائياً بعد الحفظ.' ),
 		array( 'id' => 'zad_areas_slug', 'type' => 'text', 'title' => 'رابط المدن والأحياء', 'default' => 'areas' ),
 		array( 'id' => 'zad_faq_slug', 'type' => 'text', 'title' => 'رابط الأسئلة', 'default' => 'faq' ),
