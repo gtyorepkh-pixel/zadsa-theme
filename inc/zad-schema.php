@@ -56,7 +56,7 @@ function zad_knows_about() {
 
 function zad_opening_hours() {
 	$out = array();
-	foreach ( zad_lines( zad_opt( 'zad_hours_spec', "Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday | 09:00 | 22:30\nFriday | 16:00 | 22:30" ) ) as $l ) {
+	foreach ( zad_lines( zad_opt( 'zad_hours_spec', "Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday | 08:00 | 22:00" ) ) as $l ) {
 		$c = array_map( 'trim', explode( '|', $l ) );
 		if ( count( $c ) >= 3 ) {
 			$days = array_values( array_filter( array_map( 'trim', explode( ',', $c[0] ) ) ) );

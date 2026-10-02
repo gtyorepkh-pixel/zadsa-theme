@@ -277,3 +277,9 @@ function zad_reading_time( $post = null ) {
 	$w = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $post ) ), 0, 'ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىيًٌٍَُِّْ' );
 	return max( 1, (int) ceil( $w / 180 ) );
 }
+
+
+/** Working hours text shown in header/footer/contact/about. */
+function zad_hours_text() {
+	return zad_opt( 'zad_hours', 'من 8 صباحاً إلى 10 مساءً طوال أيام الأسبوع' );
+}

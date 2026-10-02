@@ -21,7 +21,7 @@ $phone = zad_opt( 'memopt_phone' );
 	<div class="topbar">
 		<div class="wrap topbar__in">
 			<span class="topbar__hours trust">
-				<span><?php echo zad_icon( 'clock', 16 ); // phpcs:ignore ?> <?php echo esc_html( zad_opt( 'zad_hours', 'نخدمكم 24 ساعة طوال أيام الأسبوع' ) ); ?></span>
+				<span><?php echo zad_icon( 'clock', 16 ); // phpcs:ignore ?> <?php echo esc_html( zad_hours_text() ); ?></span>
 				<?php if ( zad_opt( 'zad_rating_text' ) ) : ?><span><?php echo zad_icon( 'star', 16 ); // phpcs:ignore ?> <?php echo esc_html( zad_opt( 'zad_rating_text' ) ); ?></span><?php endif; ?>
 				<?php if ( zad_opt( 'zad_since' ) ) : ?><span><?php echo zad_icon( 'badge', 16 ); // phpcs:ignore ?> منذ <?php echo esc_html( zad_opt( 'zad_since' ) ); ?></span><?php endif; ?>
 			</span>

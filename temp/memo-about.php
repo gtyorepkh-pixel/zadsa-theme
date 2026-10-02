@@ -123,7 +123,7 @@ get_template_part( 'template-parts/page-hero', null, array(
 		<?php if ( zad_opt( 'zad_cr' ) || zad_opt( 'zad_vat' ) ) : ?>
 		<header class="sec__head"><span class="eyebrow">شركة موثّقة</span><h2>بياناتنا الرسمية</h2></header>
 		<dl class="info">
-			<?php foreach ( array( 'الاسم النظامي' => zad_opt( 'zad_legal_name' ), 'السجل التجاري' => zad_opt( 'zad_cr' ), 'الرقم الضريبي' => zad_opt( 'zad_vat' ), 'العنوان' => zad_opt( 'memopt_address' ), 'ساعات العمل' => zad_opt( 'zad_hours' ) ) as $k => $v ) { if ( $v ) { echo '<div><dt>' . esc_html( $k ) . '</dt><dd>' . esc_html( $v ) . '</dd></div>'; } } ?>
+			<?php foreach ( array( 'الاسم النظامي' => zad_opt( 'zad_legal_name' ), 'السجل التجاري' => zad_opt( 'zad_cr' ), 'الرقم الضريبي' => zad_opt( 'zad_vat' ), 'العنوان' => zad_opt( 'memopt_address' ), 'ساعات العمل' => zad_hours_text() ) as $k => $v ) { if ( $v ) { echo '<div><dt>' . esc_html( $k ) . '</dt><dd>' . esc_html( $v ) . '</dd></div>'; } } ?>
 		</dl>
 		<?php endif; ?>
 	</div>

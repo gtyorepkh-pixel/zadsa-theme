@@ -46,11 +46,11 @@ $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'n
 			</div>
 		</div>
 	</div>
-	<?php if ( zad_opt( 'zad_cr' ) || zad_opt( 'zad_vat' ) ) : ?>
+	<?php if ( zad_opt( 'zad_cr' ) || zad_opt( 'zad_vat' ) || zad_hours_text() ) : ?>
 	<div class="wrap ftr__badges">
 		<?php if ( zad_opt( 'zad_cr' ) ) : ?><div class="ftr__badge"><?php echo zad_icon( 'badge', 26 ); // phpcs:ignore ?><div><b>السجل التجاري</b><span dir="ltr"><?php echo esc_html( zad_opt( 'zad_cr' ) ); ?></span></div></div><?php endif; ?>
 		<?php if ( zad_opt( 'zad_vat' ) ) : ?><div class="ftr__badge"><?php echo zad_icon( 'shield', 26 ); // phpcs:ignore ?><div><b>ضريبة القيمة المضافة</b><span dir="ltr"><?php echo esc_html( zad_opt( 'zad_vat' ) ); ?></span></div></div><?php endif; ?>
-		<?php if ( zad_opt( 'zad_hours' ) ) : ?><div class="ftr__badge"><?php echo zad_icon( 'clock', 26 ); // phpcs:ignore ?><div><b>ساعات العمل</b><span><?php echo esc_html( zad_opt( 'zad_hours' ) ); ?></span></div></div><?php endif; ?>
+		<?php if ( zad_hours_text() ) : ?><div class="ftr__badge"><?php echo zad_icon( 'clock', 26 ); // phpcs:ignore ?><div><b>ساعات العمل</b><span><?php echo esc_html( zad_hours_text() ); ?></span></div></div><?php endif; ?>
 	</div>
 	<?php endif; ?>
 	<?php if ( zad_opt( 'zad_legal_name' ) ) : ?><div class="wrap"><p class="ftr__legalname"><?php echo esc_html( zad_opt( 'zad_legal_name' ) ); ?></p></div><?php endif; ?>

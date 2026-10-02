@@ -249,7 +249,7 @@ while ( have_posts() ) :
 				'نطاق السعر'     => $min ? 'من ' . number_format_i18n( $min ) . ' ' . $unit : '',
 				'مدة التنفيذ'    => $m( 'duration' ),
 				'الضمان'         => $m( 'warranty' ),
-				'ساعات العمل'    => zad_opt( 'zad_hours' ),
+				'ساعات العمل'    => zad_hours_text(),
 			);
 			foreach ( zad_lines( $m( 'spec' ) ) as $l ) {
 				$c = array_map( 'trim', explode( '|', $l ) );
