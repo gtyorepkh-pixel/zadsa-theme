@@ -1,5 +1,14 @@
 (function () {
 	'use strict';
+	var lf = document.querySelector('[data-listen-file]');
+	if (lf) {
+		var au = lf.querySelector('audio'), rs = lf.querySelector('[data-lf-rate]'), sv = 1;
+		try { sv = parseFloat(localStorage.getItem('zad-listen-rate')) || 1; } catch (e) {}
+		rs.value = String(sv); au.playbackRate = sv;
+		rs.addEventListener('change', function () { au.playbackRate = parseFloat(rs.value) || 1; try { localStorage.setItem('zad-listen-rate', rs.value); } catch (e) {} });
+		au.addEventListener('play', function () { au.playbackRate = parseFloat(rs.value) || 1; });
+		return;
+	}
 	var box = document.querySelector('[data-listen]');
 	if (!box || !('speechSynthesis' in window) || !window.SpeechSynthesisUtterance) { return; }
 	var synth = window.speechSynthesis, voice = null, blocks = [], chunks = [], pos = 0, state = 'idle', rate = 1;
