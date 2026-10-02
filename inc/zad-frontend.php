@@ -5,8 +5,12 @@ add_action( 'wp_head', function () {
 	$p = sanitize_hex_color( zad_opt( 'zad_color_primary', '#0b4f5c' ) ) ?: '#0b4f5c';
 	$a = sanitize_hex_color( zad_opt( 'zad_color_accent', '#f59e0b' ) ) ?: '#f59e0b';
 	$c = function ( $k, $d ) { return sanitize_hex_color( zad_opt( $k, $d ) ) ?: $d; };
-	$h = '--hdr-bg:' . $c( 'zad_hdr_bg', '#faf6ee' ) . ';--hdr-ink:' . $c( 'zad_hdr_ink', '#0a3947' ) . ';--hdr-cta:' . $c( 'zad_hdr_cta', '#a94e1c' ) . ';--topbar-bg:' . $c( 'zad_topbar_bg', '#0a3947' )
+	$h = '--hdr-bg:' . $c( 'zad_hdr_bg', '#0c687e' ) . ';--hdr-ink:' . $c( 'zad_hdr_ink', '#ffffff' ) . ';--hdr-cta:' . $c( 'zad_hdr_cta', '#f49400' ) . ';--topbar-bg:' . $c( 'zad_topbar_bg', '#074250' )
 		. ';--ftr-bg:' . $c( 'zad_ftr_bg', '#0a3947' ) . ';--ftr-head:' . $c( 'zad_ftr_head', '#3fbfae' ) . ';--ftr-ink:' . $c( 'zad_ftr_ink', '#b4c2c6' );
+	$cta = ltrim( $c( 'zad_hdr_cta', '#f49400' ), '#' );
+	$cta = strlen( $cta ) === 3 ? preg_replace( '/(.)/', '$1$1', $cta ) : $cta;
+	$lum = ( hexdec( substr( $cta, 0, 2 ) ) * 0.299 + hexdec( substr( $cta, 2, 2 ) ) * 0.587 + hexdec( substr( $cta, 4, 2 ) ) * 0.114 ) / 255;
+	$h  .= ';--hdr-cta-ink:' . ( $lum > 0.55 ? '#1a1200' : '#ffffff' );
 	echo '<style id="zad-vars">:root{--primary:' . $p . ';--accent:' . $a . ';' . $h . '}</style>' . "\n"; // phpcs:ignore
 	echo '<meta name="theme-color" content="' . esc_attr( $p ) . '">' . "\n";
 }, 5 );
