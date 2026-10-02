@@ -11,12 +11,8 @@
 
 /* ---------- 1. Company data (defaults = the validated values; filter 'zsc_settings') ---------- */
 
-function zsc_settings() {
-	static $s = null;
-	if ( null !== $s ) {
-		return $s;
-	}
-	$s = array(
+function zsc_defaults() {
+	return array(
 		'authors'  => array(
 			'mahmoud' => array(
 				'name'        => 'محمود القحطاني',
@@ -58,12 +54,82 @@ function zsc_settings() {
 			'knows_about'   => array( 'مكافحة الحشرات', 'تنظيف الخزانات', 'تنظيف وصيانة المكيفات', 'تنظيف الكنب والمفروشات', 'تنظيف المنازل', 'نقل الأثاث', 'تخزين الأثاث', 'جلي البلاط والرخام', 'تسليك المجاري' ),
 		),
 	);
-	$map = function_exists( 'zad_opt' ) ? zad_opt( 'zad_map_url' ) : '';
-	if ( $map ) {
-		$s['business']['has_map'] = $map;
+}
+
+
+/** Authors option: one per line  slug | name | job title | credential | topics (; separated) | description */
+function zsc_parse_authors( $text, $fallback ) {
+	$out = array();
+	foreach ( zad_lines( $text ) as $l ) {
+		$c = array_pad( array_map( 'trim', explode( '|', $l ) ), 6, '' );
+		if ( '' === $c[0] ) { continue; }
+		$out[ $c[0] ] = array( 'name' => $c[1], 'job_title' => $c[2], 'credential' => $c[3], 'knows_about' => array_values( array_filter( array_map( 'trim', preg_split( '/[;؛]/u', $c[4] ) ) ) ), 'description' => $c[5], 'same_as' => array(), 'image' => '' );
 	}
-	$s = apply_filters( 'zsc_settings', $s );
-	return $s;
+	return $out ? $out : $fallback;
+}
+
+/** Company/schema settings: values saved in the theme options win; the validated plugin values are the defaults. */
+function zsc_settings() {
+	static $s = null;
+	if ( null !== $s ) {
+		return $s;
+	}
+	$s = zsc_defaults();
+	$b = $s['business'];
+
+	$b['name']        = zad_opt( 'zad_org_name', $b['name'] );
+	$b['legal_name']  = zad_opt( 'zad_legal_name', $b['legal_name'] );
+	$b['alternate']   = zad_opt( 'zad_alt_name', $b['alternate'] );
+	$b['description'] = zad_opt( 'zad_site_desc', $b['description'] );
+	$logo = zad_opt( 'memopt_logo' );
+	if ( is_array( $logo ) && ! empty( $logo['url'] ) ) { $b['logo'] = $logo['url']; }
+	$ph = zad_intl_number( zad_opt( 'memopt_phone' ) );
+	if ( $ph ) { $b['telephone'] = '+' . $ph; }
+	$b['email']       = zad_opt( 'memopt_mail', $b['email'] );
+	$pr = zad_opt( 'zad_price_range', '' );
+	$b['price_range'] = ( '' !== $pr && '100–500 ر.س' !== $pr ) ? $pr : $b['price_range']; // old theme default is not real data
+	$b['vat']         = zad_opt( 'zad_vat', $b['vat'] );
+	$b['cr']          = zad_opt( 'zad_cr', $b['cr'] );
+	$street           = zad_opt( 'zad_street', '' );
+	$b['street']      = '' !== $street ? trim( $street . ( zad_opt( 'zad_district' ) ? '، ' . zad_opt( 'zad_district' ) : '' ) ) : $b['street'];
+	$b['locality']    = zad_opt( 'zad_city_name', $b['locality'] );
+	$b['region']      = zad_opt( 'zad_region', $b['region'] );
+	$b['postal_code'] = zad_opt( 'zad_postal', $b['postal_code'] );
+	$b['lat']         = (float) zad_opt( 'zad_lat', $b['lat'] );
+	$b['lng']         = (float) zad_opt( 'zad_lng', $b['lng'] );
+	$b['has_map']     = zad_opt( 'zad_map_url', $b['has_map'] );
+	$b['image_license'] = zad_opt( 'zad_img_license', $b['image_license'] );
+	$b['image_acquire'] = zad_opt( 'zad_img_acquire', $b['image_acquire'] );
+
+	$same = array();
+	foreach ( array( 'memopt_fb', 'memopt_tw', 'memopt_insta', 'memopt_yt', 'zad_linkedin', 'zad_pinterest', 'zad_tiktok', 'zad_snapchat' ) as $k ) {
+		$u = zad_opt( $k );
+		if ( $u && preg_match( '#^https?://#', $u ) ) { $same[] = $u; }
+	}
+	if ( $same ) { $b['same_as'] = $same; }
+
+	$areas = array();
+	foreach ( zad_lines( zad_opt( 'zad_area_served', '' ) ) as $l ) {
+		$c = array_map( 'trim', explode( '|', $l ) );
+		$areas[] = 2 === count( $c ) ? array( $c[0], $c[1] ) : array( 'City', $c[0] );
+	}
+	if ( $areas ) { $b['area_served'] = $areas; }
+
+	$hours = array();
+	$hs = zad_opt( 'zad_hours_spec', '' );
+	if ( false !== strpos( $hs, 'Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday | 08:00 | 22:00' ) && 1 === count( zad_lines( $hs ) ) ) { $hs = ''; } // old theme default
+	foreach ( zad_lines( $hs ) as $l ) {
+		$c = array_map( 'trim', explode( '|', $l ) );
+		if ( count( $c ) >= 3 ) { $hours[] = array( array_values( array_filter( array_map( 'trim', explode( ',', $c[0] ) ) ) ), $c[1], $c[2] ); }
+	}
+	if ( $hours ) { $b['hours'] = $hours; }
+
+	$know = array_values( array_filter( zad_lines( zad_opt( 'zad_knows_about', '' ) ) ) );
+	if ( $know ) { $b['knows_about'] = $know; }
+
+	$s['business'] = $b;
+	$s['authors']  = zsc_parse_authors( zad_opt( 'zad_authors', '' ), $s['authors'] );
+	return apply_filters( 'zsc_settings', $s );
 }
 
 /* ---------- 2. Automatic detection from title / URL ---------- */

@@ -97,29 +97,45 @@ CSF::createSection( $zad_prefix, array(
 	),
 ) );
 
+$zd = zsc_defaults();
+$zb = $zd['business'];
+$zhours = array();
+foreach ( $zb['hours'] as $h ) { $zhours[] = implode( ',', $h[0] ) . ' | ' . $h[1] . ' | ' . $h[2]; }
+$zarea = array();
+foreach ( $zb['area_served'] as $x ) { $zarea[] = $x[0] . ' | ' . $x[1]; }
+$zauth = array();
+foreach ( $zd['authors'] as $slug => $au ) { $zauth[] = $slug . ' | ' . $au['name'] . ' | ' . $au['job_title'] . ' | ' . $au['credential'] . ' | ' . implode( '؛ ', $au['knows_about'] ) . ' | ' . $au['description']; }
+
 CSF::createSection( $zad_prefix, array(
 	'title'  => 'بيانات الشركة والسكيما',
 	'fields' => array(
-		array( 'type' => 'subheading', 'content' => 'تُستخدم في بيانات Google المنظّمة (Schema) وفي الفوتر وصفحة الاتصال.' ),
-		array( 'id' => 'zad_legal_name', 'type' => 'text', 'title' => 'الاسم النظامي للشركة' ),
-		array( 'id' => 'zad_cr', 'type' => 'text', 'title' => 'رقم السجل التجاري' ),
-		array( 'id' => 'zad_vat', 'type' => 'text', 'title' => 'الرقم الضريبي (VAT)' ),
-		array( 'id' => 'zad_street', 'type' => 'text', 'title' => 'الشارع ورقم المبنى', 'default' => '' ),
-		array( 'id' => 'zad_district', 'type' => 'text', 'title' => 'الحي', 'default' => '' ),
-		array( 'id' => 'zad_city_name', 'type' => 'text', 'title' => 'المدينة', 'default' => 'الرياض' ),
-		array( 'id' => 'zad_region', 'type' => 'text', 'title' => 'المنطقة', 'default' => 'منطقة الرياض' ),
-		array( 'id' => 'zad_postal', 'type' => 'text', 'title' => 'الرمز البريدي' ),
-		array( 'id' => 'zad_lat', 'type' => 'text', 'title' => 'خط العرض (Latitude)', 'desc' => 'مثال: 24.6584739 — انسخه من خرائط Google.' ),
-		array( 'id' => 'zad_lng', 'type' => 'text', 'title' => 'خط الطول (Longitude)', 'desc' => 'مثال: 46.8421882' ),
+		array( 'type' => 'subheading', 'content' => 'تُستخدم في بيانات Google المنظّمة (Schema) وفي الفوتر وصفحة الاتصال. القيم المعبّأة مسبقاً هي بيانات شركتك المعتمدة؛ عدّلها هنا فقط.' ),
+		array( 'id' => 'zad_org_name', 'type' => 'text', 'title' => 'اسم المنشأة الكامل', 'default' => $zb['name'] ),
+		array( 'id' => 'zad_legal_name', 'type' => 'text', 'title' => 'الاسم النظامي للشركة', 'default' => $zb['legal_name'] ),
+		array( 'id' => 'zad_alt_name', 'type' => 'text', 'title' => 'الاسم المختصر', 'default' => $zb['alternate'] ),
+		array( 'id' => 'zad_cr', 'type' => 'text', 'title' => 'رقم السجل التجاري', 'default' => $zb['cr'] ),
+		array( 'id' => 'zad_vat', 'type' => 'text', 'title' => 'الرقم الضريبي (VAT)', 'default' => $zb['vat'] ),
+		array( 'id' => 'zad_street', 'type' => 'text', 'title' => 'الشارع ورقم المبنى', 'default' => '2851 شارع عبدالملك بن مروان' ),
+		array( 'id' => 'zad_district', 'type' => 'text', 'title' => 'الحي', 'default' => 'حي العليا' ),
+		array( 'id' => 'zad_city_name', 'type' => 'text', 'title' => 'المدينة', 'default' => $zb['locality'] ),
+		array( 'id' => 'zad_region', 'type' => 'text', 'title' => 'المنطقة', 'default' => $zb['region'] ),
+		array( 'id' => 'zad_postal', 'type' => 'text', 'title' => 'الرمز البريدي', 'default' => $zb['postal_code'] ),
+		array( 'id' => 'zad_lat', 'type' => 'text', 'title' => 'خط العرض (Latitude)', 'default' => (string) $zb['lat'], 'desc' => 'انسخه من خرائط Google.' ),
+		array( 'id' => 'zad_lng', 'type' => 'text', 'title' => 'خط الطول (Longitude)', 'default' => (string) $zb['lng'] ),
 		array( 'id' => 'zad_map_url', 'type' => 'text', 'title' => 'رابط موقعك في خرائط Google (hasMap)' ),
-		array( 'id' => 'zad_hours_spec', 'type' => 'textarea', 'title' => 'ساعات العمل للسكيما', 'desc' => 'سطر لكل فترة: الأيام بالإنجليزية مفصولة بفاصلة | من | إلى', 'default' => "Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday | 08:00 | 22:00" ),
-		array( 'id' => 'zad_price_range', 'type' => 'text', 'title' => 'نطاق الأسعار (priceRange)', 'desc' => 'مثال: 100–500 ر.س — يظهر في بيانات Google ويزيل تنبيه «priceRange غير مضمّن».', 'default' => '100–500 ر.س' ),
+		array( 'id' => 'zad_hours_spec', 'type' => 'textarea', 'title' => 'ساعات العمل للسكيما', 'desc' => 'سطر لكل فترة: الأيام بالإنجليزية مفصولة بفاصلة | من | إلى', 'default' => implode( "\n", $zhours ) ),
+		array( 'id' => 'zad_price_range', 'type' => 'text', 'title' => 'نطاق الأسعار (priceRange)', 'desc' => 'يظهر في بيانات Google ويزيل تنبيه «priceRange غير مضمّن».', 'default' => $zb['price_range'] ),
+		array( 'id' => 'zad_area_served', 'type' => 'textarea', 'title' => 'المدن ومناطق الخدمة', 'desc' => 'سطر لكل منطقة: النوع | الاسم  (النوع: City أو AdministrativeArea)', 'default' => implode( "\n", $zarea ) ),
+		array( 'id' => 'zad_knows_about', 'type' => 'textarea', 'title' => 'مجالات الخبرة (knowsAbout)', 'desc' => 'سطر لكل مجال.', 'default' => implode( "\n", $zb['knows_about'] ) ),
+		array( 'id' => 'zad_img_license', 'type' => 'text', 'title' => 'رابط ترخيص الصور', 'default' => $zb['image_license'] ),
+		array( 'id' => 'zad_img_acquire', 'type' => 'text', 'title' => 'رابط صفحة طلب ترخيص الصور', 'default' => $zb['image_acquire'] ),
+		array( 'id' => 'zad_authors', 'type' => 'textarea', 'title' => 'الكتّاب (لسكيما المقالات)', 'desc' => 'سطر لكل كاتب: اسم المستخدم في الرابط | الاسم | المسمى | المؤهل | مجالات (؛) | نبذة', 'default' => implode( "\n", $zauth ) ),
 		array( 'id' => 'zad_linkedin', 'type' => 'text', 'title' => 'لينكدإن' ),
 		array( 'id' => 'zad_pinterest', 'type' => 'text', 'title' => 'بينترست' ),
 		array( 'id' => 'zad_tiktok', 'type' => 'text', 'title' => 'تيك توك' ),
 		array( 'id' => 'zad_snapchat', 'type' => 'text', 'title' => 'سناب شات' ),
 		array( 'id' => 'zad_og_default', 'type' => 'media', 'title' => 'صورة المشاركة الافتراضية (OG)', 'desc' => '1200×630 تقريباً.' ),
-		array( 'id' => 'zad_site_desc', 'type' => 'textarea', 'title' => 'وصف الموقع (للسكيما والصفحة الرئيسية)' ),
+		array( 'id' => 'zad_site_desc', 'type' => 'textarea', 'title' => 'وصف الموقع (للسكيما والصفحة الرئيسية)', 'default' => $zb['description'] ),
 	),
 ) );
 

@@ -6,6 +6,18 @@
  */
 
 function zad_company() {
+	$b = zsc_settings()['business'];
+	$c = zad_company_raw();
+	// the validated company data fills whatever the theme options leave empty
+	$map = array( 'legal' => $b['legal_name'], 'phone' => $b['telephone'], 'email' => $b['email'], 'street' => $b['street'], 'city' => $b['locality'], 'region' => $b['region'], 'postal' => $b['postal_code'], 'lat' => $b['lat'], 'lng' => $b['lng'], 'cr' => $b['cr'], 'vat' => $b['vat'], 'desc' => $b['description'] );
+	foreach ( $map as $k => $v ) {
+		if ( empty( $c[ $k ] ) || ( 'legal' === $k && get_bloginfo( 'name' ) === $c[ $k ] ) ) { $c[ $k ] = $v; }
+	}
+	if ( ! $c['same'] ) { $c['same'] = $b['same_as']; }
+	return $c;
+}
+
+function zad_company_raw() {
 	$logo = zad_opt( 'memopt_logo' );
 	$logo = is_array( $logo ) ? $logo : array();
 	$w    = 0;
