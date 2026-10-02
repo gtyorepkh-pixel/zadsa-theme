@@ -9,6 +9,7 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_color_primary', 'type' => 'color', 'title' => 'اللون الأساسي', 'default' => '#0b2e3a' ),
 		array( 'id' => 'zad_color_accent', 'type' => 'color', 'title' => 'لون الأزرار (التمييز)', 'default' => '#f2b134' ),
 		array( 'type' => 'subheading', 'content' => 'الثقة والاستماع' ),
+		array( 'id' => 'zad_float_cards', 'type' => 'textarea', 'title' => 'بطاقات عائمة حول نموذج الخدمة', 'desc' => 'حتى ثلاثة أسطر: العنوان | الوصف | اسم الأيقونة (bolt, pin, star, shield, clock, check…). يمكن استخدام {city} و{years}. اكتب فقط ما هو صحيح في شركتك.', 'default' => "معاينة مجانية | قبل أي عمل | bolt\nتغطية | أحياء {city} | pin\n{years}+ سنة | خبرة موثوقة | star" ),
 		array( 'id' => 'zad_listen_on', 'type' => 'switcher', 'title' => 'زر «استمع إلى الصفحة»', 'default' => true, 'desc' => 'يقرأ المحتوى بصوت عربي من جهاز الزائر (بدون ملفات أو تكلفة). يختفي إن لم يتوفر صوت عربي.' ),
 		array( 'id' => 'zad_g_rating', 'type' => 'text', 'title' => 'تقييم خرائط جوجل (مثال: 4.9)', 'desc' => 'أدخل القيمة الحقيقية فقط. يظهر الشريط حين تُملأ الحقول الثلاثة.' ),
 		array( 'id' => 'zad_g_count', 'type' => 'text', 'title' => 'عدد المراجعات' ),

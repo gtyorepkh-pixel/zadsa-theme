@@ -325,3 +325,20 @@ function zad_query_pt() {
 	}
 	return is_string( $pt ) ? $pt : '';
 }
+
+/** Floating info cards around the service hero card: "title | sub | icon" lines (option zad_float_cards). */
+function zad_float_cards() {
+	$city  = zad_opt( 'zad_city_name', 'الرياض' );
+	$since = (int) zad_opt( 'zad_since', 0 );
+	$years = ( $since > 1980 && $since <= (int) gmdate( 'Y' ) ) ? (int) gmdate( 'Y' ) - $since : 0;
+	$def   = "معاينة مجانية | قبل أي عمل | bolt\nتغطية | أحياء {city} | pin\n{years}+ سنة | خبرة موثوقة | star";
+	$out   = array();
+	foreach ( zad_lines( zad_opt( 'zad_float_cards', $def ) ) as $l ) {
+		if ( false !== strpos( $l, '{years}' ) && ! $years ) { continue; }
+		$l = str_replace( array( '{city}', '{years}' ), array( $city, (string) $years ), $l );
+		$c = array_pad( array_map( 'trim', explode( '|', $l ) ), 3, '' );
+		if ( '' === $c[0] ) { continue; }
+		$out[] = array( $c[0], $c[1], in_array( $c[2], zad_icon_keys(), true ) ? $c[2] : 'check' );
+	}
+	return array_slice( $out, 0, 3 );
+}

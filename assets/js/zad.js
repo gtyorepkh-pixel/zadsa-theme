@@ -331,7 +331,7 @@
 			var price = opt.getAttribute('data-price');
 			out.textContent = price;
 			if (wa && box.dataset.wa) {
-				var text = 'مرحباً، أرغب بخدمة: ' + box.dataset.title + ' — ' + opt.text + ' (' + price + ')';
+				var text = 'مرحباً، أرغب بخدمة: ' + box.dataset.title + ' — ' + (opt.parentNode && opt.parentNode.label ? opt.parentNode.label + ': ' : '') + opt.text + ' (' + price + ')';
 				wa.setAttribute('href', 'https://wa.me/' + box.dataset.wa + '?text=' + encodeURIComponent(text));
 			}
 		});

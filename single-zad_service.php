@@ -92,9 +92,16 @@ while ( have_posts() ) :
 						<label class="fld"><span>اختر الخدمة المطلوبة</span>
 							<select data-est-select>
 								<option value="">اختر الخدمة المطلوبة…</option>
-								<?php foreach ( $prices as $i => $r ) : ?>
-									<option value="<?php echo (int) $i; ?>" data-price="<?php echo esc_attr( $r['price'] ); ?>"><?php echo esc_html( trim( $r['group'] . ' — ' . $r['name'], ' —' ) ); ?></option>
-								<?php endforeach; ?>
+								<?php
+								// Group the price list ("group | name | price") into <optgroup>s like a catalogue.
+								$by_group = array();
+								foreach ( $prices as $i => $r ) { $by_group[ $r['group'] ][ $i ] = $r; }
+								foreach ( $by_group as $gname => $rows ) :
+									if ( '' !== $gname ) { echo '<optgroup label="' . esc_attr( $gname ) . '">'; }
+									foreach ( $rows as $i => $r ) { echo '<option value="' . (int) $i . '" data-price="' . esc_attr( $r['price'] ) . '">' . esc_html( $r['name'] ) . '</option>'; }
+									if ( '' !== $gname ) { echo '</optgroup>'; }
+								endforeach;
+								?>
 							</select></label>
 						<div class="est__out"><small>السعر التقديري</small><b data-est-price>اختر خدمة أعلاه</b></div>
 						<a class="btn btn--wa btn--block" data-est-wa href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> اطلب عبر واتساب</a>
@@ -102,6 +109,11 @@ while ( have_posts() ) :
 					</div>
 					<?php else : ?>
 						<?php echo zad_quote_form( array( 'service_id' => $id, 'id' => 'hq', 'title' => 'اطلب ' . $title, 'compact' => true ) ); // phpcs:ignore ?>
+					<?php endif; ?>
+					<?php $fc = zad_float_cards(); if ( $fc ) : ?>
+					<ul class="fcards" aria-label="مزايا الخدمة"><?php foreach ( $fc as $n => $c ) : ?>
+						<li class="fcard fcard--<?php echo (int) ( $n + 1 ); ?>"><span class="fcard__ic"><?php echo zad_icon( $c[2], 24 ); // phpcs:ignore ?></span><span class="fcard__tx"><b><?php echo esc_html( $c[0] ); ?></b><small><?php echo esc_html( $c[1] ); ?></small></span></li>
+					<?php endforeach; ?></ul>
 					<?php endif; ?>
 				</div>
 			</div>
