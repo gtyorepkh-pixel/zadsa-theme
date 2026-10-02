@@ -115,6 +115,8 @@ while ( have_posts() ) :
 	</div></section>
 	<?php endif; ?>
 
+	<?php echo zad_rating_strip(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+
 	<!-- 3. Intro (content) + all-services sidebar -->
 	<section class="sec">
 		<div class="wrap slayout">

@@ -38,6 +38,8 @@ require_once MEMO_THEME_DIR .'inc/zad-faq.php';
 require_once MEMO_THEME_DIR .'inc/zad-wizard.php';
 require_once MEMO_THEME_DIR .'inc/zad-ix.php';
 require_once MEMO_THEME_DIR .'inc/zad-work.php';
+require_once MEMO_THEME_DIR .'inc/zad-trust.php';
+require_once MEMO_THEME_DIR .'inc/zad-listen.php';
 require_once MEMO_THEME_DIR .'inc/zad-sitemap.php';
 require_once MEMO_THEME_DIR .'inc/zad-demo.php';
 require_once MEMO_THEME_DIR .'inc/zad-diag.php';

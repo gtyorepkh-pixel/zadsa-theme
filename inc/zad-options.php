@@ -8,6 +8,11 @@ CSF::createSection( $zad_prefix, array(
 	'fields' => array(
 		array( 'id' => 'zad_color_primary', 'type' => 'color', 'title' => 'اللون الأساسي', 'default' => '#0b2e3a' ),
 		array( 'id' => 'zad_color_accent', 'type' => 'color', 'title' => 'لون الأزرار (التمييز)', 'default' => '#f2b134' ),
+		array( 'type' => 'subheading', 'content' => 'الثقة والاستماع' ),
+		array( 'id' => 'zad_listen_on', 'type' => 'switcher', 'title' => 'زر «استمع إلى الصفحة»', 'default' => true, 'desc' => 'يقرأ المحتوى بصوت عربي من جهاز الزائر (بدون ملفات أو تكلفة). يختفي إن لم يتوفر صوت عربي.' ),
+		array( 'id' => 'zad_g_rating', 'type' => 'text', 'title' => 'تقييم خرائط جوجل (مثال: 4.9)', 'desc' => 'أدخل القيمة الحقيقية فقط. يظهر الشريط حين تُملأ الحقول الثلاثة.' ),
+		array( 'id' => 'zad_g_count', 'type' => 'text', 'title' => 'عدد المراجعات' ),
+		array( 'id' => 'zad_g_url', 'type' => 'text', 'title' => 'رابط مراجعات الشركة على خرائط جوجل' ),
 		array( 'type' => 'subheading', 'content' => 'ألوان الهيدر والفوتر (مأخوذة من تصميم زاد كلين)' ),
 		array( 'id' => 'zad_hdr_bg', 'type' => 'color', 'title' => 'خلفية الهيدر والقائمة', 'default' => '#0c687e' ),
 		array( 'id' => 'zad_hdr_ink', 'type' => 'color', 'title' => 'نص القائمة', 'default' => '#ffffff' ),

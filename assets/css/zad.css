@@ -703,3 +703,8 @@ tr.tabitem[hidden],.pricebox.tabitem[hidden]{display:none}
 .smx__n{flex:none;min-width:28px;text-align:center;background:var(--primary-50);color:var(--primary);border-radius:999px;font-size:.82rem;font-weight:800;padding:2px 9px}
 .smx__none{text-align:center;color:var(--muted);padding:20px}
 .smx__cta{text-align:center;margin-top:20px;border-radius:var(--r-lg)}
+
+/* Google rating strip */
+.gstrip{background:var(--tint);border-block:1px solid var(--line)}
+.gstrip__in{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:center;padding-block:12px;font-weight:600}
+.gstrip__stars{color:#e8a200;letter-spacing:2px}.gstrip__in b{font-size:1.1rem}.gstrip__in a{font-weight:800;text-decoration:none}
