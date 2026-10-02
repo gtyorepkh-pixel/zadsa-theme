@@ -258,3 +258,38 @@ add_action( 'wp_head', function () {
 	}
 	echo '<style id="zad-fonts">' . $css . "</style>\n"; // phpcs:ignore WordPress.Security.EscapeOutput
 }, 1 );
+
+
+/** Child pages of a service page: cities under a pillar (cards) or neighbourhoods under a city page (chips). */
+function zad_children_html( $id ) {
+	$pt = get_post_type( $id );
+	$o  = get_post_type_object( $pt );
+	if ( ! $o || ! $o->hierarchical ) {
+		return '';
+	}
+	$kids = get_posts( array( 'post_type' => $pt, 'post_parent' => $id, 'post_status' => 'publish', 'numberposts' => 60, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ), 'zad_all' => true ) );
+	if ( ! $kids ) {
+		return '';
+	}
+	$is_pillar = 0 === (int) wp_get_post_parent_id( $id );
+	$label     = function ( $p ) {
+		$l = trim( (string) get_post_meta( $p->ID, '_zad_breadcrumb_label', true ) );
+		return '' !== $l ? $l : ( function_exists( 'zad_bc_clean_label' ) ? zad_bc_clean_label( get_the_title( $p ) ) : wp_strip_all_tags( get_the_title( $p ) ) );
+	};
+	$out = '<section class="sec kids"><div class="wrap"><header class="sec__head"><span class="eyebrow">' . ( $is_pillar ? 'مناطق الخدمة' : 'التغطية' ) . '</span><h2>' . ( $is_pillar ? 'اختر مدينتك' : 'الأحياء التي نخدمها' ) . '</h2></header>';
+	if ( $is_pillar ) {
+		$out .= '<ul class="kids__grid">';
+		foreach ( $kids as $k ) {
+			$tag = trim( (string) get_post_meta( $k->ID, '_zad_tagline', true ) );
+			$out .= '<li><a class="kids__card" href="' . esc_url( get_permalink( $k ) ) . '"><span class="kids__ic">' . zad_icon( 'pin', 22 ) . '</span><span class="kids__tx"><b>' . esc_html( $label( $k ) ) . '</b>' . ( $tag ? '<small>' . esc_html( $tag ) . '</small>' : '' ) . '</span>' . zad_icon( 'arrow', 18 ) . '</a></li>';
+		}
+		$out .= '</ul>';
+	} else {
+		$out .= '<ul class="kids__chips">';
+		foreach ( $kids as $k ) {
+			$out .= '<li><a href="' . esc_url( get_permalink( $k ) ) . '">' . esc_html( $label( $k ) ) . '</a></li>';
+		}
+		$out .= '</ul>';
+	}
+	return $out . '</div></section>';
+}

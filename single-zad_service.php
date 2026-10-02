@@ -159,6 +159,8 @@ while ( have_posts() ) :
 		<?php endif; ?>
 	<?php endif; ?>
 
+	<?php echo zad_children_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+
 	<!-- 4. What's included -->
 	<?php if ( $features ) : ?>
 	<section class="sec sec--tint"><div class="wrap wrap--narrow">
