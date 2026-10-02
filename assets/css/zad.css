@@ -639,3 +639,24 @@ tr.tabitem[hidden],.pricebox.tabitem[hidden]{display:none}
 .toc details[open] ol{margin-top:.9rem}
 .zad-archive-content{padding-block:2rem}
 .zad-site-map .smap{columns:2;list-style:none;padding:0}
+
+/* ---- Header & footer palette (from the Zad Clean reference; editable in theme options) ---- */
+:root{--hdr-bg:#faf6ee;--hdr-ink:#0a3947;--hdr-cta:#a94e1c;--topbar-bg:#0a3947;--ftr-bg:#0a3947;--ftr-head:#3fbfae;--ftr-ink:#b4c2c6}
+.hdr{background:var(--hdr-bg);box-shadow:0 1px 0 color-mix(in srgb,var(--hdr-ink) 14%,transparent)}
+.topbar{background:var(--topbar-bg);color:#d4e3e6}
+.topbar a{color:#faf6ee}
+.nav__list a{color:var(--hdr-ink)}
+.nav__list a:hover,.nav__list .current>a,.nav__list .current-menu-item>a{color:var(--hdr-ink);background:color-mix(in srgb,var(--hdr-ink) 8%,transparent)}
+.hdr__cta{background:var(--hdr-cta);color:#faf6ee;border-color:var(--hdr-cta)}
+.hdr__cta:hover{background:color-mix(in srgb,var(--hdr-cta) 85%,#000);color:#faf6ee}
+.burger{color:var(--hdr-ink)}
+@media (max-width:900px){.nav{background:var(--hdr-bg)}}
+.ftr{background:var(--ftr-bg);color:var(--ftr-ink);background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.022) 0 1px,transparent 1px 22px),repeating-linear-gradient(-45deg,rgba(255,255,255,.022) 0 1px,transparent 1px 22px)}
+.ftr h3{color:var(--ftr-head)}
+.ftr a{color:var(--ftr-ink)}.ftr a:hover{color:#faf6ee}
+.ftr__contact .zi,.ftr__list .zi{color:var(--ftr-head)}
+.ftr__copy,.ftr__bottom{border-top-color:color-mix(in srgb,var(--ftr-ink) 32%,transparent)}
+.ftr__legalname{color:var(--ftr-ink)}
+.social a{background:rgba(255,255,255,.08);color:var(--ftr-ink)}.social a:hover{background:var(--ftr-head);color:var(--ftr-bg)}
+[data-theme=dark] .hdr{background:#071c26;--hdr-ink:#e8f1f3}
+[data-theme=dark] .nav__list a{color:#e8f1f3}
