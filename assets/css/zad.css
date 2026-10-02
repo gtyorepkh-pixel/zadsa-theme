@@ -863,3 +863,9 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .est__presets button.on{background:var(--accent);border-color:var(--accent);color:#1b1200;font-weight:700}
 .est__out em{display:block;font-style:normal;font-size:.78rem;color:rgba(255,255,255,.75);min-height:1em}
 .est__out{margin-top:12px}
+/* Trust rail: larger icons */
+.fcard__ic,.fcard--2 .fcard__ic,.fcard--3 .fcard__ic{width:52px;height:52px}
+.fcard__ic .zi,.fcard__ic svg{width:28px;height:28px}
+.fcard{padding:16px 8px;gap:8px}
+.fcard__tx b{font-size:1rem}.fcard__tx small{font-size:.8rem}
+@media (max-width:480px){.fcard__ic,.fcard--2 .fcard__ic,.fcard--3 .fcard__ic{width:46px;height:46px}.fcard__ic .zi,.fcard__ic svg{width:24px;height:24px}.fcard__tx b{font-size:.88rem}.fcard__tx small{font-size:.72rem}}
