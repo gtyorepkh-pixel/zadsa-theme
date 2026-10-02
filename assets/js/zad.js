@@ -323,17 +323,18 @@
 
 	/* Instant price estimator */
 	$$('[data-est]').forEach(function (box) {
-		var sel = $('[data-est-select]', box), out = $('[data-est-price]', box), wa = $('[data-est-wa]', box);
-		var base = wa ? wa.getAttribute('href') : '';
-		sel.addEventListener('change', function () {
-			var opt = sel.options[sel.selectedIndex];
-			if (!sel.value) { out.textContent = 'اختر خدمة أعلاه'; if (wa) wa.setAttribute('href', base); return; }
-			var price = opt.getAttribute('data-price');
-			out.textContent = price;
-			if (wa && box.dataset.wa) {
-				var text = 'مرحباً، أرغب بخدمة: ' + box.dataset.title + ' — ' + (opt.parentNode && opt.parentNode.label ? opt.parentNode.label + ': ' : '') + opt.text + ' (' + price + ')';
-				wa.setAttribute('href', 'https://wa.me/' + box.dataset.wa + '?text=' + encodeURIComponent(text));
-			}
+		var opts = $$('[data-est-opt]', box), out = $('[data-est-price]', box), wa = $('[data-est-wa]', box);
+		opts.forEach(function (o) {
+			o.addEventListener('change', function () {
+				if (!o.checked) { return; }
+				var price = o.getAttribute('data-price'), nm = o.parentNode.querySelector('.est__nm').textContent, g = o.getAttribute('data-group');
+				out.textContent = price;
+				box.classList.add('is-set');
+				if (wa && box.dataset.wa) {
+					var text = 'مرحباً، أرغب بخدمة: ' + box.dataset.title + ' — ' + (g ? g + ': ' : '') + nm + ' (' + price + ')';
+					wa.setAttribute('href', 'https://wa.me/' + box.dataset.wa + '?text=' + encodeURIComponent(text));
+				}
+			});
 		});
 	});
 

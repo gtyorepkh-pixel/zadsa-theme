@@ -88,23 +88,21 @@ while ( have_posts() ) :
 				<div class="shero__side">
 					<?php if ( $prices ) : ?>
 					<div class="est" data-est data-wa="<?php echo esc_attr( zad_whatsapp( $id ) ); ?>" data-title="<?php echo esc_attr( $title ); ?>" data-unit="<?php echo esc_attr( $unit ); ?>">
-						<div class="est__head"><?php echo zad_icon( 'bolt', 22 ); // phpcs:ignore ?> <strong>مُقدّر السعر الفوري</strong></div>
-						<label class="fld"><span>اختر الخدمة المطلوبة</span>
-							<select data-est-select>
-								<option value="">اختر الخدمة المطلوبة…</option>
-								<?php
-								// Group the price list ("group | name | price") into <optgroup>s like a catalogue.
-								$by_group = array();
-								foreach ( $prices as $i => $r ) { $by_group[ $r['group'] ][ $i ] = $r; }
-								foreach ( $by_group as $gname => $rows ) :
-									if ( '' !== $gname ) { echo '<optgroup label="' . esc_attr( $gname ) . '">'; }
-									foreach ( $rows as $i => $r ) { echo '<option value="' . (int) $i . '" data-price="' . esc_attr( $r['price'] ) . '">' . esc_html( $r['name'] ) . '</option>'; }
-									if ( '' !== $gname ) { echo '</optgroup>'; }
-								endforeach;
-								?>
-							</select></label>
-						<div class="est__out"><small>السعر التقديري</small><b data-est-price>اختر خدمة أعلاه</b></div>
-						<a class="btn btn--wa btn--block" data-est-wa href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> اطلب عبر واتساب</a>
+						<div class="est__head"><span class="est__ic"><?php echo zad_icon( 'bolt', 20 ); // phpcs:ignore ?></span><div><strong>احسب تكلفة خدمتك</strong><small>اضغط على الخدمة لتظهر أسعارها فوراً</small></div></div>
+						<div class="est__list" role="radiogroup" aria-label="اختر الخدمة">
+						<?php
+						$by_group = array();
+						foreach ( $prices as $i => $r ) { $by_group[ $r['group'] ][ $i ] = $r; }
+						foreach ( $by_group as $gname => $rows ) :
+							if ( '' !== $gname ) { echo '<div class="est__grp">' . esc_html( $gname ) . '</div>'; }
+							foreach ( $rows as $i => $r ) {
+								echo '<label class="est__opt"><input type="radio" name="est_' . (int) $id . '" value="' . (int) $i . '" data-est-opt data-price="' . esc_attr( $r['price'] ) . '" data-group="' . esc_attr( $gname ) . '"><span class="est__nm">' . esc_html( $r['name'] ) . '</span><span class="est__pr">' . esc_html( $r['price'] ) . '</span></label>';
+							}
+						endforeach;
+						?>
+						</div>
+						<div class="est__out" aria-live="polite"><small>التكلفة التقديرية</small><b data-est-price>اختر خدمة من القائمة</b></div>
+						<a class="btn btn--wa btn--block" data-est-wa href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> ثبّت هذا السعر عبر واتساب</a>
 						<p class="est__note">السعر تقريبي ويُؤكَّد نهائياً بعد المعاينة.</p>
 					</div>
 					<?php else : ?>
