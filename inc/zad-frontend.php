@@ -167,7 +167,7 @@ add_filter( 'the_content', function ( $content ) {
 	if ( count( $toc ) < 3 ) {
 		return $content;
 	}
-	$html = '<nav class="toc" aria-label="محتويات المقال"><details><summary><span>محتويات المقال</span><span class="toc__btn" aria-hidden="true">عرض العناوين</span></summary><ol>';
+	$html = '<nav class="toc" aria-label="عناوين المقال"><details><summary><span>عناوين المقال</span><span class="toc__btn" aria-hidden="true">عرض العناوين</span></summary><ol>';
 	foreach ( $toc as $t ) {
 		$html .= '<li class="toc--' . (int) $t[0] . '"><a href="#' . esc_attr( $t[1] ) . '">' . esc_html( $t[2] ) . '</a></li>';
 	}
