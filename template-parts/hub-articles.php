@@ -1,6 +1,6 @@
 <?php defined( 'ABSPATH' ) || exit;
 /** Content-library hub for article types (e.g. /guide/, /sections/): featured guide + topic filters + editorial grid. */
-$pt    = get_query_var( 'post_type' );
+$pt    = zad_query_pt();
 $pto   = get_post_type_object( is_string( $pt ) ? $pt : 'post' );
 $label = zad_ac_title( $pto ? $pto->labels->name : 'المقالات' );
 $hub   = zad_hub_opt( is_string( $pt ) ? $pt : '' );

@@ -1,6 +1,6 @@
 <?php defined( 'ABSPATH' ) || exit;
 /** Pillar/hub page for one service post type (e.g. /pest-control/): explains the category and points to the services under it. */
-$pt     = get_query_var( 'post_type' );
+$pt     = zad_query_pt();
 $pto    = get_post_type_object( $pt );
 $label  = zad_ac_title( $pto ? $pto->labels->name : 'الخدمات' );
 $hub    = zad_hub_opt( $pt );

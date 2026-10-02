@@ -316,3 +316,12 @@ function zad_schema_owner() {
 	}
 	return 'theme';
 }
+
+/** Current post-type query var as a single string (WordPress returns an array for multi-type archives). */
+function zad_query_pt() {
+	$pt = get_query_var( 'post_type' );
+	if ( is_array( $pt ) ) {
+		$pt = reset( $pt );
+	}
+	return is_string( $pt ) ? $pt : '';
+}

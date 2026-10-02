@@ -43,13 +43,13 @@ function zad_ac_taxes() {
 /** Page ID mapped to the current archive (0 = none). */
 function zad_ac_source_id() {
 	static $cache = array();
-	$key = (string) get_queried_object_id() . '|' . get_query_var( 'post_type' );
+	$key = (string) get_queried_object_id() . '|' . zad_query_pt();
 	if ( isset( $cache[ $key ] ) ) {
 		return $cache[ $key ];
 	}
 	$id = 0;
 	if ( is_post_type_archive() ) {
-		$pt  = get_query_var( 'post_type' );
+		$pt  = zad_query_pt();
 		$pt  = is_array( $pt ) ? reset( $pt ) : $pt;
 		$map = (array) get_option( ZAD_AC_MAP, array() );
 		$id  = isset( $map[ $pt ] ) ? absint( $map[ $pt ] ) : 0;
@@ -126,7 +126,7 @@ function zad_ac_seo( $field ) {
 	}
 	$custom = '';
 	if ( is_post_type_archive() ) {
-		$pt     = get_query_var( 'post_type' );
+		$pt     = zad_query_pt();
 		$pt     = is_array( $pt ) ? reset( $pt ) : $pt;
 		$seo    = (array) get_option( ZAD_AC_SEO, array() );
 		$custom = $seo[ $pt ][ $field ] ?? '';
@@ -199,7 +199,7 @@ function zad_ac_loop_hidden() {
 		return false;
 	}
 	if ( is_post_type_archive() ) {
-		$pt = get_query_var( 'post_type' );
+		$pt = zad_query_pt();
 		$pt = is_array( $pt ) ? reset( $pt ) : $pt;
 		$s  = (array) get_option( ZAD_AC_HIDE, array() );
 		return ! empty( $s[ $pt ] );

@@ -23,7 +23,7 @@ if ( $term && 'service_area' === $term->taxonomy ) {
 } elseif ( is_post_type_archive() && empty( $args['hub'] ) && ! post_type_exists( 'zad_service' ) ) {
 	$title = post_type_archive_title( '', false );
 	$sub   = 'اختر الخدمة التي تحتاجها واطلب عرض سعر مجاني خلال دقائق.';
-	$tt    = get_term_by( 'slug', sanitize_title( zad_type_base( get_query_var( 'post_type' ) ) ), 'service_cat' );
+	$tt    = get_term_by( 'slug', sanitize_title( zad_type_base( zad_query_pt() ) ), 'service_cat' );
 	$current = $tt ? $tt->term_id : 0;
 } else {
 	$title = 'جميع الخدمات';

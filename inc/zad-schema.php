@@ -87,7 +87,7 @@ function zad_current_url() {
 		return get_term_link( get_queried_object() );
 	}
 	if ( is_post_type_archive() ) {
-		return get_post_type_archive_link( get_query_var( 'post_type' ) );
+		return get_post_type_archive_link( zad_query_pt() );
 	}
 	return home_url( '/' );
 }
