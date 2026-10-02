@@ -160,21 +160,6 @@ register_post_type('drain_cleaning', array(
     'supports'          => array('title', 'editor', 'thumbnail', 'excerpt', 'page-attributes')
 ));
 
-// 9. جلي البلاط والرخام
-register_post_type('tile_polishing', array(
-    'hierarchical'      => true,
-    'public'            => true,
-    'show_ui'           => true,
-    'menu_icon'         => 'dashicons-layout',
-    'has_archive'       => true,
-    'show_in_rest'      => true,
-    'capability_type'   => 'page',
-    'map_meta_cap'      => true,
-    'rewrite'           => array('slug' => 'tile-polishing', 'with_front' => false, 'hierarchical' => true),
-    'labels'            => array('name' => 'جلي البلاط والرخام', 'menu_name' => 'جلي البلاط والرخام'),
-    'supports'          => array('title', 'editor', 'thumbnail', 'excerpt', 'page-attributes')
-));
-
 }, 0);
 
 /**

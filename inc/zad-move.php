@@ -56,6 +56,7 @@ function zad_move_page() {
 	$ids  = isset( $_POST['ids'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['ids'] ) ) : array(); // phpcs:ignore
 	$tgt  = isset( $_POST['target'] ) ? sanitize_key( wp_unslash( $_POST['target'] ) ) : ''; // phpcs:ignore
 	$slug = isset( $_POST['slug'] ) ? (array) wp_unslash( $_POST['slug'] ) : array(); // phpcs:ignore
+	$par  = isset( $_POST['parent'] ) ? absint( $_POST['parent'] ) : 0; // phpcs:ignore
 
 	if ( $step && ( ! check_admin_referer( 'zad_move' ) || ! isset( $targets[ $tgt ] ) || ! $ids ) ) { $step = ''; echo '<div class="notice notice-error"><p>اختر الصفحات والقسم الهدف.</p></div>'; }
 
@@ -66,7 +67,7 @@ function zad_move_page() {
 			if ( ! $p || 'page' !== $p->post_type ) { continue; }
 			$old  = zad_move_path( get_permalink( $p ) );
 			$name = isset( $slug[ $id ] ) ? sanitize_title( $slug[ $id ] ) : $p->post_name;
-			$r    = wp_update_post( array( 'ID' => $id, 'post_type' => $tgt, 'post_name' => $name ?: $p->post_name, 'post_parent' => 0 ), true );
+			$r    = wp_update_post( array( 'ID' => $id, 'post_type' => $tgt, 'post_name' => $name ?: $p->post_name, 'post_parent' => ( $par && get_post_type( $par ) === $tgt ) ? $par : 0 ), true );
 			if ( is_wp_error( $r ) ) { continue; }
 			$prev = (string) get_post_meta( $id, ZAD_OLD_URLS, true );
 			update_post_meta( $id, ZAD_OLD_URLS, trim( $prev . "\n" . $old ) );
@@ -82,7 +83,11 @@ function zad_move_page() {
 	if ( 'preview' === $step ) {
 		echo '<h2>معاينة (لم يُنفَّذ شيء بعد)</h2><form method="post">';
 		wp_nonce_field( 'zad_move' );
-		echo '<input type="hidden" name="target" value="' . esc_attr( $tgt ) . '"><input type="hidden" name="zad_move_step" value="run"><table class="widefat striped"><thead><tr><th>الرابط القديم</th><th>الاسم في الرابط الجديد (عدّله لو أردت)</th><th>الرابط الجديد (تقريباً)</th></tr></thead><tbody>';
+		echo '<input type="hidden" name="target" value="' . esc_attr( $tgt ) . '"><input type="hidden" name="zad_move_step" value="run">';
+		$parents = get_posts( array( 'post_type' => $tgt, 'post_status' => 'publish', 'numberposts' => 200, 'post_parent' => 0, 'orderby' => 'title', 'order' => 'ASC' ) );
+		echo '<p><label>الصفحة الأب داخل القسم (اختياري، مثل صفحة «جلي البلاط»): <select name="parent"><option value="0">— بدون أب (مستوى أول) —</option>';
+		foreach ( $parents as $pp ) { echo '<option value="' . (int) $pp->ID . '">' . esc_html( $pp->post_title ) . '</option>'; }
+		echo '</select></label></p><table class="widefat striped"><thead><tr><th>الرابط القديم</th><th>الاسم في الرابط الجديد (عدّله لو أردت)</th><th>الرابط الجديد (تقريباً)</th></tr></thead><tbody>';
 		$base = trailingslashit( home_url( '/' . ( get_post_type_object( $tgt )->rewrite['slug'] ?? $tgt ) ) );
 		foreach ( $ids as $id ) {
 			$p = get_post( $id );
