@@ -2,8 +2,8 @@
 /** Front-end output: CSS variables, schema, body classes. */
 
 add_action( 'wp_head', function () {
-	$p = sanitize_hex_color( zad_opt( 'zad_color_primary', '#0b4f5c' ) ) ?: '#0b4f5c';
-	$a = sanitize_hex_color( zad_opt( 'zad_color_accent', '#f59e0b' ) ) ?: '#f59e0b';
+	$p = sanitize_hex_color( zad_opt( 'zad_color_primary', '#0c687e' ) ) ?: '#0c687e';
+	$a = sanitize_hex_color( zad_opt( 'zad_color_accent', '#f49400' ) ) ?: '#f49400';
 	$c = function ( $k, $d ) { return sanitize_hex_color( zad_opt( $k, $d ) ) ?: $d; };
 	$h = '--hdr-bg:' . $c( 'zad_hdr_bg', '#0c687e' ) . ';--hdr-ink:' . $c( 'zad_hdr_ink', '#ffffff' ) . ';--hdr-cta:' . $c( 'zad_hdr_cta', '#f49400' ) . ';--topbar-bg:' . $c( 'zad_topbar_bg', '#074250' )
 		. ';--ftr-bg:' . $c( 'zad_ftr_bg', '#0a3947' ) . ';--ftr-head:' . $c( 'zad_ftr_head', '#3fbfae' ) . ';--ftr-ink:' . $c( 'zad_ftr_ink', '#b4c2c6' );

@@ -6,8 +6,8 @@ $zad_prefix = '_memo_theme_options';
 CSF::createSection( $zad_prefix, array(
 	'title'  => 'الهوية والألوان',
 	'fields' => array(
-		array( 'id' => 'zad_color_primary', 'type' => 'color', 'title' => 'اللون الأساسي', 'default' => '#0b2e3a' ),
-		array( 'id' => 'zad_color_accent', 'type' => 'color', 'title' => 'لون الأزرار (التمييز)', 'default' => '#f2b134' ),
+		array( 'id' => 'zad_color_primary', 'type' => 'color', 'title' => 'اللون الأساسي', 'default' => '#0c687e' ),
+		array( 'id' => 'zad_color_accent', 'type' => 'color', 'title' => 'لون الأزرار (التمييز)', 'default' => '#f49400' ),
 		array( 'type' => 'subheading', 'content' => 'الثقة والاستماع' ),
 		array( 'id' => 'zad_tts_provider', 'type' => 'select', 'title' => 'مصدر الصوت', 'options' => array( 'browser' => 'صوت المتصفح (مجاني، الجودة تختلف)', 'azure' => 'Azure Speech (أصوات سعودية طبيعية)', 'google' => 'Google Cloud Text-to-Speech' ), 'default' => 'browser', 'desc' => 'مع Azure أو Google يُولَّد ملف MP3 لكل صفحة مرة واحدة ويُعرض كمشغّل صوتي. المفتاح يبقى على الخادم فقط.' ),
 		array( 'id' => 'zad_tts_key', 'type' => 'text', 'title' => 'مفتاح الخدمة (API key)', 'attributes' => array( 'autocomplete' => 'off' ) ),
