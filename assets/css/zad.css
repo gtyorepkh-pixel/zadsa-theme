@@ -11,7 +11,7 @@
   --primary-50:color-mix(in srgb,var(--primary) 7%,#fff);
   --primary-100:color-mix(in srgb,var(--primary) 14%,#fff);
   --accent-700:color-mix(in srgb,var(--accent) 80%,#000);
-  --wa:#12803f;--accent-text:color-mix(in srgb,var(--accent) 58%,#000); --ink:#0f2230; --muted:#56656f; --line:#e4e1d6; --bg:#fff; --tint:#f6f4ee; --surface:#ffffff;
+  --wa:#12803f;--accent-text:color-mix(in srgb,var(--accent) 58%,#000); --ink:#000000; --muted:#56656f; --line:#e4e1d6; --bg:#fff; --tint:#f6f4ee; --surface:#ffffff;
   --r-sm:8px; --r:14px; --r-lg:22px;
   --shadow:0 1px 2px rgba(16,36,42,.06),0 8px 24px rgba(16,36,42,.08);
   --shadow-lg:0 2px 4px rgba(16,36,42,.06),0 18px 48px rgba(16,36,42,.14);
@@ -728,3 +728,7 @@ tr.tabitem[hidden],.pricebox.tabitem[hidden]{display:none}
 	.fcard--2{top:-18px;inset-inline-end:-30px}
 	.fcard--3{bottom:-8px;inset-inline-end:-46px}
 }
+
+/* Body content in pure black (dark mode keeps its own ink) */
+.prose,.prose p,.prose li,.prose td,.entry-content,.entry-content p,.entry-content li{color:#000}
+[data-theme=dark] .prose,[data-theme=dark] .prose p,[data-theme=dark] .prose li,[data-theme=dark] .prose td,[data-theme=dark] .entry-content,[data-theme=dark] .entry-content p,[data-theme=dark] .entry-content li{color:var(--ink)}
