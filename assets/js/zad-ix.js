@@ -137,4 +137,63 @@
 		$$('.ixw__opt input', box).forEach(function (i) { i.addEventListener('change', function () { var q = i.closest('.ixw__q'); q.classList.remove('is-err'); if (q.getAttribute('data-type') === 'single' && step < qs.length - 1) { setTimeout(function () { if (answered(q) && qs[step] === q) { next.click(); } }, 250); } }); });
 		render();
 	});
+
+	/* ---------- story player ---------- */
+	$$('[data-ixst]').forEach(function (box) {
+		var scenes = $$('.ixst__scene', box), segs = $$('.ixst__bars i b', box), playBtn = $('[data-ixst-play]', box),
+			muteBtn = $('[data-ixst-mute]', box), replay = $('[data-ixst-replay]', box), idx = 0, t = 0, last = 0, playing = false, raf = 0, started = false,
+			reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches, audio = null;
+		if (box.getAttribute('data-audio')) { audio = new Audio(box.getAttribute('data-audio')); audio.preload = 'none'; }
+		function dur(i) { return (+scenes[i].getAttribute('data-sec') || 8) * 1000; }
+		function offset(i) { var s = 0; for (var k = 0; k < i; k++) { s += dur(k); } return s / 1000; }
+		function show(i, seek) {
+			idx = i; t = 0;
+			scenes.forEach(function (sc, k) { sc.hidden = k !== i; });
+			segs.forEach(function (b, k) { b.style.width = k < i ? '100%' : '0%'; });
+			replay.hidden = true;
+			if (audio && seek) { try { audio.currentTime = offset(i); } catch (e) {} }
+		}
+		function tick(ts) {
+			if (!playing) { return; }
+			if (!last) { last = ts; }
+			t += ts - last; last = ts;
+			segs[idx].style.width = Math.min(100, t / dur(idx) * 100) + '%';
+			if (t >= dur(idx)) {
+				if (idx < scenes.length - 1) { show(idx + 1, false); } else { end(); return; }
+			}
+			raf = requestAnimationFrame(tick);
+		}
+		function play() {
+			if (playing) { return; }
+			playing = true; last = 0; box.classList.add('is-playing');
+			raf = requestAnimationFrame(tick);
+			if (audio) { audio.play().catch(function () {}); }
+			if (!started) { started = true; track('ix_story_play'); }
+		}
+		function pause() { playing = false; cancelAnimationFrame(raf); box.classList.remove('is-playing'); if (audio) { audio.pause(); } }
+		function end() { pause(); segs.forEach(function (b) { b.style.width = '100%'; }); replay.hidden = false; track('ix_story_end'); }
+		playBtn.addEventListener('click', function () { playing ? pause() : play(); });
+		$('[data-ixst-next]', box).addEventListener('click', function () { var w = playing; pause(); show(Math.min(idx + 1, scenes.length - 1), true); if (w) { play(); } });
+		$('[data-ixst-prev]', box).addEventListener('click', function () { var w = playing; pause(); show(Math.max(idx - 1, 0), true); if (w) { play(); } });
+		replay.addEventListener('click', function () { show(0, true); play(); });
+		if (muteBtn) {
+			muteBtn.addEventListener('click', function () {
+				var on = muteBtn.getAttribute('aria-pressed') !== 'true';
+				muteBtn.setAttribute('aria-pressed', on ? 'true' : 'false'); muteBtn.classList.toggle('is-on', on);
+				if (audio) { audio.muted = on; }
+			});
+		}
+		$('[data-ixst-book]', box).addEventListener('click', function () {
+			var open = $('[data-open-wizard]'), ta = $('#zad-wizard textarea[name="message"]');
+			if (ta) { ta.value = 'طلب بعد مشاهدة قصة: ' + box.getAttribute('data-svc') + ' — المشهد: ' + (scenes[idx].querySelector('.ixst__lab') || {}).textContent; }
+			if (open) { open.click(); }
+			track('ix_story_book');
+		});
+		show(0, false);
+		if ('IntersectionObserver' in window && !reduce) {
+			new IntersectionObserver(function (es) {
+				es.forEach(function (e) { if (e.isIntersecting && e.intersectionRatio > 0.6) { if (!started) { play(); } } else if (playing) { pause(); } });
+			}, { threshold: [0, 0.6] }).observe(box);
+		}
+	});
 })();

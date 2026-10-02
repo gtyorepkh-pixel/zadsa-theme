@@ -19,6 +19,9 @@ function zad_ix_modules() {
 		'life'   => 'دورة الحياة ولماذا المتابعة',
 		'safe'   => 'حاسبة الأمان للأسرة',
 		'check'  => 'قائمة التحضير',
+		'story'  => 'قصة من الميدان (مشاهد قبل/أثناء/بعد)',
+		'when'   => 'متى لا تحتاج خدمة؟ (مصداقية)',
+		'pay'    => 'قبل أن تدفع (شفافية الأسعار)',
 	);
 }
 
@@ -52,6 +55,9 @@ function zad_ix_fields() {
 		'life'   => array( 'title' => 'text', 'lead' => 'text', 'items' => 'area', 'rule' => 'text' ),
 		'safe'   => array( 'title' => 'text', 'lead' => 'text', 'items' => 'area', 'after' => 'text' ),
 		'check'  => array( 'title' => 'text', 'lead' => 'text', 'items' => 'area' ),
+		'story'  => array( 'title' => 'text', 'lead' => 'text', 'scenes' => 'area', 'imgs' => 'ids', 'audio' => 'url', 'cta' => 'text' ),
+		'when'   => array( 'title' => 'text', 'lead' => 'text', 'no_h' => 'text', 'no' => 'area', 'yes_h' => 'text', 'yes' => 'area' ),
+		'pay'    => array( 'title' => 'text', 'lead' => 'text', 'items' => 'area' ),
 	);
 }
 
@@ -67,6 +73,9 @@ function zad_ix_metabox( $post ) {
 		'life'  => 'سطر لكل مرحلة:  المرحلة | الشرح | المدة',
 		'safe'  => 'سطر لكل حالة:  الحالة | الاحتياط',
 		'check' => 'سطر لكل بند',
+		'story' => 'المشاهد: سطر لكل مشهد:  العنوان (قبل/أثناء/بعد) | المدة بالثواني | النص. الصور تُختار بنفس الترتيب.',
+		'when'  => 'سطر لكل بند في كل عمود.',
+		'pay'   => 'سطر لكل بند:  البند | النوع (free مجاني، paid مدفوع، deduct يُخصم، incl مشمول) | الشرح',
 	);
 	$packs = array();
 	foreach ( zad_ix_packs() as $k => $p ) {
@@ -90,9 +99,15 @@ function zad_ix_metabox( $post ) {
 		echo '<p class="description">' . esc_html( $hints[ $k ] ) . '</p>';
 		foreach ( zad_ix_fields()[ $k ] as $f => $type ) {
 			$name = 'zad_ix[' . $k . '][' . $f . ']';
-			$lab  = array( 'title' => 'العنوان', 'lead' => 'مقدمة قصيرة', 'img' => 'صورة (رقم المرفق، اختياري)', 'items' => 'العناصر', 'questions' => 'الأسئلة', 'tiers' => 'النتائج: الحد الأدنى للنقاط | العنوان | الوصف | خطوات الخطة مفصولة بـ ;', 'rule' => 'القاعدة (جملة مميزة)', 'after' => 'ملاحظة عامة' )[ $f ] ?? $f;
+			$lab  = array( 'title' => 'العنوان', 'lead' => 'مقدمة قصيرة', 'img' => 'صورة (رقم المرفق، اختياري)', 'items' => 'العناصر', 'questions' => 'الأسئلة', 'tiers' => 'النتائج: الحد الأدنى للنقاط | العنوان | الوصف | خطوات الخطة مفصولة بـ ;', 'rule' => 'القاعدة (جملة مميزة)', 'after' => 'ملاحظة عامة', 'scenes' => 'المشاهد', 'imgs' => 'صور المشاهد (بنفس الترتيب)', 'audio' => 'رابط تعليق صوتي mp3 (اختياري؛ يظهر زر الكتم عند وجوده)', 'cta' => 'نص زر الطلب', 'no_h' => 'عنوان العمود الأول', 'no' => 'لا تحتاج خدمة إذا…', 'yes_h' => 'عنوان العمود الثاني', 'yes' => 'اطلب معاينة إذا…' )[ $f ] ?? $f;
 			echo '<p><label><strong>' . esc_html( $lab ) . '</strong><br>';
-			if ( 'area' === $type ) {
+			if ( 'ids' === $type ) {
+				$iv = (string) ( $d[ $f ] ?? '' );
+				$iid = 'zad_ix_' . $k . '_' . $f;
+				echo '<input type="hidden" class="zad-media-val" id="' . esc_attr( $iid ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( $iv ) . '" data-f="' . esc_attr( $k . '.' . $f ) . '"><button type="button" class="button zad-media-btn" data-target="' . esc_attr( $iid ) . '">اختيار الصور</button> <span class="zad-prev" id="' . esc_attr( $iid ) . '_prev">';
+				foreach ( array_filter( array_map( 'intval', explode( ',', $iv ) ) ) as $aid ) { echo wp_get_attachment_image( $aid, array( 60, 60 ) ); }
+				echo '</span>';
+			} elseif ( 'area' === $type ) {
 				echo '<textarea class="widefat" rows="6" name="' . esc_attr( $name ) . '" data-f="' . esc_attr( $k . '.' . $f ) . '">' . esc_textarea( $d[ $f ] ?? '' ) . '</textarea>';
 			} else {
 				echo '<input class="widefat" type="text" name="' . esc_attr( $name ) . '" value="' . esc_attr( $d[ $f ] ?? '' ) . '" data-f="' . esc_attr( $k . '.' . $f ) . '">';
@@ -117,7 +132,7 @@ function zad_ix_metabox( $post ) {
 			var k=box.querySelector('[data-ix-pack]').value; if(!k) return;
 			if(!confirm('سيتم استبدال محتوى الحقول بالنموذج الجاهز. متابعة؟')) return;
 			var p=JSON.parse(box.dataset.packs)[k];
-			['map','wiz','report','life','safe','check'].forEach(function(m){
+			['map','wiz','report','life','safe','check','story','when','pay'].forEach(function(m){
 				Object.keys(p[m]||{}).forEach(function(f){
 					var el=box.querySelector('[data-f="'+m+'.'+f+'"]'); if(el) el.value=p[m][f];
 				});
@@ -140,7 +155,7 @@ add_action( 'save_post', function ( $id ) {
 		$out['en'][ $k ] = ! empty( $in['en'][ $k ] ) ? 1 : 0;
 		foreach ( $fields as $f => $type ) {
 			$v = $in[ $k ][ $f ] ?? '';
-			$out[ $k ][ $f ] = 'int' === $type ? absint( $v ) : ( 'area' === $type ? sanitize_textarea_field( $v ) : sanitize_text_field( $v ) );
+			$out[ $k ][ $f ] = 'int' === $type ? absint( $v ) : ( 'area' === $type ? sanitize_textarea_field( $v ) : ( 'ids' === $type ? implode( ',', array_filter( array_map( 'absint', explode( ',', sanitize_text_field( $v ) ) ) ) ) : ( 'url' === $type ? esc_url_raw( $v ) : sanitize_text_field( $v ) ) ) );
 		}
 	}
 	update_post_meta( $id, '_zad_ix', $out );
@@ -290,6 +305,50 @@ function zad_ix_module_html( $k, $ix, $post_id ) {
 				$o .= '<li><label><input type="checkbox" data-i="' . (int) $i . '"><span>' . esc_html( $it ) . '</span></label></li>';
 			}
 			$o .= '</ul><div class="ixc__cta"><button type="button" class="btn btn--wa" data-ixc-wa>' . zad_icon( 'whatsapp', 20 ) . ' أرسل القائمة واتساب</button><button type="button" class="btn btn--ghost" data-ix-print>اطبع أو احفظ PDF</button></div></div>';
+			break;
+		case 'story':
+			$sc = array();
+			foreach ( zad_lines( $d['scenes'] ?? '' ) as $l ) {
+				$c = array_pad( array_map( 'trim', explode( '|', $l, 3 ) ), 3, '' );
+				$sc[] = array( 'label' => $c[0], 'sec' => max( 3, (int) $c[1] ?: 8 ), 'text' => $c[2] );
+			}
+			if ( ! $sc ) { return ''; }
+			$imgs  = array_values( array_filter( array_map( 'intval', explode( ',', (string) ( $d['imgs'] ?? '' ) ) ) ) );
+			$total = array_sum( wp_list_pluck( $sc, 'sec' ) );
+			$o    .= zad_ix_head( $d, 'من الميدان' ) . '<div class="ixst" data-ixst data-svc="' . esc_attr( $title ) . '"' . ( ! empty( $d['audio'] ) ? ' data-audio="' . esc_url( $d['audio'] ) . '"' : '' ) . '><div class="ixst__phone"><div class="ixst__bars" aria-hidden="true">';
+			foreach ( $sc as $i => $x ) { $o .= '<i data-seg><b></b></i>'; }
+			$o .= '</div><div class="ixst__stage">';
+			foreach ( $sc as $i => $x ) {
+				$o .= '<article class="ixst__scene" data-i="' . (int) $i . '" data-sec="' . (int) $x['sec'] . '"' . ( 0 === $i ? '' : ' hidden' ) . '>';
+				$o .= ! empty( $imgs[ $i ] ) ? wp_get_attachment_image( $imgs[ $i ], 'large', false, array( 'loading' => 0 === $i ? 'lazy' : 'lazy', 'class' => 'ixst__img' ) ) : '<span class="ixst__ph">' . esc_html( $x['label'] ) . '</span>';
+				$o .= '<div class="ixst__cap"><span class="ixst__lab">' . esc_html( $x['label'] ) . '</span><span class="ixst__len">' . (int) $x['sec'] . ' ث</span><p>' . esc_html( $x['text'] ) . '</p></div></article>';
+			}
+			$o .= '<button type="button" class="ixst__tap ixst__tap--p" data-ixst-prev aria-label="المشهد السابق"></button><button type="button" class="ixst__tap ixst__tap--n" data-ixst-next aria-label="المشهد التالي"></button></div>';
+			$o .= '<div class="ixst__ctl"><button type="button" class="ixst__btn" data-ixst-play aria-label="تشغيل / إيقاف">' . zad_icon( 'bolt', 18 ) . '</button>' . ( ! empty( $d['audio'] ) ? '<button type="button" class="ixst__btn" data-ixst-mute aria-pressed="false" aria-label="كتم الصوت">' . zad_icon( 'sparkle', 18 ) . '</button>' : '' ) . '<button type="button" class="ixst__btn" data-ixst-replay aria-label="إعادة" hidden>↻</button></div></div>';
+			$o .= '<div class="ixst__side"><p class="ixst__meta">' . count( $sc ) . ' مشاهد · ' . (int) $total . ' ث</p><button type="button" class="btn btn--accent" data-ixst-book>' . zad_icon( 'bolt', 20 ) . ' ' . esc_html( ! empty( $d['cta'] ) ? $d['cta'] : 'اطلب فحصاً مثل هذا' ) . '</button></div></div>';
+			break;
+
+		case 'when':
+			$no  = zad_lines( $d['no'] ?? '' );
+			$yes = zad_lines( $d['yes'] ?? '' );
+			if ( ! $no && ! $yes ) { return ''; }
+			$o  .= zad_ix_head( $d, 'بصدق معك' ) . '<div class="ixwhen"><div class="ixwhen__col ixwhen__col--no"><h3>' . esc_html( ! empty( $d['no_h'] ) ? $d['no_h'] : 'لا تحتاج خدمة إذا…' ) . '</h3><ul>';
+			foreach ( $no as $l ) { $o .= '<li>' . zad_icon( 'check', 18 ) . '<span>' . esc_html( $l ) . '</span></li>'; }
+			$o  .= '</ul></div><div class="ixwhen__col ixwhen__col--yes"><h3>' . esc_html( ! empty( $d['yes_h'] ) ? $d['yes_h'] : 'اطلب معاينة إذا…' ) . '</h3><ul>';
+			foreach ( $yes as $l ) { $o .= '<li>' . zad_icon( 'bolt', 18 ) . '<span>' . esc_html( $l ) . '</span></li>'; }
+			$o  .= '</ul><p><button type="button" class="btn btn--accent" data-open-wizard>اطلب معاينة مجانية</button></p></div></div>';
+			break;
+
+		case 'pay':
+			$rows = zad_ix_pipe( $d['items'] ?? '', 3 );
+			if ( ! $rows ) { return ''; }
+			$tag = array( 'free' => array( 'مجاني', 'free' ), 'paid' => array( 'مدفوع', 'paid' ), 'deduct' => array( 'يُخصم', 'deduct' ), 'incl' => array( 'مشمول', 'incl' ) );
+			$o  .= zad_ix_head( $d, 'بلا مفاجآت' ) . '<ul class="ixpay">';
+			foreach ( $rows as $r ) {
+				$t  = $tag[ strtolower( $r[1] ) ] ?? array( $r[1], 'incl' );
+				$o .= '<li><div><strong>' . esc_html( $r[0] ) . '</strong><span>' . esc_html( $r[2] ) . '</span></div><em class="ixpay__tag ixpay__tag--' . esc_attr( $t[1] ) . '">' . esc_html( $t[0] ) . '</em></li>';
+			}
+			$o  .= '</ul>';
 			break;
 	}
 	return '<section class="sec ix ix--' . esc_attr( $k ) . '" id="ix-' . esc_attr( $k ) . '"><div class="wrap">' . $o . '</div></section>';
