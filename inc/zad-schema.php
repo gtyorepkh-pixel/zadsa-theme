@@ -400,7 +400,7 @@ add_action( 'wp_head', function () {
 		zad_print_graph( zsc_with_breadcrumb( array_slice( $site, 0, 2 ), zad_current_url() ) );
 	}
 
-	if ( zad_is_service() ) {
+	if ( zad_is_service() && ! ( function_exists( 'zad_hood_active' ) && zad_hood_active( get_queried_object_id() ) ) ) {
 		$id = get_queried_object_id();
 		$faq = array_filter( (array) get_post_meta( $id, '_zad_faq', true ), function ( $f ) { return ! empty( $f['q'] ); } );
 		if ( $faq ) {

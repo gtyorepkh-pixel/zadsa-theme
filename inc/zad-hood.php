@@ -413,6 +413,8 @@ add_filter( 'zsc_service_nodes', function ( $nodes, $post ) {
 		if ( isset( $n['@type'] ) && 'Service' === $n['@type'] ) {
 			$nodes[ $k ]['name'] = wp_strip_all_tags( get_the_title( $id ) );
 			if ( $area ) { $nodes[ $k ]['areaServed'] = $area; }
+			// The district layout shows no price table, so no price markup either.
+			unset( $nodes[ $k ]['offers'], $nodes[ $k ]['hasOfferCatalog'], $nodes[ $k ]['subjectOf'] );
 		}
 	}
 	return $nodes;
