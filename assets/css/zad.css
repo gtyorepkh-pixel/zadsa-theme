@@ -1079,10 +1079,16 @@ button,input,select,textarea,optgroup{font-family:inherit}
 
 /* FAQ single: clarification paragraph + deep-dive card */
 .faq-more{margin:-8px 0 22px;padding-inline-start:18px;border-inline-start:2px dashed var(--line);color:var(--ink);line-height:2}.faq-more p{margin:0 0 10px}
-.deep{display:flex;align-items:stretch;gap:0;margin:0 0 28px;border-radius:var(--r);overflow:hidden;background:var(--primary);color:#fff;text-decoration:none;transition:.15s}
-.deep:hover{transform:translateY(-2px);color:#fff}
-.deep__img{flex:0 0 38%;min-height:130px;background:var(--sky,#dff1f4)}.deep__img img{width:100%;height:100%;object-fit:cover;display:block}
-.deep__body{display:flex;flex-direction:column;gap:8px;justify-content:center;padding:20px 24px}
-.deep__kick{font-size:.8rem;color:#bfe0e6;font-weight:700}.deep strong{font-size:1.15rem;line-height:1.6;color:#fff}
-.deep__go{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:800}
-@media(max-width:600px){.deep{flex-direction:column}.deep__img{flex-basis:auto;height:150px}}
+/* fork: two doors under the answer (service / deeper reading) */
+.fork{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:0 0 28px;border-top:3px solid var(--ink);border-bottom:1px solid var(--line)}
+.fork--one{grid-template-columns:1fr}
+.fork__t{position:relative;display:flex;flex-direction:column;gap:6px;padding:20px 22px 18px;text-decoration:none;color:var(--ink);overflow:hidden;transition:background .2s}
+.fork__t+.fork__t{border-inline-start:1px solid var(--line)}
+.fork__t:hover{background:var(--tint,#f3f8f9);color:var(--ink)}
+.fork__n{position:absolute;inset-block-start:4px;inset-inline-end:14px;font-size:3.2rem;font-weight:900;line-height:1;color:var(--line);letter-spacing:-2px;pointer-events:none}
+.fork__k{font-size:.82rem;font-weight:700;color:var(--ink-soft,#5a6b72)}
+.fork__t strong{font-size:1.08rem;line-height:1.7;max-width:86%}
+.fork__go{display:inline-flex;align-items:center;gap:6px;margin-top:4px;font-weight:800;color:var(--primary);background:linear-gradient(currentColor,currentColor) no-repeat 0 100%/0 2px;padding-bottom:3px;align-self:flex-start;transition:background-size .25s}
+.fork__t--svc .fork__go{color:var(--accent-700,#c27a00)}
+.fork__t:hover .fork__go{background-size:100% 2px}
+@media(max-width:600px){.fork{grid-template-columns:1fr}.fork__t+.fork__t{border-inline-start:0;border-top:1px solid var(--line)}}

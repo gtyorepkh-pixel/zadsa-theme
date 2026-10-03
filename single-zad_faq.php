@@ -19,16 +19,28 @@ while ( have_posts() ) :
 			$more = trim( (string) get_post_meta( $id, '_zad_faq_more', true ) );
 			if ( $more ) : ?><div class="faq-more"><?php echo wp_kses_post( wpautop( esc_html( $more ) ) ); ?></div><?php endif;
 			$aid = (int) get_post_meta( $id, '_zad_faq_article', true );
-			if ( $aid && get_post_status( $aid ) === 'publish' ) :
-				$albl = get_post_meta( $id, '_zad_faq_article_lbl', true ) ?: 'اقرأ الدليل كاملاً'; ?>
-			<a class="deep" href="<?php echo esc_url( get_permalink( $aid ) ); ?>">
-				<?php if ( has_post_thumbnail( $aid ) ) : ?><span class="deep__img"><?php echo get_the_post_thumbnail( $aid, 'medium', array( 'loading' => 'lazy' ) ); ?></span><?php endif; ?>
-				<span class="deep__body">
-					<span class="deep__kick">للتعمّق أكثر · <?php echo esc_html( zad_reading_time( $aid ) ); ?></span>
+			$aid = ( $aid && get_post_status( $aid ) === 'publish' ) ? $aid : 0;
+			$sid = $sids ? (int) $sids[0] : 0;
+			$sid = ( $sid && get_post_status( $sid ) === 'publish' ) ? $sid : 0;
+			$albl = get_post_meta( $id, '_zad_faq_article_lbl', true ) ?: 'اقرأ الدليل كاملاً';
+			if ( $aid || $sid ) : ?>
+			<div class="fork<?php echo ( $aid && $sid ) ? '' : ' fork--one'; ?>">
+				<?php if ( $sid ) : ?>
+				<a class="fork__t fork__t--svc" href="<?php echo esc_url( get_permalink( $sid ) ); ?>">
+					<span class="fork__n">01</span>
+					<span class="fork__k">هل تحتاج الخدمة؟</span>
+					<strong><?php echo esc_html( get_the_title( $sid ) ); ?></strong>
+					<span class="fork__go">تفاصيل الخدمة والسعر <?php echo zad_icon( 'arrow', 16 ); // phpcs:ignore ?></span>
+				</a>
+				<?php endif; if ( $aid ) : ?>
+				<a class="fork__t fork__t--art" href="<?php echo esc_url( get_permalink( $aid ) ); ?>">
+					<span class="fork__n">0<?php echo $sid ? '2' : '1'; ?></span>
+					<span class="fork__k">لقراءة شرح أكثر · <?php echo esc_html( zad_reading_time( $aid ) ); ?></span>
 					<strong><?php echo esc_html( get_the_title( $aid ) ); ?></strong>
-					<span class="deep__go"><?php echo esc_html( $albl ); ?> <?php echo zad_icon( 'arrow', 18 ); // phpcs:ignore ?></span>
-				</span>
-			</a>
+					<span class="fork__go"><?php echo esc_html( $albl ); ?> <?php echo zad_icon( 'arrow', 16 ); // phpcs:ignore ?></span>
+				</a>
+				<?php endif; ?>
+			</div>
 			<?php endif; ?>
 			<div class="prose entry-content"><?php the_content(); ?></div>
 			<p class="meta-line">آخر تحديث: <?php echo esc_html( get_the_modified_date() ); ?></p>
