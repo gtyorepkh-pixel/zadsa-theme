@@ -167,6 +167,7 @@ while ( have_posts() ) :
 	<?php endif; ?>
 
 	<?php echo zad_children_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+	<?php echo zad_coverage_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
 	<!-- 4. What's included -->
 	<?php if ( $features ) : ?>
