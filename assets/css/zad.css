@@ -922,3 +922,12 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .shero .crumbs ol,.phero .crumbs ol,.kbhero .crumbs ol{margin:0;color:#b9d6dd}
 .shero .crumbs [aria-current],.phero .crumbs [aria-current],.kbhero .crumbs [aria-current]{color:#fff;font-weight:700}
 .shero .crumbs a:hover,.phero .crumbs a:hover{color:var(--accent);text-decoration:none}
+
+/* [zad_cta] + legacy inline-styled content */
+.zad-cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:22px 0}
+.zad-faq{margin-top:2em}
+.prose thead[style] th{background:transparent;color:inherit}
+.prose table[style*="min-width"]{display:table;min-width:0!important}
+.prose a[style*="#0066cc"]{background:var(--primary)!important}
+.prose a[style*="#F49300"],.prose a[style*="#f49300"]{background:var(--accent)!important;color:#1b1200!important}
+.prose a[style*="background"]{text-decoration:none}
