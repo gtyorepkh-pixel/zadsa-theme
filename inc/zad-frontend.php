@@ -204,9 +204,18 @@ add_action( 'save_post_post', function ( $id ) {
 	update_post_meta( $id, '_zad_post_service', isset( $_POST['zad_post_service'] ) ? absint( $_POST['zad_post_service'] ) : '' );
 } );
 
+/** Where the collapsed headings list shows. Default (option off): articles, FAQ pages. Option on: exactly the content types ticked in the theme options. */
+function zad_toc_enabled_here() {
+	if ( ! is_singular() ) { return false; }
+	if ( zad_opt( 'zad_toc_on', false ) ) {
+		return in_array( get_post_type(), (array) zad_opt( 'zad_toc_types', array() ), true );
+	}
+	return is_singular( 'post' ) || zad_is_faq() || zad_is_article();
+}
+
 /* Table of contents for articles with 3+ headings */
 add_filter( 'the_content', function ( $content ) {
-	if ( zad_suite_has( 'toc' ) || ! ( is_singular( 'post' ) || zad_is_faq() || zad_is_article() ) || ! in_the_loop() || ! is_main_query() ) {
+	if ( zad_suite_has( 'toc' ) || ! zad_toc_enabled_here() || ! in_the_loop() || ! is_main_query() ) {
 		return $content;
 	}
 	$n   = 0;
@@ -217,10 +226,11 @@ add_filter( 'the_content', function ( $content ) {
 		$toc[] = array( (int) $m[1], $id, wp_strip_all_tags( $m[3] ) );
 		return '<h' . $m[1] . $m[2] . ' id="' . $id . '">' . $m[3] . '</h' . $m[1] . '>';
 	}, $content );
-	if ( count( $toc ) < 3 ) {
+	if ( count( $toc ) < max( 2, (int) zad_opt( 'zad_toc_min', 3 ) ) ) {
 		return $content;
 	}
-	$html = '<nav class="toc" aria-label="عناوين المقال"><details><summary><span>عناوين المقال</span><span class="toc__btn" aria-hidden="true">عرض العناوين</span></summary><ol>';
+	$toc_title = trim( (string) zad_opt( 'zad_toc_title', '' ) ) ?: 'عناوين المقال';
+	$html = '<nav class="toc" aria-label="' . esc_attr( $toc_title ) . '"><details><summary><span>' . esc_html( $toc_title ) . '</span><span class="toc__btn" aria-hidden="true">عرض العناوين</span></summary><ol>';
 	foreach ( $toc as $t ) {
 		$html .= '<li class="toc--' . (int) $t[0] . '"><a href="#' . esc_attr( $t[1] ) . '">' . esc_html( $t[2] ) . '</a></li>';
 	}
