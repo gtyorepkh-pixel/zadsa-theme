@@ -62,15 +62,13 @@ while ( have_posts() ) :
 			<?php endif; ?>
 		</article>
 		<aside class="slayout__side"><div class="sticky" id="quote">
-			<?php echo zad_quote_form( array( 'id' => 'fq1', 'compact' => true, 'title' => 'ما زال عندك سؤال؟', 'sub' => 'اتصل بنا مباشرة أو راسلنا على واتساب', 'service_id' => $sids ? $sids[0] : 0 ) ); // phpcs:ignore ?>
-			<?php $fwa = zad_wa_link( 'مرحباً، عندي سؤال بخصوص: ' . get_the_title(), 0 ); $fph = zad_phone( 0 );
-			if ( $fwa || $fph ) : ?>
-			<div class="faq-wa">
-				<p><b>تفضّل الكلام مباشرة؟</b> اتصل بنا أو أرسل سؤالك على واتساب ويرد عليك أحد المختصين.</p>
+			<?php $fwa = zad_wa_link( 'مرحباً، عندي سؤال بخصوص: ' . get_the_title(), 0 ); $fph = zad_phone( 0 ); ?>
+			<div class="faq-ask">
+				<h3>ما زال عندك سؤال؟</h3>
+				<p>اتصل بنا أو راسلنا على واتساب ويرد عليك أحد المختصين مباشرة.</p>
 				<?php if ( $fph ) : ?><a class="btn btn--primary btn--block" href="<?php echo esc_url( zad_tel_href( $fph ) ); ?>"><?php echo zad_icon( 'phone', 20 ); // phpcs:ignore ?> اتصل بنا</a><?php endif; ?>
 				<?php if ( $fwa ) : ?><a class="btn btn--wa btn--block" href="<?php echo esc_url( $fwa ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> كلّمنا على واتساب</a><?php endif; ?>
 			</div>
-			<?php endif; ?>
 		</div></aside>
 	</div>
 </main>

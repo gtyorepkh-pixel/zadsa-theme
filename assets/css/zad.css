@@ -1095,3 +1095,4 @@ button,input,select,textarea,optgroup{font-family:inherit}
 
 .faq-wa{margin-top:14px;padding:16px 18px;border:1px dashed var(--line);border-radius:var(--r);background:var(--surface)}.faq-wa p{margin:0 0 12px;font-size:.92rem;line-height:1.8}
 .faq-wa .btn+.btn{margin-top:8px}
+.faq-ask{padding:20px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}.faq-ask h3{margin:0 0 6px;font-size:1.1rem}.faq-ask p{margin:0 0 14px;font-size:.92rem;line-height:1.8;color:var(--ink-soft,#5a6b72)}.faq-ask .btn+.btn{margin-top:8px}
