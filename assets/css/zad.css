@@ -945,3 +945,11 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .cov__chips a,.cov__chips span{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:99px;border:1.5px solid var(--sky);background:var(--sky-50);color:var(--primary);font-weight:700;text-decoration:none}
 .cov__chips a:hover{background:var(--primary);border-color:var(--primary);color:#fff}
 .cov__note{margin-top:16px!important;color:var(--sky-700)!important;font-weight:700}
+
+/* Breadcrumb bar: also on section hubs and libraries */
+.hubhero,.libhero{overflow-x:clip}
+.hubhero .crumbs,.libhero .crumbs{margin-inline:calc(50% - 50vw);padding:12px calc(50vw - 50%);background:var(--topbar-bg,#074250);border-bottom:1px solid rgba(143,211,240,.28);box-shadow:0 1px 0 rgba(0,0,0,.15);margin-bottom:26px}
+.hubhero .crumbs{margin-top:-30px}.libhero .crumbs{margin-top:-32px}
+.hubhero .crumbs ol,.libhero .crumbs ol{margin:0;color:#b9d6dd}
+.hubhero .crumbs a,.libhero .crumbs a{color:#fff}.hubhero .crumbs a:hover,.libhero .crumbs a:hover{color:var(--accent)}
+.hubhero .crumbs [aria-current],.libhero .crumbs [aria-current]{color:#fff;font-weight:700}
