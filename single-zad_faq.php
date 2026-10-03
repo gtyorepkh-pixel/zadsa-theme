@@ -15,6 +15,21 @@ while ( have_posts() ) :
 	<div class="wrap slayout">
 		<article class="slayout__main">
 			<?php if ( $short ) : ?><div class="answer"><span class="eyebrow" data-nosnippet>الإجابة المختصرة</span><p><?php echo esc_html( zad_clean_answer( $short ) ); ?></p></div><?php endif; ?>
+			<?php
+			$more = trim( (string) get_post_meta( $id, '_zad_faq_more', true ) );
+			if ( $more ) : ?><div class="faq-more"><?php echo wp_kses_post( wpautop( esc_html( $more ) ) ); ?></div><?php endif;
+			$aid = (int) get_post_meta( $id, '_zad_faq_article', true );
+			if ( $aid && get_post_status( $aid ) === 'publish' ) :
+				$albl = get_post_meta( $id, '_zad_faq_article_lbl', true ) ?: 'اقرأ الدليل كاملاً'; ?>
+			<a class="deep" href="<?php echo esc_url( get_permalink( $aid ) ); ?>">
+				<?php if ( has_post_thumbnail( $aid ) ) : ?><span class="deep__img"><?php echo get_the_post_thumbnail( $aid, 'medium', array( 'loading' => 'lazy' ) ); ?></span><?php endif; ?>
+				<span class="deep__body">
+					<span class="deep__kick">للتعمّق أكثر · <?php echo esc_html( zad_reading_time( $aid ) ); ?></span>
+					<strong><?php echo esc_html( get_the_title( $aid ) ); ?></strong>
+					<span class="deep__go"><?php echo esc_html( $albl ); ?> <?php echo zad_icon( 'arrow', 18 ); // phpcs:ignore ?></span>
+				</span>
+			</a>
+			<?php endif; ?>
 			<div class="prose entry-content"><?php the_content(); ?></div>
 			<p class="meta-line">آخر تحديث: <?php echo esc_html( get_the_modified_date() ); ?></p>
 

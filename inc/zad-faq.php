@@ -39,6 +39,15 @@ function zad_faq_metabox( $post ) {
 		echo '<option value="' . (int) $s->ID . '"' . ( in_array( $s->ID, $sel, true ) ? ' selected' : '' ) . '>' . esc_html( $s->post_title ) . '</option>';
 	}
 	echo '</select>';
+	$more = (string) get_post_meta( $post->ID, '_zad_faq_more', true );
+	$art  = (int) get_post_meta( $post->ID, '_zad_faq_article', true );
+	$lbl  = (string) get_post_meta( $post->ID, '_zad_faq_article_lbl', true );
+	echo '<hr><p><b>فقرة توضيح تحت الإجابة</b> (اختياري، نص عادي)</p><textarea name="zad_faq_more" rows="5" style="width:100%">' . esc_textarea( $more ) . '</textarea>';
+	echo '<p><b>مقال للتعمّق</b> (اختياري)</p><select name="zad_faq_article" style="width:100%"><option value="0">— بدون —</option>';
+	foreach ( get_posts( array( 'post_type' => zad_article_types(), 'numberposts' => 300, 'orderby' => 'title', 'order' => 'ASC' ) ) as $a ) {
+		echo '<option value="' . (int) $a->ID . '"' . selected( $art, $a->ID, false ) . '>' . esc_html( $a->post_title ) . '</option>';
+	}
+	echo '</select><p><input type="text" name="zad_faq_article_lbl" value="' . esc_attr( $lbl ) . '" placeholder="عنوان الزر (افتراضي: اقرأ الدليل كاملاً)" style="width:100%"></p>';
 }
 add_action( 'save_post', function ( $id ) {
 	if ( ! in_array( get_post_type( $id ), zad_faq_types(), true ) ) {
@@ -49,6 +58,9 @@ add_action( 'save_post', function ( $id ) {
 	}
 	$v = isset( $_POST['zad_faq_services'] ) ? array_map( 'strval', array_map( 'absint', (array) $_POST['zad_faq_services'] ) ) : array();
 	update_post_meta( $id, '_zad_faq_services', $v );
+	update_post_meta( $id, '_zad_faq_more', isset( $_POST['zad_faq_more'] ) ? sanitize_textarea_field( wp_unslash( $_POST['zad_faq_more'] ) ) : '' );
+	update_post_meta( $id, '_zad_faq_article', isset( $_POST['zad_faq_article'] ) ? absint( $_POST['zad_faq_article'] ) : 0 );
+	update_post_meta( $id, '_zad_faq_article_lbl', isset( $_POST['zad_faq_article_lbl'] ) ? sanitize_text_field( wp_unslash( $_POST['zad_faq_article_lbl'] ) ) : '' );
 } );
 
 add_action( 'pre_get_posts', function ( $q ) {
