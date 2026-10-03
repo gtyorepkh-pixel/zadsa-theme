@@ -33,6 +33,8 @@ add_action( 'template_redirect', function () {
 }, 1 );
 
 add_action( 'admin_menu', function () {
+	// Off by default: nothing here ever runs unless the owner turns it on in theme options.
+	if ( ! zad_opt( 'zad_enable_move', false ) ) { return; }
 	add_management_page( 'نقل الصفحات إلى قسم', 'نقل الصفحات إلى قسم (زاد)', 'manage_options', 'zad-move', 'zad_move_page' );
 } );
 
