@@ -63,6 +63,13 @@ while ( have_posts() ) :
 		</article>
 		<aside class="slayout__side"><div class="sticky" id="quote">
 			<?php echo zad_quote_form( array( 'id' => 'fq1', 'compact' => true, 'title' => 'ما زال عندك سؤال؟', 'sub' => 'اترك رقمك ونتصل بك', 'service_id' => $sids ? $sids[0] : 0 ) ); // phpcs:ignore ?>
+			<?php $fwa = zad_wa_link( 'مرحباً، عندي سؤال بخصوص: ' . get_the_title(), 0 );
+			if ( $fwa ) : ?>
+			<div class="faq-wa">
+				<p><b>تفضّل الكتابة؟</b> أرسل سؤالك على واتساب ويرد عليك أحد المختصين مباشرة.</p>
+				<a class="btn btn--wa btn--block" href="<?php echo esc_url( $fwa ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> كلّمنا على واتساب</a>
+			</div>
+			<?php endif; ?>
 		</div></aside>
 	</div>
 </main>
