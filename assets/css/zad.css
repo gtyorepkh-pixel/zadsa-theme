@@ -1008,3 +1008,8 @@ button,input,select,textarea,optgroup{font-family:inherit}
 /* Floating contact buttons: always visible (no toggle) */
 .fab__actions,.fab.is-open .fab__actions{display:flex}
 .fab__main{display:none}
+
+/* Fixed section floors (no logic): white · sky tint · mint · cream · dark */
+.sec--mint{background:#e9f6f3}
+.sec--cream{background:#fff8ec}
+[data-theme=dark] .sec--mint,[data-theme=dark] .sec--cream{background:var(--tint)}

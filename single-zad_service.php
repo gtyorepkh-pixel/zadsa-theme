@@ -193,7 +193,7 @@ while ( have_posts() ) :
 
 	<!-- 6. Sub-services -->
 	<?php if ( $subs ) : ?>
-	<section class="sec sec--tint"><div class="wrap">
+	<section class="sec sec--mint"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">خدماتنا</span><h2>أنواع <?php echo esc_html( $title ); ?></h2></header>
 		<div class="cardgrid cardgrid--4">
 			<?php foreach ( $subs as $w ) : ?>
@@ -263,7 +263,7 @@ while ( have_posts() ) :
 	<?php endif; ?>
 
 	<!-- 11. Technical card (spec) -->
-	<section class="sec sec--tint"><div class="wrap wrap--narrow">
+	<section class="sec sec--mint"><div class="wrap wrap--narrow">
 		<header class="sec__head"><span class="eyebrow"><?php echo zad_icon( 'check', 14 ); // phpcs:ignore ?> نظرة سريعة</span><h2>البطاقة الفنية</h2></header>
 		<dl class="info">
 			<?php
@@ -298,7 +298,7 @@ while ( have_posts() ) :
 	</div></section>
 	<?php endif; ?>
 	<?php if ( $harms ) : ?>
-	<section class="sec sec--tint"><div class="wrap">
+	<section class="sec sec--cream"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">الأضرار المحتملة</span><h2>لماذا لا تؤجّل المعالجة؟</h2></header>
 		<div class="cardgrid">
 			<?php foreach ( $harms as $w ) : ?><div class="icard icard--warn"><span class="icard__ic"><?php echo zad_icon( 'bolt', 24 ); // phpcs:ignore ?></span><h3><?php echo esc_html( $w['t'] ); ?></h3><p><?php echo esc_html( $w['d'] ); ?></p></div><?php endforeach; ?>
@@ -309,7 +309,7 @@ while ( have_posts() ) :
 	<?php $ctx( 1 ); ?>
 	<!-- 11c. Safety -->
 	<?php if ( $safety || $after ) : ?>
-	<section class="sec"><div class="wrap">
+	<section class="sec sec--tint"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow"><?php echo zad_icon( 'shield', 14 ); // phpcs:ignore ?> الأمان أولاً</span><h2>آمن لمن تحب</h2></header>
 		<?php if ( $safety ) : ?><div class="cardgrid"><?php foreach ( $safety as $w ) : ?><div class="icard"><span class="icard__ic"><?php echo zad_icon( 'shield', 26 ); // phpcs:ignore ?></span><h3><?php echo esc_html( $w['t'] ); ?></h3><p><?php echo esc_html( $w['d'] ); ?></p></div><?php endforeach; ?></div><?php endif; ?>
 		<?php if ( $after ) : ?><div class="after"><h3>إرشادات ما بعد الخدمة</h3><ul><?php foreach ( $after as $l ) { echo '<li>' . zad_icon( 'check', 18 ) . '<span>' . esc_html( $l ) . '</span></li>'; } // phpcs:ignore ?></ul></div><?php endif; ?>
@@ -319,7 +319,7 @@ while ( have_posts() ) :
 	<?php $ctx( 0 ); ?>
 	<!-- 11d. Packages -->
 	<?php if ( $pkgs ) : ?>
-	<section class="sec sec--tint"><div class="wrap">
+	<section class="sec sec--mint"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">باقات الحماية</span><h2>اختر الباقة المناسبة</h2></header>
 		<div class="pkgs">
 			<?php foreach ( $pkgs as $i => $pk ) : ?>
@@ -337,7 +337,7 @@ while ( have_posts() ) :
 
 	<!-- 11e. Warranty -->
 	<?php if ( $wrows ) : ?>
-	<section class="sec"><div class="wrap wrap--narrow">
+	<section class="sec sec--cream"><div class="wrap wrap--narrow">
 		<header class="sec__head"><span class="eyebrow"><?php echo zad_icon( 'badge', 14 ); // phpcs:ignore ?> الضمان</span><h2>ضمان مكتوب وموثّق</h2></header>
 		<div class="wrows"><?php foreach ( $wrows as $w ) : ?><div class="wrow"><span class="icard__ic"><?php echo zad_icon( 'shield', 24 ); // phpcs:ignore ?></span><div><h3><?php echo esc_html( $w['t'] ); ?></h3><p><?php echo esc_html( $w['d'] ); ?></p></div></div><?php endforeach; ?></div>
 	</div></section>
@@ -383,7 +383,7 @@ while ( have_posts() ) :
 	<!-- 13a. B2B sectors -->
 	<?php $sectors = array_filter( (array) zad_opt( 'zad_sectors', array() ), function ( $c ) { return ! empty( $c['name'] ); } );
 	if ( $sectors ) : ?>
-	<section class="sec sec--tint"><div class="wrap">
+	<section class="sec sec--mint"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">قطاع الأعمال</span><h2>شركات تثق بنا</h2></header>
 		<div class="b2b">
 			<?php foreach ( $sectors as $sct ) : ?>
@@ -407,7 +407,7 @@ while ( have_posts() ) :
 
 	<!-- 14. Coverage -->
 	<?php if ( $area_names ) : ?>
-	<section class="sec sec--tint"><div class="wrap">
+	<section class="sec sec--cream"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">تغطيتنا</span><h2>نصل إليك في أي منطقة</h2></header>
 		<ul class="chips"><?php foreach ( $areas as $t ) : ?><li><a href="<?php echo esc_url( 0 === (int) $t->parent ? zad_city_url( $id, $t ) : get_term_link( $t ) ); ?>"><?php echo zad_icon( 'pin', 16 ); // phpcs:ignore ?> <?php echo esc_html( $t->name ); ?></a></li><?php endforeach; ?></ul>
 	</div></section>
@@ -446,7 +446,7 @@ while ( have_posts() ) :
 	<?php
 	$rel = zad_related_services( $id, 6 );
 	if ( $rel->have_posts() ) : ?>
-	<section class="sec sec--tint"><div class="wrap">
+	<section class="sec sec--mint"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">قد يهمك أيضاً</span><h2>خدمات ومقالات ذات صلة</h2></header>
 		<div class="sgrid"><?php while ( $rel->have_posts() ) { $rel->the_post(); get_template_part( 'template-parts/' . ( in_array( get_post_type(), zad_service_types(), true ) ? 'service-card' : 'post-card' ) ); } wp_reset_postdata(); ?></div>
 	</div></section>

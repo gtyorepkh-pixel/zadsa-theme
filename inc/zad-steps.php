@@ -80,7 +80,7 @@ function zad_steps_save( $post_id, $in ) {
 
 /* ---------- front end ---------- */
 function zad_steps_cards1( $steps ) {
-	$o = '<section class="sec"><div class="wrap"><header class="sec__head"><span class="eyebrow">خطوة بخطوة</span><h2>كيف تسير عملية التنفيذ</h2></header><ol class="hsteps">';
+	$o = '<section class="sec sec--cream"><div class="wrap"><header class="sec__head"><span class="eyebrow">خطوة بخطوة</span><h2>كيف تسير عملية التنفيذ</h2></header><ol class="hsteps">';
 	foreach ( $steps as $i => $s ) {
 		$sp = array_map( 'trim', explode( '||', (string) $s['d'] ) ); $tags = isset( $sp[1] ) ? array_filter( array_map( 'trim', preg_split( '/[,،]/u', $sp[1] ) ) ) : array();
 		$o .= '<li><span class="hsteps__n">' . esc_html( $i + 1 ) . '</span><h3>' . esc_html( $s['t'] ) . '</h3><p>' . esc_html( $sp[0] ) . '</p>';
