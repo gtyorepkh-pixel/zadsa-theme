@@ -75,21 +75,40 @@ function zad_service_faqs( $service_id, $limit = 6 ) {
 	) );
 }
 
-/** QAPage schema on single questions. */
+/** Strip a leading "الإجابة" label ("الإجابة:", "الإجابة المختصرة -", …) so it never starts a description, snippet or schema answer. */
+function zad_clean_answer( $t ) {
+	$t = trim( preg_replace( '/\s+/u', ' ', wp_strip_all_tags( html_entity_decode( (string) $t, ENT_QUOTES, 'UTF-8' ) ) ) );
+	return trim( preg_replace( '/^\s*(?:ال)?[إا]جابة(?:\s+المختصرة)?\s*[:：\-–—]*\s*/u', '', $t ) );
+}
+
+/** Plain-text answer of a single question page: the short answer (excerpt) when present, otherwise the start of the content. */
+function zad_faq_answer_text( $id ) {
+	$ex = has_excerpt( $id ) ? get_the_excerpt( $id ) : '';
+	$t  = zad_clean_answer( $ex );
+	if ( '' === $t ) { $t = zad_clean_answer( strip_shortcodes( (string) get_post_field( 'post_content', $id ) ) ); }
+	return $t;
+}
+
+/** Schema for a single question page: FAQPage with one Question (answer text only; no label, no extra fields). */
 add_action( 'wp_head', function () {
 	if ( ! zad_is_faq() || 'theme' !== zad_schema_owner() ) {
 		return;
 	}
-	$ans = wp_strip_all_tags( get_the_excerpt() ?: get_the_content() );
+	$id  = get_queried_object_id();
+	$ans = zad_faq_answer_text( $id );
+	if ( '' === $ans ) { return; }
+	$full = zad_clean_answer( strip_shortcodes( (string) get_post_field( 'post_content', $id ) ) );
+	if ( mb_strlen( $full ) > mb_strlen( $ans ) && 0 !== mb_strpos( $full, mb_substr( $ans, 0, 30 ) ) ) { $ans .= ' ' . $full; }
 	zad_print_schema( array(
 		'@context'   => 'https://schema.org',
-		'@type'      => 'QAPage',
+		'@type'      => 'FAQPage',
+		'@id'        => get_permalink( $id ) . '#faq',
 		'mainEntity' => array(
-			'@type'          => 'Question',
-			'name'           => get_the_title(),
-			'answerCount'    => 1,
-			'dateCreated'    => get_the_date( 'c' ),
-			'acceptedAnswer' => array( '@type' => 'Answer', 'text' => $ans, 'dateCreated' => get_the_modified_date( 'c' ), 'url' => get_permalink() ),
+			array(
+				'@type'          => 'Question',
+				'name'           => wp_strip_all_tags( get_the_title( $id ) ),
+				'acceptedAnswer' => array( '@type' => 'Answer', 'text' => wp_trim_words( $ans, 160, '' ) ),
+			),
 		),
 	) );
 }, 21 );

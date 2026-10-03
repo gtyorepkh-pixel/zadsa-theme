@@ -14,7 +14,7 @@ while ( have_posts() ) :
 <main id="main" class="sec">
 	<div class="wrap slayout">
 		<article class="slayout__main">
-			<?php if ( $short ) : ?><div class="answer"><span class="eyebrow">الإجابة المختصرة</span><p><?php echo esc_html( $short ); ?></p></div><?php endif; ?>
+			<?php if ( $short ) : ?><div class="answer"><span class="eyebrow" data-nosnippet>الإجابة المختصرة</span><p><?php echo esc_html( zad_clean_answer( $short ) ); ?></p></div><?php endif; ?>
 			<div class="prose entry-content"><?php the_content(); ?></div>
 			<p class="meta-line">آخر تحديث: <?php echo esc_html( get_the_modified_date() ); ?></p>
 

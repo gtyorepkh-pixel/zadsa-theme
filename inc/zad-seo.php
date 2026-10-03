@@ -90,7 +90,11 @@ function zad_seo_desc() {
 		}
 		$d = zad_seo_meta( $id, 'desc' );
 		if ( $d ) {
-			return $d;
+			return function_exists( 'zad_clean_answer' ) ? zad_clean_answer( $d ) : $d;
+		}
+		if ( function_exists( 'zad_is_faq' ) && zad_is_faq( $id ) && function_exists( 'zad_faq_answer_text' ) ) {
+			$a = zad_faq_answer_text( $id );
+			if ( '' !== $a ) { return wp_trim_words( $a, 32, '…' ); }
 		}
 		$ex = get_the_excerpt( $id );
 		return $ex ? wp_trim_words( wp_strip_all_tags( $ex ), 30, '' ) : wp_trim_words( wp_strip_all_tags( get_post_field( 'post_content', $id ) ), 30, '' );
