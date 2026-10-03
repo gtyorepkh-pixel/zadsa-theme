@@ -1094,3 +1094,4 @@ button,input,select,textarea,optgroup{font-family:inherit}
 @media(max-width:600px){.fork{grid-template-columns:1fr}.fork__t+.fork__t{border-inline-start:0;border-top:1px solid var(--line)}}
 
 .faq-wa{margin-top:14px;padding:16px 18px;border:1px dashed var(--line);border-radius:var(--r);background:var(--surface)}.faq-wa p{margin:0 0 12px;font-size:.92rem;line-height:1.8}
+.faq-wa .btn+.btn{margin-top:8px}
