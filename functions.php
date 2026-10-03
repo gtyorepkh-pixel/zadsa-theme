@@ -46,6 +46,7 @@ require_once MEMO_THEME_DIR .'inc/zad-schemacheck.php';
 require_once MEMO_THEME_DIR .'inc/zad-faqmigrate.php';
 require_once MEMO_THEME_DIR .'inc/zad-assets.php';
 require_once MEMO_THEME_DIR .'inc/zad-related.php';
+require_once MEMO_THEME_DIR .'inc/zad-steps.php';
 require_once MEMO_THEME_DIR .'inc/zad-hood.php';
 require_once MEMO_THEME_DIR .'inc/zad-audit.php';
 require_once MEMO_THEME_DIR .'inc/zad-itemlist.php';

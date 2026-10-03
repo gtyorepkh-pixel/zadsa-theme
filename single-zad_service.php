@@ -216,19 +216,8 @@ while ( have_posts() ) :
 	</div></section>
 	<?php endif; ?>
 
-	<!-- 8. Timeline -->
-	<?php if ( $steps ) : ?>
-	<section class="sec"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow">خطوة بخطوة</span><h2>كيف تسير عملية التنفيذ</h2></header>
-		<ol class="hsteps">
-			<?php foreach ( $steps as $i => $s ) : ?>
-				<?php $sp = array_map( 'trim', explode( '||', $s['d'] ) ); $tags = isset( $sp[1] ) ? array_filter( array_map( 'trim', preg_split( '/[,،]/u', $sp[1] ) ) ) : array(); ?>
-				<li><span class="hsteps__n"><?php echo esc_html( $i + 1 ); ?></span><h3><?php echo esc_html( $s['t'] ); ?></h3><p><?php echo esc_html( $sp[0] ); ?></p>
-				<?php if ( $tags ) : ?><div class="hsteps__tags"><?php foreach ( $tags as $tg ) { echo '<span class="chip">' . esc_html( $tg ) . '</span>'; } ?></div><?php endif; ?></li>
-			<?php endforeach; ?>
-		</ol>
-	</div></section>
-	<?php endif; ?>
+	<!-- 8. Execution steps (design chosen per page) -->
+	<?php echo zad_steps_html( $id, $steps ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
 	<!-- 9. Pricing factors + CTA box -->
 	<?php if ( $factors ) : ?>

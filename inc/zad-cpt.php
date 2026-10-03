@@ -171,6 +171,7 @@ function zad_service_metabox( $post ) {
 
 		<h4>خطوات التنفيذ</h4>
 		<?php zad_repeater_ui( $post->ID, 'steps', 't', 'd', 'عنوان الخطوة', 'وصف الخطوة', 'إضافة خطوة' ); ?>
+		<?php zad_steps_box( $post->ID ); ?>
 
 		<h4>كيف نحدد السعر (عوامل التسعير)</h4>
 		<?php zad_repeater_ui( $post->ID, 'factors', 't', 'd', 'العنوان', 'الوصف', 'إضافة عامل' ); ?>
@@ -308,6 +309,7 @@ add_action( 'save_post', function ( $post_id ) {
 	update_post_meta( $post_id, '_zad_ba', isset( $in['ba'] ) ? implode( ',', array_filter( array_map( 'absint', explode( ',', $in['ba'] ) ) ) ) : '' );
 	zad_related_save( $post_id, $in );
 	zad_coverage_save( $post_id, $in );
+	zad_steps_save( $post_id, $in );
 } );
 
 /* ------------------------------------------------------------------ */
