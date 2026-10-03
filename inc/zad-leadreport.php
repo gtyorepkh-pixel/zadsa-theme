@@ -46,6 +46,7 @@ function zad_leadreport_page() {
 		echo '<a class="button' . ( $k === $days ? ' button-primary' : '' ) . '" href="' . esc_url( admin_url( 'edit.php?post_type=zad_lead&page=zad-lead-report&d=' . $k ) ) . '">' . esc_html( $lbl ) . '</a> ';
 	}
 	echo '</p><p>إجمالي الطلبات في الفترة: <b>' . count( $leads ) . '</b></p>';
+	zad_leadreport_wa( $days );
 	if ( ! $leads ) { echo '<p>لا طلبات في هذه الفترة.</p></div>'; return; }
 	$titles = array( 'page' => 'الصفحة التي جاء منها الطلب', 'hood' => 'الحي (لصفحات الأحياء)', 'sec' => 'القسم', 'svc' => 'الخدمة المطلوبة', 'area' => 'المنطقة المكتوبة في النموذج' );
 	foreach ( $titles as $k => $t ) {
@@ -61,4 +62,27 @@ function zad_leadreport_page() {
 	$dm = max( $by['day'] );
 	foreach ( array_slice( $by['day'], -30, null, true ) as $d => $c ) { echo '<tr><td>' . esc_html( $d ) . '</td><td style="width:60px"><b>' . (int) $c . '</b></td><td style="width:180px">' . zad_leadreport_bar( $c, $dm ) . '</td></tr>'; } // phpcs:ignore
 	echo '</tbody></table><p class="description">المصدر هو رابط الصفحة المحفوظ مع كل طلب. الطلبات القديمة التي بلا مصدر تظهر «غير معروف». أين يأتي أكثر من طلب فاستثمر في محتوى تلك الصفحات والأحياء المشابهة.</p></div>';
+}
+
+
+/** WhatsApp button clicks by card (aggregate counters; no personal data). */
+function zad_leadreport_wa( $days ) {
+	$log = (array) get_option( 'zad_wa_clicks', array() );
+	if ( ! $log ) { echo '<h2>نقرات واتساب من البطاقات</h2><p class="description">لا بيانات بعد (تُسجَّل عند استخدام بطاقات «اطلب في 30 ثانية» و«شخّص مشكلتك»).</p>'; return; }
+	$from = gmdate( 'Y-m-d', time() - $days * DAY_IN_SECONDS ); $by = array(); $pg = array();
+	foreach ( $log as $key => $d ) {
+		list( $src, $pid ) = array_pad( explode( '|', $key ), 2, 0 ); $n = 0;
+		foreach ( $d as $day => $c ) { if ( $day >= $from ) { $n += (int) $c; } }
+		if ( ! $n ) { continue; }
+		$by[ $src ] = ( $by[ $src ] ?? 0 ) + $n;
+		$t = (int) $pid ? get_the_title( (int) $pid ) : 'الصفحة الرئيسية';
+		$pg[ $t ] = ( $pg[ $t ] ?? 0 ) + $n;
+	}
+	arsort( $by ); arsort( $pg );
+	$names = zad_quick_sources();
+	echo '<h2>نقرات واتساب من البطاقات</h2><table class="widefat striped" style="max-width:520px"><tbody>';
+	foreach ( $by as $k => $n ) { echo '<tr><td>' . esc_html( $names[ $k ] ?? $k ) . '</td><td><b>' . (int) $n . '</b></td></tr>'; }
+	echo '</tbody></table>';
+	if ( $pg ) { echo '<p>أكثر الصفحات: '; $i = 0; foreach ( $pg as $t => $n ) { if ( ++$i > 6 ) { break; } echo esc_html( $t ) . ' (' . (int) $n . ') · '; } echo '</p>'; }
+	echo '<p class="description">النقرات تعني فتح محادثة واتساب بالرسالة المنظمة، وليست طلبات مؤكدة.</p>';
 }

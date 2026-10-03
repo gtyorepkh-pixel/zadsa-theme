@@ -223,6 +223,8 @@ if ( $hs ) : ?>
 </div></section>
 <?php endif; ?>
 
+<?php echo zad_dx_section( 0, 'home-b', (string) zad_opt( 'zad_dx_home_title', '' ), (string) zad_opt( 'zad_dx_home_sub', '' ) ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+
 <?php $home_areas = zad_link_lines( 'zad_home_areas' ); if ( $home_areas ) : ?>
 <section class="sec">
 	<div class="wrap">

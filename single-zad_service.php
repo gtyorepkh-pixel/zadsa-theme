@@ -87,7 +87,9 @@ while ( have_posts() ) :
 				</div>
 
 				<div class="shero__side">
-					<?php if ( $prices ) : ?>
+					<?php $hc = zad_hero_card( $id, (bool) $prices ); if ( 'q30' === $hc ) : echo zad_q30_html( $id, 'hero-a' ); // phpcs:ignore
+					elseif ( 'dx' === $hc ) : echo zad_dx_html( $id, 'hero-b' ); // phpcs:ignore
+					elseif ( 'est' === $hc ) : ?>
 					<div class="est" data-est data-wa="<?php echo esc_attr( zad_whatsapp( $id ) ); ?>" data-title="<?php echo esc_attr( $title ); ?>" data-unit="<?php echo esc_attr( $unit ); ?>">
 						<div class="est__head"><span class="est__step">1</span><div><strong>حدّد خدمتك واعرف سعرها</strong><small>اختر الخدمة المطلوبة من الخيارات</small></div></div>
 						<div class="est__chips" role="radiogroup" aria-label="اختر الخدمة">
@@ -174,6 +176,8 @@ while ( have_posts() ) :
 
 	<?php echo zad_children_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 	<?php echo zad_coverage_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+
+	<?php if ( 'dx' !== $hc ) { echo zad_dx_section( $id, 'sec-b' ); } // phpcs:ignore ?>
 
 	<!-- 4. What's included -->
 	<?php if ( $features ) : ?>
@@ -468,7 +472,10 @@ while ( have_posts() ) :
 				<?php if ( $wa ) : ?><a class="btn btn--wa" href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> واتساب</a><?php endif; ?>
 			</div>
 		</div>
+		<?php $fin_a = ( 'q30' === get_post_meta( $id, '_zad_final_req', true ) ) ? zad_q30_html( $id, 'sec-a' ) : ''; if ( '' !== $fin_a ) : echo $fin_a; // phpcs:ignore
+		else : ?>
 		<?php echo zad_quote_form( array( 'service_id' => $id, 'id' => 'fq', 'title' => 'اترك بياناتك ونتصل بك', 'sub' => 'رد خلال دقائق', 'area' => $city ? $city->name : '' ) ); // phpcs:ignore ?>
+		<?php endif; ?>
 	</div></section>
 </main>
 <?php endwhile; get_footer(); ?>

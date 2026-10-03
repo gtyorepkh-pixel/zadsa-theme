@@ -227,6 +227,7 @@ function zad_service_metabox( $post ) {
 		<h4>خدمات ومقالات ذات صلة <small>(فارغ = لا يظهر القسم؛ اختر 3–6 صفحات وثيقة الصلة)</small></h4>
 		<?php zad_related_picker( $post->ID, $related ); ?>
 		<?php zad_coverage_box( $post->ID ); ?>
+		<?php zad_quick_box( $post->ID ); ?>
 	</div>
 	<?php zad_mb_tabs( $post->ID ); ?>
 	<?php
@@ -311,6 +312,7 @@ add_action( 'save_post', function ( $post_id ) {
 	zad_related_save( $post_id, $in );
 	zad_coverage_save( $post_id, $in );
 	zad_steps_save( $post_id, $in );
+	zad_quick_save( $post_id, $in );
 } );
 
 /* ------------------------------------------------------------------ */
@@ -500,10 +502,10 @@ function zad_mb_tabs( $post_id ) {
 	(function(){
 		var box=document.querySelector('.zad-mb');if(!box||box.dataset.tabbed)return;box.dataset.tabbed=1;
 		var rules=[
-			['نظرة عامة',/^الأساسيات/],
+			['نظرة عامة',/^(الأساسيات|بطاقة الهيرو)/],
 			['المميزات والأرقام',/^(مميزات|الأرقام|لماذا|أنواع الخدمة|الأدوات)/],
 			['خطوات التنفيذ',/^(خطوات التنفيذ|شكل قسم)/],
-			['المشاكل والأمان',/^(علامات|الأضرار|الأمان)/],
+			['المشاكل والأمان',/^(علامات|الأضرار|الأمان|الأعراض)/],
 			['الأسعار',/^(الأسعار|كيف نحدد|قائمة الأسعار|الباقات)/],
 			['الضمان',/^(الضمان|البطاقة الفنية)/],
 			['الأسئلة',/^الأسئلة/],

@@ -1016,3 +1016,63 @@ button,input,select,textarea,optgroup{font-family:inherit}
 
 /* Price estimator: no inner scrolling (height follows the options) */
 .est__chips{max-height:none;overflow:visible}
+
+/* Quick-request cards (أ) q30 / (ب) dx */
+
+.q30{color:#000;background:#fff;border-radius:26px;box-shadow:0 24px 60px rgba(0,0,0,.28);overflow:visible;position:relative;max-width:560px}
+.q30__head{display:flex;gap:12px;align-items:center;padding:16px 20px;background:linear-gradient(135deg,var(--sky-100),var(--sky-50));border-bottom:1px solid var(--line);border-radius:26px 26px 0 0;color:var(--primary)}
+.q30__bolt{flex:none;width:40px;height:40px;border-radius:50%;background:var(--accent);color:#1b1200;display:grid;place-items:center;font-size:1.1rem}
+.q30__head strong{display:block;font-size:1.15rem}.q30__head small{color:var(--muted)}
+.q30__body{padding:14px 18px 18px;display:grid;gap:12px}
+.q30__lab{display:flex;gap:8px;align-items:center;font-weight:800;color:var(--primary);margin-bottom:7px;font-size:.92rem}
+.q30__lab i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-size:.78rem}
+.q30__opts{display:flex;flex-wrap:wrap;gap:7px}
+.q30__opt{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:8px 14px;font:700 .88rem Tajawal;color:#000;cursor:pointer;transition:.15s}
+.q30__opt:hover{border-color:var(--sky)}
+.q30__opt.on{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 4px 12px rgba(12,104,126,.3)}
+.q30__opt--more{border-style:dashed;color:var(--primary);background:var(--sky-50)}
+.q30__seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--sky-50);border:1.5px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+.q30__seg button{border:0;background:transparent;border-radius:10px;padding:9px 6px;font:700 .9rem Tajawal;cursor:pointer;color:var(--primary)}
+.q30__seg button.on{background:var(--primary);color:#fff}
+.q30__prices{display:flex;align-items:center;gap:12px;width:100%;border:1.5px dashed var(--accent);background:#fff8ec;border-radius:16px;padding:10px 14px;cursor:pointer;font:700 .95rem Tajawal;color:#000;text-align:start}
+.q30__tag{flex:none;width:40px;height:40px;border-radius:12px;background:var(--accent);color:#1b1200;display:grid;place-items:center;font-size:1.2rem}
+.q30__prices span.t{flex:1;line-height:1.4}.q30__prices small{display:block;color:var(--muted);font-weight:500}
+.q30__prices .ch{color:var(--primary);transition:.2s}.q30__prices[aria-expanded=true] .ch{transform:rotate(180deg)}
+.q30__pw{position:relative}
+.q30__pop{position:absolute;inset-inline:0;bottom:calc(100% + 8px);z-index:30;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 22px 50px rgba(7,66,80,.28);padding:8px 8px 10px}
+.q30__pop[hidden]{display:none}
+.q30__pg{font-size:.78rem;font-weight:800;color:var(--sky-700);padding:8px 12px 3px}
+.q30__po{display:flex;gap:10px;align-items:center;width:100%;border:0;background:transparent;text-align:start;padding:10px 12px;border-radius:12px;cursor:pointer;font:600 .92rem Tajawal;color:#000}
+.q30__po:hover{background:var(--sky-50)}
+.q30__po b{margin-inline-start:auto;font-size:.82rem;color:var(--primary);background:var(--sky-50);padding:3px 10px;border-radius:99px;white-space:nowrap}
+.q30__po.on{background:var(--sky-100)}.q30__po.on::before{content:"✓";color:var(--primary);font-weight:800}
+.q30__note{margin:0;text-align:center;font-size:.8rem;color:var(--muted)}
+/* ===== B: شخّص مشكلتك ===== */
+.dx{color:#000;background:#fff;border-radius:26px;box-shadow:0 24px 60px rgba(0,0,0,.28);overflow:hidden}
+.dx__head{padding:16px 20px;background:linear-gradient(135deg,var(--sky-100),var(--sky-50));border-bottom:1px solid var(--line);color:var(--primary)}
+.dx__head strong{display:block;font-size:1.15rem}.dx__head small{color:var(--muted)}
+.dx__bar{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.dx__bar i{height:6px;border-radius:6px;background:var(--line)}.dx__bar i.on{background:linear-gradient(90deg,var(--primary),var(--sky))}
+.dx__body{padding:18px}
+.dx__q{margin:0 0 12px;font-weight:800;font-size:1.05rem;color:#000}
+.dx__tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.dx__tile{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:1.5px solid var(--line);background:#fff;border-radius:16px;padding:14px 8px;cursor:pointer;font:700 .9rem Tajawal;color:#000;transition:.15s}
+.dx__tile span{font-size:1.7rem;line-height:1}
+.dx__tile:hover{border-color:var(--sky);background:var(--sky-50);transform:translateY(-2px)}
+.dx__tile.on{border-color:var(--primary);background:var(--sky-50);box-shadow:inset 0 0 0 1px var(--primary)}
+.dx__step{display:none}.dx__step.on{display:block}
+.dx__back{border:0;background:none;color:var(--primary);font:700 .88rem Tajawal;cursor:pointer;margin-top:12px}
+.dx__res{border:1.5px solid var(--sky);background:linear-gradient(180deg,var(--sky-50),#fff);border-radius:18px;padding:16px;text-align:center}
+.dx__res small{display:block;color:var(--muted)}.dx__res h3{margin:4px 0 6px;color:var(--primary);font-size:1.3rem}
+.dx__price{display:inline-block;margin:6px 0;padding:8px 18px;border-radius:99px;background:var(--primary);color:#ffd58a;font-weight:800;font-size:1.15rem}
+.dx__sum{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:10px 0 14px}
+.dx__sum span{background:#fff;border:1px solid var(--line);border-radius:99px;padding:4px 12px;font-size:.82rem}
+.dx__why{margin:8px 0 0;font-size:.82rem;color:var(--muted)}
+
+.q30__in{width:100%;margin-top:8px;padding:10px 14px;border:1.5px solid var(--sky);border-radius:12px;font:600 .95rem var(--font);background:#fff;color:#000}
+.q30__in[hidden]{display:none}
+.dx__more{display:block;margin-top:10px;color:var(--primary);font-weight:800;text-decoration:underline}
+.dx__more[hidden],.dx__price[hidden]{display:none}
+.dxsec .dx{max-width:620px;margin-inline:auto;box-shadow:0 18px 46px rgba(12,104,126,.16);border:1px solid var(--line)}
+.sec--dark .q30{max-width:none}
+.q30 button,.dx button{font-family:inherit}
