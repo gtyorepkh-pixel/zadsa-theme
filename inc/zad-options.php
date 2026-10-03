@@ -40,6 +40,7 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_noindex_date', 'type' => 'switcher', 'title' => 'noindex لأرشيف التواريخ', 'default' => false ),
 		array( 'id' => 'zad_noindex_paged', 'type' => 'switcher', 'title' => 'noindex للصفحات المرقّمة (صفحة 2 فأكثر)', 'default' => false ),
 		array( 'id' => 'zad_audit_min_words', 'type' => 'number', 'title' => 'حد المحتوى القليل في فحص السيو (كلمة)', 'default' => 300 ),
+		array( 'id' => 'zad_est_max', 'type' => 'number', 'title' => 'حاسبة السعر: أقصى عدد خيارات تظهر', 'default' => 6, 'desc' => 'الحاسبة في أعلى صفحة الخدمة تعرض أول هذا العدد من خدمات جدول الأسعار بلا تمرير. 0 = كل الخيارات. الجدول الكامل يبقى في الصفحة.' ),
 		array( 'id' => 'zad_toc_on', 'type' => 'switcher', 'title' => 'عناوين المحتوى: تخصيص أماكن العرض', 'default' => false, 'desc' => 'مغلق = الوضع الحالي (المقالات وصفحات الأسئلة). مفعّل = تظهر فقط في الأنواع التي تحددها أدناه. القائمة تظهر مطويّة ولا تُفتح إلا بالضغط عليها.' ),
 		array( 'id' => 'zad_toc_types', 'type' => 'checkbox', 'title' => 'عناوين المحتوى: أنواع المحتوى المفعّلة', 'options' => 'post_types', 'desc' => 'تُستخدم فقط إذا فعّلت التخصيص أعلاه: الخدمات (التنظيف، المكافحة، التسليك…)، والأسئلة، والمقالات، والصفحات…', 'default' => array() ),
 		array( 'id' => 'zad_toc_title', 'type' => 'text', 'title' => 'عناوين المحتوى: عنوان القائمة', 'desc' => 'فارغ = عناوين المقال', 'default' => '' ),

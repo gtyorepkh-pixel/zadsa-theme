@@ -94,7 +94,13 @@ while ( have_posts() ) :
 						<?php
 						$by_group = array();
 						foreach ( $prices as $i => $r ) { $by_group[ $r['group'] ][ $i ] = $r; }
+						$est_max = (int) zad_opt( 'zad_est_max', 6 ); $est_n = 0; // 0 = show all; the full list stays in the price table below
 						foreach ( $by_group as $gname => $rows ) :
+							if ( $est_max > 0 ) {
+								if ( $est_n >= $est_max ) { break; }
+								$rows = array_slice( $rows, 0, $est_max - $est_n, true );
+							}
+							$est_n += count( $rows );
 							if ( '' !== $gname ) { echo '<div class="est__grp">' . esc_html( $gname ) . '</div>'; }
 							echo '<div class="est__row">';
 							foreach ( $rows as $i => $r ) {

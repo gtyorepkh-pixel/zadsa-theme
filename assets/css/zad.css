@@ -1013,3 +1013,6 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .sec--mint{background:#e9f6f3}
 .sec--cream{background:#fff8ec}
 [data-theme=dark] .sec--mint,[data-theme=dark] .sec--cream{background:var(--tint)}
+
+/* Price estimator: no inner scrolling (height follows the options) */
+.est__chips{max-height:none;overflow:visible}
