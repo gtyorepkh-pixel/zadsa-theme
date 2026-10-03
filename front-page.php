@@ -223,17 +223,17 @@ if ( $hs ) : ?>
 </div></section>
 <?php endif; ?>
 
-<?php if ( $areas && ! is_wp_error( $areas ) ) : ?>
+<?php $home_areas = zad_link_lines( 'zad_home_areas' ); if ( $home_areas ) : ?>
 <section class="sec">
 	<div class="wrap">
 		<header class="sec__head"><span class="eyebrow">مناطق الخدمة</span><h2>نغطي مدنكم وأحياءكم</h2></header>
 		<div class="citygrid">
-			<?php foreach ( $areas as $t ) : $d = get_terms( array( 'taxonomy' => 'service_area', 'parent' => $t->term_id, 'hide_empty' => false, 'number' => 6 ) ); ?>
-				<a class="city" href="<?php echo esc_url( $areas_page ? $areas_page . '#' . $t->slug : get_term_link( $t ) ); ?>">
+			<?php foreach ( $home_areas as $a ) : $tag = $a['url'] ? 'a' : 'div'; ?>
+				<<?php echo $tag; // phpcs:ignore ?> class="city"<?php echo $a['url'] ? ' href="' . esc_url( $a['url'] ) . '"' : ''; // phpcs:ignore ?>>
 					<span class="city__ic"><?php echo zad_icon( 'pin', 26 ); // phpcs:ignore ?></span>
-					<strong><?php echo esc_html( $t->name ); ?></strong>
-					<?php if ( $d && ! is_wp_error( $d ) ) : ?><small><?php echo esc_html( implode( '، ', wp_list_pluck( $d, 'name' ) ) ); ?></small><?php endif; ?>
-				</a>
+					<strong><?php echo esc_html( $a['name'] ); ?></strong>
+					<?php if ( $a['note'] ) : ?><small><?php echo esc_html( $a['note'] ); ?></small><?php endif; ?>
+				</<?php echo $tag; // phpcs:ignore ?>>
 			<?php endforeach; ?>
 		</div>
 	</div>

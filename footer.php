@@ -4,15 +4,35 @@ $wa    = zad_wa_link( zad_is_service() ? 'مرحباً، أرغب بطلب خد�
 $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'number' => 8, 'parent' => 0 ) );
 ?>
 <footer class="ftr">
-	<div class="wrap ftr__grid">
-		<div class="ftr__about">
-			<h3><?php bloginfo( 'name' ); ?></h3>
+	<?php if ( $phone || $wa ) : ?>
+	<div class="wrap ftr__cta">
+		<div><h2>جاهزون لخدمتك</h2><p>تواصل معنا الآن لمعاينة مجانية وعرض سعر واضح.</p></div>
+		<div class="hero__btns">
+			<?php if ( $phone ) : ?><a class="btn btn--accent" href="<?php echo esc_url( zad_tel_href( $phone ) ); ?>" dir="ltr"><?php echo zad_icon( 'phone', 20 ); // phpcs:ignore ?> <?php echo esc_html( $phone ); ?></a><?php endif; ?>
+			<?php if ( $wa ) : ?><a class="btn btn--wa" href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> واتساب</a><?php endif; ?>
+		</div>
+	</div>
+	<?php endif; ?>
+	<?php $f_areas = zad_link_lines( 'zad_footer_areas' ); ?>
+	<div class="wrap ftr__grid<?php echo $f_areas ? '' : ' ftr__grid--3'; ?>">
+		<div class="ftr__brand ftr__about">
+			<b><?php bloginfo( 'name' ); ?></b>
 			<?php echo wp_kses_post( wpautop( zad_opt( 'memopt_footer_h' ) ) ); ?>
 			<ul class="ftr__contact">
 				<?php if ( zad_opt( 'memopt_phone' ) ) : ?><li><?php echo zad_icon( 'phone', 18 ); // phpcs:ignore ?><a href="<?php echo esc_url( zad_tel_href( zad_opt( 'memopt_phone' ) ) ); ?>" dir="ltr"><?php echo esc_html( zad_opt( 'memopt_phone' ) ); ?></a></li><?php endif; ?>
 				<?php if ( zad_opt( 'memopt_mail' ) ) : ?><li><?php echo zad_icon( 'mail', 18 ); // phpcs:ignore ?><a href="mailto:<?php echo esc_attr( zad_opt( 'memopt_mail' ) ); ?>"><?php echo esc_html( zad_opt( 'memopt_mail' ) ); ?></a></li><?php endif; ?>
 				<?php if ( zad_opt( 'memopt_address' ) ) : ?><li><?php echo zad_icon( 'pin', 18 ); // phpcs:ignore ?><span><?php echo esc_html( zad_opt( 'memopt_address' ) ); ?></span></li><?php endif; ?>
 			</ul>
+			<div class="social">
+				<?php
+				foreach ( array( 'memopt_fb' => array( 'facebook', 'فيسبوك' ), 'memopt_tw' => array( 'x', 'إكس' ), 'memopt_insta' => array( 'instagram', 'إنستغرام' ), 'zad_linkedin' => array( 'linkedin', 'لينكدإن' ), 'zad_pinterest' => array( 'pinterest', 'بنترست' ) ) as $k => $v ) {
+					$u = zad_opt( $k );
+					if ( $u && preg_match( '#^https?://#', $u ) ) {
+						echo '<a href="' . esc_url( $u ) . '" target="_blank" rel="noopener" aria-label="' . esc_attr( $v[1] ) . '">' . zad_icon( $v[0], 20 ) . '</a>'; // phpcs:ignore
+					}
+				}
+				?>
+			</div>
 		</div>
 		<div>
 			<h3>أهم الروابط</h3>
@@ -32,19 +52,12 @@ $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'n
 			}
 			?>
 		</div>
+		<?php if ( $f_areas ) : ?>
 		<div>
-			<h3>تواصل اجتماعي</h3>
-			<div class="social">
-				<?php
-				foreach ( array( 'memopt_fb' => array( 'facebook', 'فيسبوك' ), 'memopt_tw' => array( 'x', 'إكس' ), 'memopt_insta' => array( 'instagram', 'إنستغرام' ), 'zad_linkedin' => array( 'linkedin', 'لينكدإن' ), 'zad_pinterest' => array( 'pinterest', 'بينترست' ), 'zad_tiktok' => array( 'tiktok', 'تيك توك' ), 'zad_snapchat' => array( 'snapchat', 'سناب شات' ), 'memopt_yt' => array( 'youtube', 'يوتيوب' ) ) as $k => $v ) {
-					$u = zad_opt( $k );
-					if ( $u && preg_match( '#^https?://#', $u ) ) {
-						echo '<a href="' . esc_url( $u ) . '" target="_blank" rel="noopener" aria-label="' . esc_attr( $v[1] ) . '">' . zad_icon( $v[0], 20 ) . '</a>'; // phpcs:ignore
-					}
-				}
-				?>
-			</div>
+			<h3>مناطق نخدمها</h3>
+			<ul class="ftr__list"><?php foreach ( $f_areas as $a ) { echo '<li>' . ( $a['url'] ? '<a href="' . esc_url( $a['url'] ) . '">' . esc_html( $a['name'] ) . '</a>' : esc_html( $a['name'] ) ) . '</li>'; } ?></ul>
 		</div>
+		<?php endif; ?>
 	</div>
 	<?php if ( zad_opt( 'zad_cr' ) || zad_opt( 'zad_vat' ) || zad_hours_text() ) : ?>
 	<div class="wrap ftr__badges">

@@ -40,6 +40,8 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_noindex_date', 'type' => 'switcher', 'title' => 'noindex لأرشيف التواريخ', 'default' => false ),
 		array( 'id' => 'zad_noindex_paged', 'type' => 'switcher', 'title' => 'noindex للصفحات المرقّمة (صفحة 2 فأكثر)', 'default' => false ),
 		array( 'id' => 'zad_audit_min_words', 'type' => 'number', 'title' => 'حد المحتوى القليل في فحص السيو (كلمة)', 'default' => 300 ),
+		array( 'id' => 'zad_home_areas', 'type' => 'textarea', 'title' => 'مناطق الخدمة في الصفحة الرئيسية', 'desc' => 'فارغ = لا يظهر القسم. سطر لكل بطاقة: الاسم | الرابط (اختياري) | وصف قصير (اختياري). مثال: الرياض | /pest-control/riyadh/ | شمال، جنوب، شرق، غرب', 'default' => '' ),
+		array( 'id' => 'zad_footer_areas', 'type' => 'textarea', 'title' => 'عمود «مناطق نخدمها» في الفوتر', 'desc' => 'فارغ = لا يظهر العمود. سطر لكل رابط: الاسم | الرابط', 'default' => '' ),
 		array( 'id' => 'zad_bridges', 'type' => 'textarea', 'title' => 'روابط ذكية بين الأقسام', 'desc' => 'سطر لكل قاعدة: القسم المصدر > الأقسام المستهدفة. مثال: drain-cleaning > cleaning, pest-control — تظهر في صفحات القسم المصدر كتلة «قد تحتاج أيضاً». فارغ = مغلق.' ),
 		array( 'id' => 'zad_faq_slugs', 'type' => 'text', 'title' => 'أنواع تُعرض بتصميم «السؤال»', 'default' => 'faq' ),
 		array( 'id' => 'zad_article_slugs', 'type' => 'text', 'title' => 'أنواع تُعرض بتصميم «المقال»', 'default' => 'sections,guide,pests-library' ),

@@ -349,3 +349,17 @@ function zad_float_cards() {
 	}
 	return array_slice( $out, 0, 3 );
 }
+
+/** Owner-filled link lines "الاسم | الرابط | وصف قصير" (link optional). */
+function zad_link_lines( $opt ) {
+	$out = array();
+	foreach ( zad_lines( zad_opt( $opt, '' ) ) as $l ) {
+		$c = array_pad( array_map( 'trim', explode( '|', $l ) ), 3, '' );
+		if ( '' === $c[0] ) { continue; }
+		$u = $c[1];
+		if ( '' !== $u && '/' === $u[0] && 0 !== strpos( $u, '//' ) ) { $u = home_url( $u ); }
+		if ( '' !== $u && ! preg_match( '#^https?://#', $u ) ) { $u = ''; }
+		$out[] = array( 'name' => $c[0], 'url' => $u, 'note' => $c[2] );
+	}
+	return $out;
+}
