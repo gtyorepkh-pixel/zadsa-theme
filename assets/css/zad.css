@@ -888,3 +888,7 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .hd-nb a:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
 .hd-up{margin-top:14px}.hd-up a{color:var(--sky);font-weight:700}
 .hd-bl{margin:14px 0 8px;font-weight:700;color:var(--primary)}
+
+/* Plain content (services + articles): white background behind paragraphs, lists and quotes. Section colours unchanged. */
+:root:not([data-theme=dark]) .prose,:root:not([data-theme=dark]) .entry-content,:root:not([data-theme=dark]) .prose p,:root:not([data-theme=dark]) .prose li,:root:not([data-theme=dark]) .prose ul,:root:not([data-theme=dark]) .prose ol,:root:not([data-theme=dark]) .prose figure{background:#fff}
+:root:not([data-theme=dark]) .prose blockquote{background:#fff;border:1px solid var(--line);border-inline-start:4px solid var(--accent)}
