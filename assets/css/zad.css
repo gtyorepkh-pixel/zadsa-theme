@@ -869,3 +869,21 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .fcard{padding:16px 8px;gap:8px}
 .fcard__tx b{font-size:1rem}.fcard__tx small{font-size:.8rem}
 @media (max-width:480px){.fcard__ic,.fcard--2 .fcard__ic,.fcard--3 .fcard__ic{width:46px;height:46px}.fcard__ic .zi,.fcard__ic svg{width:24px;height:24px}.fcard__tx b{font-size:.88rem}.fcard__tx small{font-size:.72rem}}
+
+/* District page (صفحة حي) */
+.hd-hero__in{max-width:760px;padding-block:8px 20px}
+.hd-chips{list-style:none;margin:10px 0 16px;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.hd-chips li{padding:6px 14px;border-radius:99px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;font-size:.88rem}
+.hd-local{display:flex;gap:14px;align-items:flex-start;padding:20px 22px;background:var(--sky-50);border:1px solid var(--line);border-inline-start:4px solid var(--accent);border-radius:16px}
+.hd-local .zi{flex:none;color:var(--primary)}.hd-local p{margin:0 0 8px;color:var(--ink);line-height:1.9}.hd-local .hd-desc{color:var(--muted)}
+.hd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.hd-card{margin:0;padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 6px 18px rgba(12,104,126,.07)}
+.hd-card h3{margin:0 0 6px;font-size:1.05rem;color:var(--primary)}.hd-card p{margin:0;color:var(--ink);line-height:1.8}.hd-card cite{display:block;margin-top:8px;color:var(--muted);font-style:normal}
+.hd-env{margin:16px 0 0;color:var(--muted);font-size:.9rem}
+.hd-ba{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.hd-ba figure{position:relative;margin:0;border-radius:14px;overflow:hidden}.hd-ba img{width:100%;height:auto;display:block}
+.hd-ba span{position:absolute;top:10px;inset-inline-start:10px;background:var(--primary);color:#fff;padding:3px 12px;border-radius:99px;font-size:.8rem;z-index:1}
+.hd-nb{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px}
+.hd-nb a{display:block;padding:9px 18px;border-radius:99px;background:var(--surface);border:1.5px solid var(--sky);color:var(--primary);font-weight:700}
+.hd-nb a:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+.hd-up{margin-top:14px}.hd-up a{color:var(--sky);font-weight:700}

@@ -3,6 +3,7 @@ get_header();
 while ( have_posts() ) :
 	the_post();
 	$id   = get_the_ID();
+	if ( function_exists( 'zad_hood_active' ) && zad_hood_active( $id ) ) { zad_hood_render( $id ); continue; }
 	$m    = function ( $k ) use ( $id ) { return get_post_meta( $id, '_zad_' . $k, true ); };
 	$arr  = function ( $k ) use ( $m ) { return array_values( array_filter( (array) $m( $k ), function ( $r ) { return is_array( $r ); } ) ); };
 

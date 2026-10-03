@@ -515,7 +515,7 @@ function zsc_service_nodes( $post ) {
 	}
 	$webpage['about']      = array( '@id' => $url . '#service' );
 	$webpage['mainEntity'] = array( '@id' => $url . '#service' );
-	return array_merge( array( $webpage, $service ), $nodes );
+	return apply_filters( 'zsc_service_nodes', array_merge( array( $webpage, $service ), $nodes ), $post );
 }
 
 function zsc_person_node( $user_id ) {
