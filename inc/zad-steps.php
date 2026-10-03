@@ -1,7 +1,7 @@
 <?php
 /**
  * "طريقة تنفيذ الخدمة": several designs, chosen per service page.
- *   cards1  = current cards (default, unchanged)     cards2 = second card design (no images)
+ *   cards1  = the cards design (default, unchanged)
  *   story   = alternating rows with images (theme colours); image beside the text or behind it.
  * Only the chosen design is rendered. No JS: layout is CSS.
  *
@@ -10,7 +10,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-function zad_steps_styles() { return array( 'cards1' => 'بطاقات (1) — الشكل الحالي', 'cards2' => 'بطاقات (2) — تصميم آخر بدون صور', 'story' => 'قصة الخطوات — بصور، تتبادل يميناً ويساراً' ); }
+function zad_steps_styles() { return array( 'cards1' => 'بطاقات — الشكل الحالي', 'story' => 'قصة الخطوات — بصور، تتبادل يميناً ويساراً' ); }
 
 /* ---------- editor ---------- */
 function zad_steps_row( $i, $r ) {
@@ -31,7 +31,7 @@ function zad_steps_box( $post_id ) {
 	echo '<style>.zst-row{padding:10px;margin:8px 0;border:1px solid #cfe0e8;border-radius:8px;background:#f6fafc;display:grid;gap:6px}.zst-r1{display:flex;gap:6px}.zst-r1 input{flex:1}.zst-row textarea{width:100%}.zst-thumb img{border-radius:6px;vertical-align:middle}</style>';
 	echo '<h4>شكل قسم «طريقة التنفيذ»</h4><p><select name="zad[steps_style]" id="zst-style">';
 	foreach ( zad_steps_styles() as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $style, $k, false ) . '>' . esc_html( $l ) . '</option>'; }
-	echo '</select> <span class="description">الشكلان (1) و(2) يقرآن «خطوات التنفيذ» أعلاه. «قصة الخطوات» تقرأ الحقول أدناه.</span></p>';
+	echo '</select> <span class="description">«بطاقات» تقرأ «خطوات التنفيذ» أعلاه. «قصة الخطوات» تقرأ الحقول أدناه.</span></p>';
 	echo '<div id="zst-story"' . ( 'story' === $style ? '' : ' style="display:none"' ) . '>';
 	echo '<p>موضع الصورة: <select name="zad[story_pos]"><option value="side"' . selected( $pos, 'side', false ) . '>بجانب النص</option><option value="behind"' . selected( $pos, 'behind', false ) . '>خلف النص (النص فوق الصورة)</option></select></p>';
 	echo '<p><input type="text" name="zad[story_title]" value="' . esc_attr( $sh['title'] ?? '' ) . '" placeholder="عنوان القسم (فارغ = كيف تسير عملية التنفيذ)" style="width:100%"></p>';
@@ -90,17 +90,6 @@ function zad_steps_cards1( $steps ) {
 	return $o . '</ol></div></section>';
 }
 
-function zad_steps_cards2( $steps ) {
-	$o = '<section class="sec sec--tint"><div class="wrap"><header class="sec__head"><span class="eyebrow">خطوة بخطوة</span><h2>كيف تسير عملية التنفيذ</h2></header><ol class="ssteps">';
-	foreach ( $steps as $i => $s ) {
-		$sp = array_map( 'trim', explode( '||', (string) $s['d'] ) ); $tags = isset( $sp[1] ) ? array_filter( array_map( 'trim', preg_split( '/[,،]/u', $sp[1] ) ) ) : array();
-		$o .= '<li><b class="ssteps__n">' . esc_html( sprintf( '%02d', $i + 1 ) ) . '</b><h3>' . esc_html( $s['t'] ) . '</h3><p>' . esc_html( $sp[0] ) . '</p>';
-		if ( $tags ) { $o .= '<div class="hsteps__tags">'; foreach ( $tags as $tg ) { $o .= '<span class="chip">' . esc_html( $tg ) . '</span>'; } $o .= '</div>'; }
-		$o .= '</li>';
-	}
-	return $o . '</ol></div></section>';
-}
-
 function zad_steps_story( $id, $rows ) {
 	$pos = get_post_meta( $id, '_zad_story_pos', true ) === 'behind' ? 'behind' : 'side';
 	$sh  = (array) get_post_meta( $id, '_zad_story_head', true );
@@ -135,5 +124,5 @@ function zad_steps_html( $id, $steps ) {
 		if ( $rows ) { return zad_steps_story( $id, $rows ); }
 	}
 	if ( ! $steps ) { return ''; }
-	return 'cards2' === $style ? zad_steps_cards2( $steps ) : zad_steps_cards1( $steps );
+	return zad_steps_cards1( $steps );
 }
