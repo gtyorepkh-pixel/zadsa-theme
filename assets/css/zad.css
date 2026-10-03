@@ -887,3 +887,4 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .hd-nb a{display:block;padding:9px 18px;border-radius:99px;background:var(--surface);border:1.5px solid var(--sky);color:var(--primary);font-weight:700}
 .hd-nb a:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
 .hd-up{margin-top:14px}.hd-up a{color:var(--sky);font-weight:700}
+.hd-bl{margin:14px 0 8px;font-weight:700;color:var(--primary)}

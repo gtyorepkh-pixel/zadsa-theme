@@ -375,6 +375,8 @@ function zad_hood_render( $id ) {
 	</div></section>
 	<?php endif; ?>
 
+	<?php echo function_exists( 'zad_bridges_html' ) ? zad_bridges_html( $id ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
+
 	<section class="sec sec--dark" id="quote"><div class="wrap qfinal">
 		<div>
 			<span class="eyebrow">اطلب الآن</span>

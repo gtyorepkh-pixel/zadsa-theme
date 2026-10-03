@@ -451,6 +451,7 @@ while ( have_posts() ) :
 	</div></section>
 	<?php endif; ?>
 
+	<?php echo function_exists( 'zad_bridges_html' ) ? zad_bridges_html( $id ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 	<!-- 16. Related + final quote -->
 	<?php
 	$rel = zad_related_services( $id, 3 );
