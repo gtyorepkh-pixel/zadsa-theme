@@ -396,8 +396,8 @@ add_action( 'wp_enqueue_scripts', function () {
 	if ( ! $p || ( ! zad_ix_enabled( $p->ID ) && ! has_shortcode( $p->post_content, 'zad_ix' ) ) ) {
 		return;
 	}
-	wp_enqueue_style( 'zad-ix', get_template_directory_uri() . '/assets/css/zad-ix.css', array( 'zad-main' ), ZAD_VERSION );
-	wp_enqueue_script( 'zad-ix', get_template_directory_uri() . '/assets/js/zad-ix.js', array(), ZAD_VERSION, true );
+	wp_enqueue_style( 'zad-ix', get_template_directory_uri() . '/assets/css/zad-ix.css', array( 'zad-main' ), zad_asset_ver( 'assets/css/zad-ix.css' ) );
+	wp_enqueue_script( 'zad-ix', get_template_directory_uri() . '/assets/js/zad-ix.js', array(), zad_asset_ver( 'assets/js/zad-ix.js' ), true );
 }, 110 );
 
 /** Split rendered content around the "Read more" marker: [before, after]. */

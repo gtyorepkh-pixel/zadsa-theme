@@ -9,6 +9,13 @@
 
 defined( 'ABSPATH' ) || exit;
 
+/** Asset version = the file's own modified time (changes on every upload, so caches/CDNs/browsers refetch); falls back to ZAD_VERSION. */
+function zad_asset_ver( $rel ) {
+	$f = get_template_directory() . '/' . ltrim( $rel, '/' );
+	$t = is_readable( $f ) ? filemtime( $f ) : false;
+	return $t ? (string) $t : ZAD_VERSION;
+}
+
 /* ================= (1) Inspector ================= */
 add_action( 'admin_menu', function () {
 	add_management_page( 'فاحص الأصول', 'فاحص الأصول (زاد)', 'manage_options', 'zad-assets', 'zad_assets_page' );

@@ -219,7 +219,7 @@
 
 	/* Reveal on scroll */
 	if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-		var targets = $$('.sec .sec__head, .icard, .scard, .hsteps li, .pkg, .wrow, .faq__item, .tcard, .b2b__s, .client, .cat, .stat, .featgrid li, .ctximg, .faqlinks a');
+		var targets = $$('.sec:not(.cov) .sec__head, .icard, .scard, .hsteps li, .pkg, .wrow, .faq__item, .tcard, .b2b__s, .client, .cat, .stat, .featgrid li, .ctximg, .faqlinks a');
 		var io = new IntersectionObserver(function (es) {
 			es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
 		}, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });

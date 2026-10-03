@@ -21,7 +21,7 @@ add_action( 'add_meta_boxes_page', function ( $post ) {
 add_action( 'admin_enqueue_scripts', function ( $hook ) {
 	if ( in_array( $hook, array( 'post.php', 'post-new.php' ), true ) && 'page' === get_post_type() ) {
 		wp_enqueue_media();
-		wp_enqueue_script( 'zad-admin', get_template_directory_uri() . '/assets/js/admin.js', array(), ZAD_VERSION, true );
+		wp_enqueue_script( 'zad-admin', get_template_directory_uri() . '/assets/js/admin.js', array(), zad_asset_ver( 'assets/js/admin.js' ), true );
 	}
 } );
 

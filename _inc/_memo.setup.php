@@ -53,9 +53,9 @@ if ( ! class_exists( 'MemoSetupTheme' ) ) :
         wp_deregister_style('wp-mediaelement');
         wp_dequeue_style('global-styles');
 
-        wp_enqueue_style('zad-main', MEMO_THEME_URI . 'assets/css/zad.css', array(), ZAD_VERSION);
+        wp_enqueue_style('zad-main', MEMO_THEME_URI . 'assets/css/zad.css', array(), zad_asset_ver('assets/css/zad.css'));
 
-        wp_enqueue_script('zad-main', MEMO_THEME_URI . 'assets/js/zad.js', array(), ZAD_VERSION, true);
+        wp_enqueue_script('zad-main', MEMO_THEME_URI . 'assets/js/zad.js', array(), zad_asset_ver('assets/js/zad.js'), true);
         wp_localize_script('zad-main', 'ZAD', array('ajax' => admin_url('admin-ajax.php')));
     }
 

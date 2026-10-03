@@ -118,29 +118,56 @@ function zad_related_clean_page() {
 
 
 /* ---------- Coverage section ("نصل إليك في أي حي"): shown only when filled ---------- */
-function zad_coverage_html( $post_id = 0, $home = false ) {
-	$own = $post_id ? (array) get_post_meta( $post_id, '_zad_cov', true ) : array();
-	$own = array_filter( array( 'title' => $own['title'] ?? '', 'text' => $own['text'] ?? '', 'chips' => $own['chips'] ?? '', 'note' => $own['note'] ?? '' ) );
-	if ( $own ) {
-		$d = array( 'eyebrow' => zad_opt( 'zad_cov_eyebrow', '' ), 'title' => $own['title'] ?? '', 'sub' => '', 'box' => '', 'text' => $own['text'] ?? '', 'chips' => $own['chips'] ?? '', 'note' => $own['note'] ?? '', 'stats' => zad_opt( 'zad_cov_stats', '' ) );
-	} elseif ( $home || zad_opt( 'zad_cov_services', false ) ) {
-		$d = array( 'eyebrow' => zad_opt( 'zad_cov_eyebrow', '' ), 'title' => zad_opt( 'zad_cov_title', '' ), 'sub' => zad_opt( 'zad_cov_sub', '' ), 'box' => zad_opt( 'zad_cov_box', '' ), 'text' => zad_opt( 'zad_cov_text', '' ), 'chips' => zad_opt( 'zad_cov_chips', '' ), 'note' => zad_opt( 'zad_cov_note', '' ), 'stats' => zad_opt( 'zad_cov_stats', '' ) );
-	} else { return ''; }
+function zad_cov_keys() { return array( 'eyebrow', 'title', 'sub', 'box', 'text', 'chips', 'note', 'stats' ); }
+
+/** Split "name | url" lines into array( name, url ). */
+function zad_cov_chips( $text ) {
 	$chips = array();
-	foreach ( preg_split( '/\r\n|\r|\n/', (string) $d['chips'] ) as $l ) {
+	foreach ( preg_split( '/\r\n|\r|\n/', (string) $text ) as $l ) {
 		$c = array_pad( array_map( 'trim', explode( '|', $l ) ), 2, '' );
 		if ( '' === $c[0] ) { continue; }
 		$u = $c[1]; if ( '' !== $u && '/' === $u[0] && 0 !== strpos( $u, '//' ) ) { $u = home_url( $u ); }
 		$chips[] = array( $c[0], preg_match( '#^https?://#', $u ) ? $u : '' );
 	}
-	if ( '' === trim( (string) $d['title'] ) && ! $chips ) { return ''; }
+	return $chips;
+}
+
+function zad_cov_chip_li( $c ) {
+	return '<li>' . ( $c[1]
+		? '<a class="cov__chip cov__chip--link" href="' . esc_url( $c[1] ) . '">' . zad_icon( 'pin', 16 ) . '<span>' . esc_html( $c[0] ) . '</span></a>'
+		: '<span class="cov__chip cov__chip--plain">' . zad_icon( 'pin', 16 ) . '<span>' . esc_html( $c[0] ) . '</span></span>' ) . '</li>';
+}
+
+/**
+ * Coverage section. Page data lives in _zad_cov (keys: eyebrow,title,sub,box,text,chips,note,stats).
+ * title/text/chips/note come from the page only; eyebrow/sub/box/stats fall back to the global options when empty.
+ */
+function zad_coverage_html( $post_id = 0, $home = false ) {
+	$raw = $post_id ? (array) get_post_meta( $post_id, '_zad_cov', true ) : array();
+	$own = array();
+	foreach ( zad_cov_keys() as $k ) {
+		$v = ( isset( $raw[ $k ] ) && is_string( $raw[ $k ] ) ) ? trim( $raw[ $k ] ) : '';
+		if ( '' !== $v ) { $own[ $k ] = $v; }
+	}
+	$glob = function ( $k ) { return (string) zad_opt( 'zad_cov_' . $k, '' ); };
+	$page_has = isset( $own['title'] ) || isset( $own['text'] ) || isset( $own['chips'] ) || isset( $own['note'] );
+	if ( $page_has ) {
+		$d = array();
+		foreach ( array( 'title', 'text', 'chips', 'note' ) as $k ) { $d[ $k ] = $own[ $k ] ?? ''; }
+		foreach ( array( 'eyebrow', 'sub', 'box', 'stats' ) as $k ) { $d[ $k ] = $own[ $k ] ?? $glob( $k ); }
+	} elseif ( $home || zad_opt( 'zad_cov_services', false ) ) {
+		$d = array();
+		foreach ( zad_cov_keys() as $k ) { $d[ $k ] = $glob( $k ); }
+	} else { return ''; }
+	$chips = zad_cov_chips( $d['chips'] );
+	if ( '' === trim( $d['title'] ) && ! $chips ) { return ''; }
 	$stats = array();
 	foreach ( array_slice( preg_split( '/\r\n|\r|\n/', (string) $d['stats'] ), 0, 3 ) as $l ) { $c = array_pad( array_map( 'trim', explode( '|', $l ) ), 2, '' ); if ( '' !== $c[0] ) { $stats[] = $c; } }
-	$o = '<section class="sec cov"><div class="wrap"><header class="sec__head">';
-	if ( $d['eyebrow'] ) { $o .= '<span class="eyebrow">' . esc_html( $d['eyebrow'] ) . '</span>'; }
+	$o = '<section class="sec cov"><div class="wrap"><header class="cov__head">';
+	if ( $d['eyebrow'] ) { $o .= '<span class="cov__eyebrow">' . esc_html( $d['eyebrow'] ) . '</span>'; }
 	if ( $d['title'] ) { $o .= '<h2>' . esc_html( $d['title'] ) . '</h2>'; }
 	if ( $d['sub'] ) { $o .= '<p>' . esc_html( $d['sub'] ) . '</p>'; }
-	$o .= '</header><div class="cov__card">';
+	$o .= '</header><div class="cov__card' . ( $stats ? ' has-stats' : '' ) . '">';
 	if ( $stats ) {
 		$o .= '<div class="cov__stats">';
 		foreach ( $stats as $c ) { $o .= '<div class="cov__st"><b>' . esc_html( $c[0] ) . '</b><span>' . esc_html( $c[1] ) . '</span></div>'; }
@@ -148,11 +175,17 @@ function zad_coverage_html( $post_id = 0, $home = false ) {
 	}
 	$o .= '<div class="cov__main">';
 	if ( $d['box'] ) { $o .= '<h3>' . esc_html( $d['box'] ) . '</h3>'; }
-	if ( $d['text'] ) { $o .= '<p>' . nl2br( esc_html( $d['text'] ) ) . '</p>'; }
+	if ( $d['text'] ) { $o .= '<p class="cov__text">' . nl2br( esc_html( $d['text'] ) ) . '</p>'; }
 	if ( $chips ) {
+		$n = count( $chips );
 		$o .= '<ul class="cov__chips">';
-		foreach ( $chips as $c ) { $o .= '<li>' . ( $c[1] ? '<a href="' . esc_url( $c[1] ) . '">' . zad_icon( 'pin', 16 ) . esc_html( $c[0] ) . '</a>' : '<span>' . zad_icon( 'pin', 16 ) . esc_html( $c[0] ) . '</span>' ) . '</li>'; }
+		foreach ( array_slice( $chips, 0, 12 ) as $c ) { $o .= zad_cov_chip_li( $c ); }
 		$o .= '</ul>';
+		if ( $n > 12 ) { // every district stays in the HTML (SEO); only the display is folded
+			$o .= '<details class="cov__more"><summary><span class="cov__open">عرض كل الأحياء (' . (int) $n . ')</span><span class="cov__close">إخفاء</span></summary><ul class="cov__chips">';
+			foreach ( array_slice( $chips, 12 ) as $c ) { $o .= zad_cov_chip_li( $c ); }
+			$o .= '</ul></details>';
+		}
 	}
 	if ( $d['note'] ) { $o .= '<p class="cov__note">' . zad_icon( 'check', 16 ) . ' ' . esc_html( $d['note'] ) . '</p>'; }
 	return $o . '</div></div></div></section>';
@@ -161,17 +194,27 @@ function zad_coverage_html( $post_id = 0, $home = false ) {
 /* per-page override fields (service pages) */
 function zad_coverage_box( $post_id ) {
 	$v = (array) get_post_meta( $post_id, '_zad_cov', true );
-	echo '<h4>التغطية في هذه الصفحة <small>(اختياري؛ فارغ = لا يظهر هنا إلا إذا فعّلت العرض العام من الإعدادات)</small></h4><div class="zad-grid">';
+	echo '<h4>التغطية في هذه الصفحة <small>(اختياري؛ ما تتركه فارغاً من الوسم/السطر/العنوان الفرعي/الأرقام يؤخذ من الإعدادات العامة)</small></h4><div class="zad-grid">';
+	echo '<p><label>الوسم الصغير<input type="text" name="zad[cov_eyebrow]" value="' . esc_attr( $v['eyebrow'] ?? '' ) . '" placeholder="تغطيتنا"></label></p>';
 	echo '<p><label>العنوان<input type="text" name="zad[cov_title]" value="' . esc_attr( $v['title'] ?? '' ) . '" placeholder="نصل إليك في أي حي بالرياض"></label></p>';
+	echo '<p><label>السطر تحت العنوان<input type="text" name="zad[cov_sub]" value="' . esc_attr( $v['sub'] ?? '' ) . '"></label></p>';
+	echo '<p><label>عنوان البطاقة<input type="text" name="zad[cov_box]" value="' . esc_attr( $v['box'] ?? '' ) . '"></label></p>';
 	echo '<p><label>الملاحظة الأخيرة<input type="text" name="zad[cov_note]" value="' . esc_attr( $v['note'] ?? '' ) . '"></label></p></div>';
 	echo '<p><label>الوصف<textarea name="zad[cov_text]" rows="2" style="width:100%">' . esc_textarea( $v['text'] ?? '' ) . '</textarea></label></p>';
 	echo '<p><label>الأحياء (سطر لكل حي: الاسم | الرابط اختياري)<textarea name="zad[cov_chips]" rows="4" style="width:100%">' . esc_textarea( $v['chips'] ?? '' ) . '</textarea></label></p>';
+	echo '<p><label>بطاقات الأرقام (سطر لكل رقم: الرقم | الوصف — حتى 3 أسطر)<textarea name="zad[cov_stats]" rows="3" style="width:100%" placeholder="24/7 | استقبال الطلبات">' . esc_textarea( $v['stats'] ?? '' ) . '</textarea></label></p>';
 }
 
 function zad_coverage_save( $post_id, $in ) {
 	if ( ! array_key_exists( 'cov_title', $in ) ) { return; }
 	update_post_meta( $post_id, '_zad_cov', array(
-		'title' => sanitize_text_field( $in['cov_title'] ?? '' ), 'note' => sanitize_text_field( $in['cov_note'] ?? '' ),
-		'text'  => sanitize_textarea_field( $in['cov_text'] ?? '' ), 'chips' => sanitize_textarea_field( $in['cov_chips'] ?? '' ),
+		'eyebrow' => sanitize_text_field( $in['cov_eyebrow'] ?? '' ),
+		'title'   => sanitize_text_field( $in['cov_title'] ?? '' ),
+		'sub'     => sanitize_text_field( $in['cov_sub'] ?? '' ),
+		'box'     => sanitize_text_field( $in['cov_box'] ?? '' ),
+		'note'    => sanitize_text_field( $in['cov_note'] ?? '' ),
+		'text'    => sanitize_textarea_field( $in['cov_text'] ?? '' ),
+		'chips'   => sanitize_textarea_field( $in['cov_chips'] ?? '' ),
+		'stats'   => sanitize_textarea_field( $in['cov_stats'] ?? '' ),
 	) );
 }

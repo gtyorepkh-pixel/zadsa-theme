@@ -236,8 +236,8 @@ add_action( 'admin_enqueue_scripts', function ( $hook ) {
 	$screen = get_current_screen();
 	if ( $screen && in_array( $screen->post_type, zad_service_types(), true ) && in_array( $hook, array( 'post.php', 'post-new.php' ), true ) ) {
 		wp_enqueue_media();
-		wp_enqueue_style( 'zad-admin', get_template_directory_uri() . '/assets/css/admin.css', array(), ZAD_VERSION );
-		wp_enqueue_script( 'zad-admin', get_template_directory_uri() . '/assets/js/admin.js', array(), ZAD_VERSION, true );
+		wp_enqueue_style( 'zad-admin', get_template_directory_uri() . '/assets/css/admin.css', array(), zad_asset_ver( 'assets/css/admin.css' ) );
+		wp_enqueue_script( 'zad-admin', get_template_directory_uri() . '/assets/js/admin.js', array(), zad_asset_ver( 'assets/js/admin.js' ), true );
 	}
 } );
 
