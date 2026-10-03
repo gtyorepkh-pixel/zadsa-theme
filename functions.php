@@ -40,7 +40,6 @@ require_once MEMO_THEME_DIR .'inc/zad-ix.php';
 require_once MEMO_THEME_DIR .'inc/zad-work.php';
 require_once MEMO_THEME_DIR .'inc/zad-trust.php';
 require_once MEMO_THEME_DIR .'inc/zad-home-defaults.php';
-require_once MEMO_THEME_DIR .'inc/zad-move.php';
 require_once MEMO_THEME_DIR .'inc/zad-dbclean.php';
 require_once MEMO_THEME_DIR .'inc/zad-404.php';
 require_once MEMO_THEME_DIR .'inc/zad-schemacheck.php';
