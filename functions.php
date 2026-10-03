@@ -42,8 +42,6 @@ require_once MEMO_THEME_DIR .'inc/zad-trust.php';
 require_once MEMO_THEME_DIR .'inc/zad-home-defaults.php';
 require_once MEMO_THEME_DIR .'inc/zad-move.php';
 require_once MEMO_THEME_DIR .'inc/zad-dbclean.php';
-require_once MEMO_THEME_DIR .'inc/zad-compat.php';
-require_once MEMO_THEME_DIR .'inc/zad-lean.php';
 require_once MEMO_THEME_DIR .'inc/zad-hood.php';
 require_once MEMO_THEME_DIR .'inc/zad-audit.php';
 require_once MEMO_THEME_DIR .'inc/zad-itemlist.php';

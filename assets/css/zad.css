@@ -888,14 +888,3 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .hd-nb a:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
 .hd-up{margin-top:14px}.hd-up a{color:var(--sky);font-weight:700}
 .hd-bl{margin:14px 0 8px;font-weight:700;color:var(--primary)}
-
-/* Content written elsewhere: keep inline-styled tables/buttons legible and on-palette */
-.prose thead[style] th{background:transparent;color:inherit}
-.prose table[style*="min-width"]{display:table;min-width:0!important}
-.prose a[style*="#0066cc"]{background:var(--primary)!important}
-.prose a[style*="#F49300"],.prose a[style*="#f49300"]{background:var(--accent)!important;color:#1b1200!important}
-.prose a[style*="background"]{text-decoration:none}
-/* Estimator: long service names read as a tidy list */
-.est__row{display:grid;gap:6px}
-.est__chip .est__nm{border-radius:12px;text-align:start}
-.est__chips{max-height:300px}
