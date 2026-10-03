@@ -228,6 +228,7 @@ function zad_service_metabox( $post ) {
 		<?php zad_related_picker( $post->ID, $related ); ?>
 		<?php zad_coverage_box( $post->ID ); ?>
 	</div>
+	<?php zad_mb_tabs( $post->ID ); ?>
 	<?php
 }
 
@@ -482,3 +483,48 @@ add_action( 'save_post', function ( $id ) {
 		zad_type_category( $id );
 	}
 }, 30 );
+
+
+/** Turns the long service form into side-by-side tabs (pure JS; every field is still submitted). */
+function zad_mb_tabs( $post_id ) {
+	?>
+	<style>
+	.zad-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;padding:8px;background:#f0f6fa;border:1px solid #cfe0e8;border-radius:8px;position:sticky;top:32px;z-index:5}
+	.zad-tabs button{border:1px solid #cfe0e8;background:#fff;color:#0c687e;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:700;font-size:13px}
+	.zad-tabs button:hover{border-color:#0c687e}
+	.zad-tabs button.is-on{background:#0c687e;border-color:#0c687e;color:#fff}
+	.zad-tab-panel{display:none}.zad-tab-panel.is-on{display:block}
+	.zad-tab-panel>h4:first-child{margin-top:4px}
+	</style>
+	<script>
+	(function(){
+		var box=document.querySelector('.zad-mb');if(!box||box.dataset.tabbed)return;box.dataset.tabbed=1;
+		var rules=[
+			['نظرة عامة',/^(الأساسيات|مميزات|الأرقام|لماذا)/],
+			['الخدمة والتنفيذ',/^(أنواع الخدمة|الأدوات|خطوات التنفيذ|شكل قسم|علامات|الأضرار|الأمان)/],
+			['الأسعار',/^(الأسعار|كيف نحدد|قائمة الأسعار|الباقات)/],
+			['الضمان والبيانات',/^(الضمان|البطاقة الفنية)/],
+			['الأسئلة الشائعة',/^الأسئلة/],
+			['الصور والفيديو',/^(قبل|معرض)/],
+			['التواصل والربط',/^(تواصل|خدمات ومقالات|التغطية)/]
+		];
+		var order=rules.map(function(r){return r[0]}),groups={},cur=rules[0][0];
+		function pick(t){t=t.trim();for(var i=0;i<rules.length;i++){if(rules[i][1].test(t))return rules[i][0];}return null;}
+		[].slice.call(box.children).forEach(function(n){
+			if(n.tagName==='H4'){var g=pick(n.textContent);if(g)cur=g;}
+			(groups[cur]=groups[cur]||[]).push(n);
+		});
+		var nav=document.createElement('div');nav.className='zad-tabs';nav.setAttribute('role','tablist');
+		var key='zadmbtab'+(<?php echo (int) $post_id; ?>),saved=null;try{saved=sessionStorage.getItem(key);}catch(e){}
+		var names=order.filter(function(g){return groups[g]&&groups[g].length;}),panels={};
+		names.forEach(function(g){
+			var p=document.createElement('div');p.className='zad-tab-panel';groups[g].forEach(function(n){p.appendChild(n);});panels[g]=p;box.appendChild(p);
+			var b=document.createElement('button');b.type='button';b.textContent=g;b.setAttribute('role','tab');b.onclick=function(){show(g);};nav.appendChild(b);
+		});
+		function show(g){names.forEach(function(x,i){panels[x].classList.toggle('is-on',x===g);nav.children[i].classList.toggle('is-on',x===g);});try{sessionStorage.setItem(key,g);}catch(e){}}
+		box.insertBefore(nav,box.firstChild);
+		show(names.indexOf(saved)>-1?saved:names[0]);
+	})();
+	</script>
+	<?php
+}
