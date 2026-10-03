@@ -1,0 +1,117 @@
+<?php
+/**
+ * "Related services & articles": a picker (search → click to add, × to remove, drag to reorder),
+ * manual only (empty = the section is not shown), plus a cleanup tool for values that were auto-filled/saved by mistake.
+ *
+ * @package ZadPro
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+function zad_related_types() { return array_values( array_unique( array_merge( zad_service_types(), zad_article_types() ) ) ); }
+
+function zad_related_label( $id ) {
+	$pt = get_post_type( $id );
+	return in_array( $pt, zad_service_types(), true ) ? 'خدمة' : 'مقال';
+}
+
+function zad_related_picker( $post_id, $ids ) {
+	$ids = array_values( array_filter( array_map( 'intval', (array) $ids ) ) );
+	wp_nonce_field( 'zad_rel', 'zad_rel_n' );
+	echo '<div class="zrel" data-ex="' . (int) $post_id . '" data-ajax="' . esc_url( admin_url( 'admin-ajax.php' ) ) . '" data-nonce="' . esc_attr( wp_create_nonce( 'zad_rel' ) ) . '">';
+	echo '<input type="hidden" name="zad[related_csv]" value="' . esc_attr( implode( ',', $ids ) ) . '" class="zrel__val">';
+	echo '<input type="search" class="zrel__q widefat" placeholder="ابحث عن خدمة أو مقال بالاسم ثم اضغط عليه لإضافته…" autocomplete="off"><ul class="zrel__res"></ul>';
+	echo '<ul class="zrel__sel">';
+	foreach ( $ids as $id ) {
+		if ( ! get_post( $id ) ) { continue; }
+		echo '<li draggable="true" data-id="' . (int) $id . '"><span class="zrel__h">⋮⋮</span><b>' . esc_html( get_the_title( $id ) ) . '</b><em>' . esc_html( zad_related_label( $id ) ) . '</em><button type="button" class="zrel__x" aria-label="إزالة">×</button></li>';
+	}
+	echo '</ul><p class="description zrel__none"' . ( $ids ? ' hidden' : '' ) . '>لم تختر شيئاً: لن يظهر قسم «ذات صلة» في هذه الصفحة.</p></div>';
+	?>
+	<style>.zrel__res,.zrel__sel{list-style:none;margin:6px 0;padding:0}.zrel__res li{padding:7px 10px;border:1px solid #dcdcde;background:#fff;cursor:pointer}.zrel__res li:hover{background:#eef7fc}.zrel__sel li{display:flex;gap:10px;align-items:center;padding:8px 10px;margin:4px 0;background:#f6fafc;border:1px solid #cfe0e8;border-radius:6px;cursor:grab}.zrel__sel li b{flex:1}.zrel__sel li em{color:#0c687e;font-style:normal;font-size:12px}.zrel__x{border:0;background:#fee2e2;color:#b91c1c;border-radius:50%;width:24px;height:24px;cursor:pointer;line-height:1}.zrel__h{color:#999}.zrel__sel li.is-drag{opacity:.4}</style>
+	<script>
+	(function(){
+		var box=document.querySelector('.zrel');if(!box||box.dataset.init)return;box.dataset.init=1;
+		var val=box.querySelector('.zrel__val'),q=box.querySelector('.zrel__q'),res=box.querySelector('.zrel__res'),sel=box.querySelector('.zrel__sel'),none=box.querySelector('.zrel__none'),t;
+		function sync(){var ids=[].map.call(sel.children,function(li){return li.dataset.id});val.value=ids.join(',');none.hidden=ids.length>0;}
+		function has(id){return !!sel.querySelector('[data-id="'+id+'"]');}
+		function add(it){if(has(it.id))return;var li=document.createElement('li');li.draggable=true;li.dataset.id=it.id;li.innerHTML='<span class="zrel__h">⋮⋮</span><b></b><em></em><button type="button" class="zrel__x" aria-label="إزالة">×</button>';li.querySelector('b').textContent=it.title;li.querySelector('em').textContent=it.label;sel.appendChild(li);sync();}
+		sel.addEventListener('click',function(e){if(e.target.classList.contains('zrel__x')){e.target.closest('li').remove();sync();}});
+		var drag=null;
+		sel.addEventListener('dragstart',function(e){drag=e.target.closest('li');if(drag){drag.classList.add('is-drag');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','x');}});
+		sel.addEventListener('dragend',function(){if(drag)drag.classList.remove('is-drag');drag=null;sync();});
+		sel.addEventListener('dragover',function(e){e.preventDefault();var o=e.target.closest('li');if(!drag||!o||o===drag)return;var r=o.getBoundingClientRect();sel.insertBefore(drag,(e.clientY-r.top)>r.height/2?o.nextSibling:o);});
+		q.addEventListener('keydown',function(e){if(e.key==='Enter')e.preventDefault();});
+		q.addEventListener('input',function(){clearTimeout(t);var s=q.value.trim();if(s.length<2){res.innerHTML='';return;}t=setTimeout(function(){
+			var u=box.dataset.ajax+'?action=zad_rel_search&_wpnonce='+encodeURIComponent(box.dataset.nonce)+'&exc='+box.dataset.ex+'&q='+encodeURIComponent(s);
+			fetch(u,{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(j){res.innerHTML='';(j.data||[]).forEach(function(it){if(has(it.id))return;var li=document.createElement('li');li.textContent=it.title+' — '+it.label;li.onclick=function(){add(it);li.remove();};res.appendChild(li);});});
+		},250);});
+	})();
+	</script>
+	<?php
+}
+
+add_action( 'wp_ajax_zad_rel_search', function () {
+	check_ajax_referer( 'zad_rel' );
+	if ( ! current_user_can( 'edit_posts' ) ) { wp_send_json_error(); }
+	$q = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : ''; // phpcs:ignore
+	$ex = isset( $_GET['exc'] ) ? absint( $_GET['exc'] ) : 0; // phpcs:ignore
+	if ( mb_strlen( $q ) < 2 ) { wp_send_json_success( array() ); }
+	$posts = get_posts( array( 's' => $q, 'post_type' => zad_related_types(), 'post_status' => 'publish', 'numberposts' => 12, 'post__not_in' => array( $ex ), 'suppress_filters' => false, 'zad_all' => true ) );
+	$out = array();
+	foreach ( $posts as $p ) { $out[] = array( 'id' => $p->ID, 'title' => html_entity_decode( get_the_title( $p ), ENT_QUOTES, 'UTF-8' ), 'label' => zad_related_label( $p->ID ) ); }
+	wp_send_json_success( $out );
+} );
+
+function zad_related_save( $post_id, $in ) {
+	if ( ! isset( $in['related_csv'] ) ) { return; }
+	$ids = array_values( array_unique( array_filter( array_map( 'absint', explode( ',', (string) $in['related_csv'] ) ) ) ) );
+	$ok  = array();
+	foreach ( $ids as $id ) {
+		if ( $id !== (int) $post_id && in_array( get_post_type( $id ), zad_related_types(), true ) ) { $ok[] = $id; }
+	}
+	update_post_meta( $post_id, '_zad_related', array_slice( $ok, 0, 12 ) );
+}
+
+/* ---------- Cleanup tool ---------- */
+add_action( 'admin_menu', function () {
+	add_management_page( 'تنظيف «ذات صلة»', 'تنظيف «ذات صلة» (زاد)', 'manage_options', 'zad-related-clean', 'zad_related_clean_page' );
+} );
+
+function zad_related_clean_page() {
+	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'غير مسموح' ); }
+	$msg = '';
+	if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['zad_rc'] ) && check_admin_referer( 'zad_rc' ) ) { // phpcs:ignore
+		$act = sanitize_key( wp_unslash( $_POST['zad_rc'] ) ); $n = 0;
+		if ( 'clear' === $act ) {
+			foreach ( array_map( 'absint', (array) wp_unslash( $_POST['ids'] ?? array() ) ) as $id ) { // phpcs:ignore
+				$v = get_post_meta( $id, '_zad_related', true );
+				if ( is_array( $v ) && $v ) { update_post_meta( $id, '_zad_related_backup', $v ); update_post_meta( $id, '_zad_related', array() ); $n++; }
+			}
+			$msg = "فُرِّغ حقل «ذات صلة» في {$n} صفحة (نسخة احتياطية محفوظة).";
+		} elseif ( 'undo' === $act ) {
+			$id = absint( $_POST['undo_id'] ?? 0 ); $b = get_post_meta( $id, '_zad_related_backup', true );
+			if ( is_array( $b ) ) { update_post_meta( $id, '_zad_related', $b ); delete_post_meta( $id, '_zad_related_backup' ); $msg = 'تم التراجع.'; }
+		}
+	}
+	$ids = get_posts( array( 'post_type' => zad_related_types(), 'post_status' => array( 'publish', 'draft', 'private' ), 'numberposts' => 1000, 'fields' => 'ids', 'suppress_filters' => true, 'zad_all' => true, 'meta_query' => array( 'relation' => 'OR', array( 'key' => '_zad_related', 'compare' => 'EXISTS' ), array( 'key' => '_zad_related_backup', 'compare' => 'EXISTS' ) ) ) );
+	$total = count( get_posts( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => 1000, 'fields' => 'ids', 'suppress_filters' => true, 'zad_all' => true ) ) );
+	echo '<div class="wrap" dir="rtl"><h1>تنظيف «خدمات ذات صلة»</h1><p>يعرض الصفحات التي فيها قيمة محفوظة في حقل «ذات صلة». الصفحات التي اختير فيها عدد كبير غالباً امتلأت بالخطأ (اختيار الكل). التفريغ لا يغيّر شيئاً آخر، ويُحفظ ما فُرِّغ للتراجع.</p>';
+	if ( $msg ) { echo '<div class="notice notice-success"><p>' . esc_html( $msg ) . '</p></div>'; }
+	$rows = array();
+	foreach ( $ids as $id ) {
+		$v = get_post_meta( $id, '_zad_related', true ); $v = is_array( $v ) ? array_filter( array_map( 'intval', $v ) ) : array();
+		$bk = is_array( get_post_meta( $id, '_zad_related_backup', true ) );
+		if ( $v || $bk ) { $rows[ $id ] = array( count( $v ), $bk ); }
+	}
+	if ( ! $rows ) { echo '<p><b>لا توجد صفحات فيها قيمة محفوظة.</b></p></div>'; return; }
+	uasort( $rows, function ( $a, $b ) { return $b[0] <=> $a[0]; } );
+	echo '<form method="post">'; wp_nonce_field( 'zad_rc' );
+	echo '<p><label><input type="checkbox" onclick="jQuery(\'.zrc\').prop(\'checked\',this.checked)"> تحديد الكل</label></p>';
+	echo '<table class="widefat striped"><thead><tr><th></th><th>الصفحة</th><th>النوع</th><th>عدد المختار</th><th>تقدير</th><th></th></tr></thead><tbody>';
+	foreach ( $rows as $id => $r ) {
+		$many = $r[0] >= 8 || ( $total && $r[0] >= $total * 0.5 );
+		echo '<tr><td>' . ( $r[0] ? '<input class="zrc" type="checkbox" name="ids[]" value="' . (int) $id . '"' . ( $many ? ' checked' : '' ) . '>' : '' ) . '</td><td><a href="' . esc_url( get_edit_post_link( $id, 'raw' ) ) . '">' . esc_html( get_the_title( $id ) ) . '</a></td><td>' . esc_html( get_post_type( $id ) ) . '</td><td>' . (int) $r[0] . '</td><td>' . ( $many ? '<span style="color:#b91c1c">يبدو اختيار الكل</span>' : ( $r[0] ? 'اختيار محدود' : '—' ) ) . '</td><td>' . ( $r[1] ? '<button class="button" name="zad_rc" value="undo" onclick="this.form.undo_id.value=' . (int) $id . '">تراجع</button>' : '' ) . '</td></tr>';
+	}
+	echo '</tbody></table><input type="hidden" name="undo_id" value=""><p><button class="button button-primary" name="zad_rc" value="clear" onclick="return confirm(\'تفريغ الصفحات المحددة؟\')">تفريغ المحدد</button></p></form></div>';
+}

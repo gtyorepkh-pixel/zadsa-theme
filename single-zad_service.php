@@ -454,11 +454,11 @@ while ( have_posts() ) :
 	<?php echo function_exists( 'zad_bridges_html' ) ? zad_bridges_html( $id ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 	<!-- 16. Related + final quote -->
 	<?php
-	$rel = zad_related_services( $id, 3 );
+	$rel = zad_related_services( $id, 6 );
 	if ( $rel->have_posts() ) : ?>
 	<section class="sec sec--tint"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow">قد يهمك أيضاً</span><h2>خدمات ذات صلة</h2></header>
-		<div class="sgrid"><?php while ( $rel->have_posts() ) { $rel->the_post(); get_template_part( 'template-parts/service-card' ); } wp_reset_postdata(); ?></div>
+		<header class="sec__head"><span class="eyebrow">قد يهمك أيضاً</span><h2>خدمات ومقالات ذات صلة</h2></header>
+		<div class="sgrid"><?php while ( $rel->have_posts() ) { $rel->the_post(); get_template_part( 'template-parts/' . ( in_array( get_post_type(), zad_service_types(), true ) ? 'service-card' : 'post-card' ) ); } wp_reset_postdata(); ?></div>
 	</div></section>
 	<?php endif; ?>
 

@@ -169,7 +169,7 @@ add_filter( 'get_post_metadata', function ( $v, $id, $key, $single ) {
 	if ( null !== $v || $busy || ! is_string( $key ) ) {
 		return $v;
 	}
-	$map = array( '_zad_tagline', '_zad_phone', '_zad_whatsapp', '_zad_video', '_zad_related', '_thumbnail_id' );
+	$map = array( '_zad_tagline', '_zad_phone', '_zad_whatsapp', '_zad_video', '_thumbnail_id' );
 	if ( ! in_array( $key, $map, true ) ) {
 		return $v;
 	}
@@ -197,9 +197,6 @@ add_filter( 'get_post_metadata', function ( $v, $id, $key, $single ) {
 			break;
 		case '_zad_video':
 			$val = (string) ( $o['memo_single_video']['url'] ?? '' );
-			break;
-		case '_zad_related':
-			$val = array_map( 'intval', (array) ( $o['memo_single_related'] ?? array() ) );
 			break;
 		case '_thumbnail_id':
 			$val = (int) ( $o['memo_single_img']['id'] ?? 0 );

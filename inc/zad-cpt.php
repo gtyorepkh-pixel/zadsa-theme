@@ -127,7 +127,6 @@ function zad_service_metabox( $post ) {
 	$gallery = (string) $g( 'gallery', '' );
 	$related = array_map( 'intval', (array) $g( 'related', array() ) );
 	$icon    = $g( 'icon', 'sparkle' );
-	$services = get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 200, 'post__not_in' => array( $post->ID ), 'orderby' => 'title', 'order' => 'ASC' ) );
 	?>
 	<div class="zad-mb">
 		<h4>الأساسيات</h4>
@@ -224,12 +223,8 @@ function zad_service_metabox( $post ) {
 			<p><label>رقم الواتساب<input type="text" name="zad[whatsapp]" value="<?php echo esc_attr( $g( 'whatsapp' ) ); ?>" dir="ltr"></label></p>
 		</div>
 
-		<h4>خدمات ذات صلة <small>(اتركها فارغة ليتم اختيارها تلقائياً من نفس القسم)</small></h4>
-		<p><select name="zad[related][]" multiple size="6" style="width:100%">
-			<?php foreach ( $services as $s ) : ?>
-				<option value="<?php echo (int) $s->ID; ?>" <?php echo in_array( $s->ID, $related, true ) ? 'selected' : ''; ?>><?php echo esc_html( $s->post_title ); ?></option>
-			<?php endforeach; ?>
-		</select></p>
+		<h4>خدمات ومقالات ذات صلة <small>(فارغ = لا يظهر القسم؛ اختر 3–6 صفحات وثيقة الصلة)</small></h4>
+		<?php zad_related_picker( $post->ID, $related ); ?>
 	</div>
 	<?php
 }
@@ -310,7 +305,7 @@ add_action( 'save_post', function ( $post_id ) {
 	update_post_meta( $post_id, '_zad_prices', isset( $in['prices'] ) ? sanitize_textarea_field( $in['prices'] ) : '' );
 	update_post_meta( $post_id, '_zad_ba_text', isset( $in['ba_text'] ) ? sanitize_textarea_field( $in['ba_text'] ) : '' );
 	update_post_meta( $post_id, '_zad_ba', isset( $in['ba'] ) ? implode( ',', array_filter( array_map( 'absint', explode( ',', $in['ba'] ) ) ) ) : '' );
-	update_post_meta( $post_id, '_zad_related', isset( $in['related'] ) ? array_map( 'absint', (array) $in['related'] ) : array() );
+	zad_related_save( $post_id, $in );
 } );
 
 /* ------------------------------------------------------------------ */
@@ -433,18 +428,25 @@ add_action( 'pre_get_posts', function ( $q ) {
 }, 20 );
 
 function zad_related_services( $post_id, $limit = 3 ) {
-	$ids = array_filter( array_map( 'intval', (array) get_post_meta( $post_id, '_zad_related', true ) ) );
-	$args = array( 'post_type' => zad_service_types(), 'posts_per_page' => $limit, 'post__not_in' => array( $post_id ), 'no_found_rows' => true );
+	$ids  = array_values( array_filter( array_map( 'intval', (array) get_post_meta( $post_id, '_zad_related', true ) ) ) );
+	$all  = array_values( array_unique( array_merge( zad_service_types(), zad_article_types() ) ) );
+	$args = array( 'post_type' => $all, 'post_status' => 'publish', 'posts_per_page' => $limit, 'post__not_in' => array( $post_id ), 'no_found_rows' => true, 'ignore_sticky_posts' => true );
 	if ( $ids ) {
-		$args['post__in'] = $ids;
-		$args['orderby']  = 'post__in';
-	} else {
-		$terms = wp_get_post_terms( $post_id, 'service_cat', array( 'fields' => 'ids' ) );
-		if ( $terms ) {
-			$args['tax_query'] = array( array( 'taxonomy' => 'service_cat', 'terms' => $terms ) );
-		}
-		$args['orderby'] = array( 'menu_order' => 'ASC', 'date' => 'DESC' );
+		$args['post__in']       = $ids;
+		$args['orderby']        = 'post__in';
+		$args['posts_per_page'] = max( $limit, min( 12, count( $ids ) ) );
+		unset( $args['post__not_in'] );
+		return new WP_Query( $args );
 	}
+	if ( ! zad_opt( 'zad_related_auto', false ) ) {
+		return new WP_Query( array( 'post__in' => array( 0 ), 'no_found_rows' => true ) ); // nothing chosen = nothing shown
+	}
+	$args['post_type'] = zad_service_types();
+	$terms = wp_get_post_terms( $post_id, 'service_cat', array( 'fields' => 'ids' ) );
+	if ( $terms ) {
+		$args['tax_query'] = array( array( 'taxonomy' => 'service_cat', 'terms' => $terms ) );
+	}
+	$args['orderby'] = array( 'menu_order' => 'ASC', 'date' => 'DESC' );
 	return new WP_Query( $args );
 }
 
