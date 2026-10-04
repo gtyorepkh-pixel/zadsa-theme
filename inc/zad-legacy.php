@@ -31,8 +31,9 @@ add_action( 'init', function () {
 		if ( ! in_array( $norm, $want, true ) || ( function_exists( 'zad_faqconv_retired' ) && zad_faqconv_retired() && $k === zad_faqconv_cfg( 'from' ) ) ) {
 			continue;
 		}
+		$lbl = ( apply_filters( 'zad_legacy_type_labels', array( 'moving' => 'نقل وتخزين الأثاث', 'drain_cleaning' => 'تسليك المجاري', 'cleaning' => 'التنظيف', 'pest_control' => 'مكافحة الحشرات', 'faq' => 'الأسئلة القديمة' ) )[ $k ] ?? ucwords( str_replace( array( '-', '_' ), ' ', $k ) ) ) . ' (مؤقت)';
 		register_post_type( $k, array(
-			'labels'        => array( 'name' => ucwords( str_replace( array( '-', '_' ), ' ', $k ) ), 'singular_name' => $k ),
+			'labels'        => array( 'name' => $lbl, 'singular_name' => $lbl, 'menu_name' => $lbl ),
 			'public'        => true,
 			'has_archive'   => $norm,
 			'rewrite'       => array( 'slug' => $norm, 'with_front' => false ),
@@ -51,7 +52,9 @@ add_action( 'init', function () {
 	if ( empty( $zad_legacy_registered ) ) {
 		return;
 	}
-	$tax = $wpdb->get_col( "SELECT DISTINCT taxonomy FROM {$wpdb->term_taxonomy} WHERE taxonomy NOT IN ('category','post_tag','nav_menu','link_category','post_format','wp_theme','wp_template_part_area')" ); // phpcs:ignore
+	// only the taxonomies the pages of these types are actually assigned to (not every orphan taxonomy in the database)
+	$in  = "'" . implode( "','", array_map( 'esc_sql', $zad_legacy_registered ) ) . "'";
+	$tax = $wpdb->get_col( "SELECT DISTINCT tt.taxonomy FROM {$wpdb->posts} p JOIN {$wpdb->term_relationships} tr ON tr.object_id = p.ID JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id WHERE p.post_type IN ($in) AND tt.taxonomy NOT IN ('category','post_tag','nav_menu','link_category','post_format','wp_theme','wp_template_part_area')" ); // phpcs:ignore
 	foreach ( (array) $tax as $t ) {
 		if ( taxonomy_exists( $t ) || 0 === strpos( $t, 'service_' ) || 0 === strpos( $t, 'faq_' ) || ( function_exists( 'zad_faqconv_retired' ) && zad_faqconv_retired() && $t === zad_faqconv_cfg( 'tax' ) ) ) {
 			continue;
