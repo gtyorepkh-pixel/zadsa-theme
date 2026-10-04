@@ -59,7 +59,10 @@ $phone = zad_opt( 'memopt_phone' );
 					<button type="submit" aria-label="بحث"><?php echo zad_icon( 'search', 18 ); // phpcs:ignore ?></button>
 				</form>
 			</nav>
-			<button type="button" class="btn btn--accent hdr__cta" data-open-wizard><?php echo zad_icon( 'bolt', 20 ); // phpcs:ignore ?> احجز موعد</button>
+			<button type="button" class="hdr__cta book" data-open-wizard aria-label="احجز خدمتك — معاينة مجانية">
+				<span class="book__ic"><?php echo zad_icon( 'calendar', 20 ); // phpcs:ignore ?></span>
+				<span class="book__tx"><b>احجز خدمتك</b><small>معاينة مجانية</small></span>
+			</button>
 		</div>
 	</div>
 	<div class="nav-overlay" data-nav-close></div>
