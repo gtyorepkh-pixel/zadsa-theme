@@ -286,7 +286,7 @@ function zad_demo_import() {
 	$fcat  = zad_demo_term( 'الرش والمبيدات', 'faq_cat' );
 	$q     = 'كم يدوم أثر الرش الوقائي؟';
 	if ( ! get_page_by_title( $q, OBJECT, 'zad_faq' ) ) {
-		$fid = wp_insert_post( array( 'post_type' => zad_faq_types(), 'post_status' => 'publish', 'post_title' => $q, 'post_name' => 'spray-effect-duration', 'post_excerpt' => 'يمتد الأثر الوقائي أسابيع، ونحدد موعد الرش التالي حسب الموسم ونوع الإصابة.',
+		$fid = wp_insert_post( array( 'post_type' => 'zad_faq', 'post_status' => 'publish', 'post_title' => $q, 'post_name' => 'spray-effect-duration', 'post_excerpt' => 'يمتد الأثر الوقائي أسابيع، ونحدد موعد الرش التالي حسب الموسم ونوع الإصابة.',
 			'post_content' => '<p>المبيدات المبطّنة تثبت على الأسطح وتقاوم الرطوبة، لذلك يطول أثرها مقارنة بالمبيدات العادية.</p><h3>ما الذي يقلّل مدة الأثر؟</h3><p>التنظيف المتكرر للأسطح المعالجة، والرطوبة العالية جداً، وتعرّض المحيط الخارجي لأشعة الشمس المباشرة.</p><h3>متى أعيد الرش؟</h3><p>نجدول المتابعة بعد المعاينة حسب الموسم ونوع الإصابة، وغالباً مرة كل موسم للمنازل ذات الحدائق.</p>' ) );
 		if ( $fid && ! is_wp_error( $fid ) ) {
 			$created++;

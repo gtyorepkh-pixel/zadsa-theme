@@ -4,8 +4,8 @@
 function zad_register_faq() {
 	$fs       = zad_slug( 'zad_faq_slug', 'faq' );
 	$existing = zad_existing_types( 'faq' );
-	$types    = $existing ? array_keys( $existing ) : array( 'zad_faq' );
-	if ( ! $existing ) {
+	$types    = array_values( array_unique( array_merge( array_keys( $existing ), array( 'zad_faq' ) ) ) ); // zad_faq always exists (a mu-plugin may register it first: see mu-plugins/zad-core-faq.php)
+	if ( ! post_type_exists( 'zad_faq' ) ) {
 	register_post_type( 'zad_faq', array(
 		'labels'       => array( 'name' => 'الأسئلة الشائعة', 'singular_name' => 'سؤال', 'add_new' => 'إضافة سؤال', 'add_new_item' => 'إضافة سؤال جديد', 'edit_item' => 'تعديل السؤال', 'all_items' => 'كل الأسئلة', 'menu_name' => 'الأسئلة' ),
 		'public'       => true,
@@ -14,7 +14,7 @@ function zad_register_faq() {
 		'menu_icon'    => 'dashicons-editor-help',
 		'menu_position'=> 7,
 		'show_in_rest' => true,
-		'supports'     => array( 'title', 'editor', 'excerpt', 'revisions' ),
+		'supports'     => array( 'title', 'editor', 'excerpt', 'revisions', 'author' ),
 	) );
 	}
 	register_taxonomy( 'faq_cat', $types, array(

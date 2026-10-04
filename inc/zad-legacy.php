@@ -28,7 +28,7 @@ add_action( 'init', function () {
 	$done = array();
 	foreach ( zad_db_orphan_types() as $k ) {
 		$norm = str_replace( '_', '-', strtolower( $k ) );
-		if ( ! in_array( $norm, $want, true ) ) {
+		if ( ! in_array( $norm, $want, true ) || ( function_exists( 'zad_faqconv_retired' ) && zad_faqconv_retired() && $k === zad_faqconv_cfg( 'from' ) ) ) {
 			continue;
 		}
 		register_post_type( $k, array(
@@ -53,7 +53,7 @@ add_action( 'init', function () {
 	}
 	$tax = $wpdb->get_col( "SELECT DISTINCT taxonomy FROM {$wpdb->term_taxonomy} WHERE taxonomy NOT IN ('category','post_tag','nav_menu','link_category','post_format','wp_theme','wp_template_part_area')" ); // phpcs:ignore
 	foreach ( (array) $tax as $t ) {
-		if ( taxonomy_exists( $t ) || 0 === strpos( $t, 'service_' ) || 0 === strpos( $t, 'faq_' ) ) {
+		if ( taxonomy_exists( $t ) || 0 === strpos( $t, 'service_' ) || 0 === strpos( $t, 'faq_' ) || ( function_exists( 'zad_faqconv_retired' ) && zad_faqconv_retired() && $t === zad_faqconv_cfg( 'tax' ) ) ) {
 			continue;
 		}
 		register_taxonomy( $t, $zad_legacy_registered, array(
