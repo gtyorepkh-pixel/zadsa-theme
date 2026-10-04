@@ -237,12 +237,26 @@ function zad_yoast_term_meta( $term, $key ) {
 /** Smart default for Yoast when ITS field is empty. Returns '' when Yoast has a value (or we cannot tell). */
 function zad_yoast_default( $field ) {
 	if ( 'yoast' !== zad_seo_mode() ) { return ''; }
+	$yoast_empty = function ( $id, $f ) { return '' === trim( (string) get_post_meta( $id, 'title' === $f ? '_yoast_wpseo_title' : '_yoast_wpseo_metadesc', true ) ); };
+
+	if ( is_front_page() ) { // home description: zad_site_desc (then the hero text) when Yoast's home description is empty
+		if ( 'desc' !== $field ) { return ''; }
+		if ( is_singular() ) { $mine = (string) get_post_meta( get_queried_object_id(), '_yoast_wpseo_metadesc', true ); }
+		elseif ( class_exists( 'WPSEO_Options' ) && method_exists( 'WPSEO_Options', 'get' ) ) { $mine = (string) WPSEO_Options::get( 'metadesc-home-wpseo', '' ); }
+		else { return ''; } // cannot tell: never override
+		return '' === trim( $mine ) && function_exists( 'zad_seo_desc' ) ? zad_seo_desc() : '';
+	}
 	if ( is_singular() ) {
 		$id = get_queried_object_id();
-		if ( ! $id || ! function_exists( 'zad_is_service' ) || ! zad_is_service() ) { return ''; }
-		$mine = trim( (string) get_post_meta( $id, 'title' === $field ? '_yoast_wpseo_title' : '_yoast_wpseo_metadesc', true ) );
-		if ( '' !== $mine ) { return ''; }
-		return 'title' === $field ? ( function_exists( 'zad_seo_title' ) ? zad_seo_title() : '' ) : ( function_exists( 'zad_seo_desc' ) ? zad_seo_desc() : '' );
+		if ( ! $id || ! $yoast_empty( $id, $field ) ) { return ''; }
+		if ( function_exists( 'zad_is_service' ) && zad_is_service() ) {
+			return 'title' === $field ? ( function_exists( 'zad_seo_title' ) ? zad_seo_title() : '' ) : ( function_exists( 'zad_seo_desc' ) ? zad_seo_desc() : '' );
+		}
+		// Questions (excerpt = short answer) and articles (excerpt): description only.
+		$is_faq = function_exists( 'zad_is_faq' ) && zad_is_faq( $id );
+		$is_art = is_singular( 'post' ) || ( function_exists( 'zad_is_article' ) && zad_is_article( $id ) );
+		if ( 'desc' === $field && ( $is_faq || $is_art ) && function_exists( 'zad_seo_desc' ) ) { return zad_seo_desc(); }
+		return '';
 	}
 	$t = zad_seo_target();
 	if ( $t && 'term' === $t[0] ) {
