@@ -7,7 +7,7 @@ $icon  = get_post_meta( $id, '_zad_icon', true ) ?: 'sparkle';
 $rate  = get_post_meta( $id, '_zad_rating', true );
 $warr  = get_post_meta( $id, '_zad_warranty', true );
 $terms = get_the_terms( $id, 'service_cat' );
-$wa    = zad_wa_link( 'مرحباً، أرغب بطلب خدمة: ' . get_the_title(), $id );
+$wa    = zad_wa_link( 'مرحباً، أرغب بطلب خدمة: ' . zad_card_title( $id ), $id );
 ?>
 <article class="scard">
 	<a class="scard__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
@@ -20,7 +20,7 @@ $wa    = zad_wa_link( 'مرحباً، أرغب بطلب خدمة: ' . get_the_ti
 	</a>
 	<div class="scard__body">
 		<?php if ( $terms && ! is_wp_error( $terms ) ) : ?><span class="scard__cat"><?php echo esc_html( $terms[0]->name ); ?></span><?php endif; ?>
-		<h3 class="scard__title"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
+		<h3 class="scard__title"><a href="<?php the_permalink(); ?>"><?php echo esc_html( zad_card_title( $id ) ); ?></a></h3>
 		<p class="scard__desc"><?php echo esc_html( get_post_meta( $id, '_zad_tagline', true ) ?: wp_trim_words( get_the_excerpt(), 18 ) ); ?></p>
 		<?php $bd = zad_lines( zad_opt( 'zad_card_badges', "فحص مجاني\nضمان مكتوب" ) ); if ( $bd ) : ?>
 			<ul class="scard__badges"><?php foreach ( $bd as $b ) { echo '<li>' . zad_icon( 'check', 14 ) . esc_html( $b ) . '</li>'; } // phpcs:ignore ?></ul>

@@ -234,6 +234,26 @@ function zad_digits_en( $s ) {
 	return strtr( (string) $s, array( '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9', '٬' => ',', '٫' => '.' ) );
 }
 
+/** Remove Saudi mobile numbers (05xxxxxxxx / 9665xxxxxxxx / +966 5…) from a display string. */
+function zad_strip_phones( $s ) {
+	$t = zad_digits_en( (string) $s );
+	$t = preg_replace( '/(?:\+?\s*00?966|\+?\s*966|\b0)\s*-?\s*5(?:[\s\-]*\d){8}(?!\d)/u', ' ', $t );
+	$t = preg_replace( '/\s+/u', ' ', $t );
+	return preg_replace( '/^[\s\-–—|،,:·]+|[\s\-–—|،,:·]+$/u', '', $t ); // not trim(): its byte list would corrupt Arabic
+}
+
+/** Title to show for ANOTHER page in a card / link: Yoast breadcrumb title if set, else the page title; phone numbers removed. */
+function zad_card_title( $id = 0 ) {
+	$id = $id ? $id : get_the_ID();
+	$bc = trim( (string) get_post_meta( $id, '_yoast_wpseo_bctitle', true ) );
+	$t  = zad_strip_phones( '' !== $bc ? wp_strip_all_tags( $bc ) : wp_strip_all_tags( html_entity_decode( get_the_title( $id ), ENT_QUOTES, 'UTF-8' ) ) );
+	if ( '' === $t ) {
+		$o = get_post_type_object( get_post_type( $id ) );
+		$t = $o ? $o->labels->singular_name : 'صفحة';
+	}
+	return $t;
+}
+
 /** Parse the price list textarea: "group | service | price | warranty". */
 function zad_parse_prices( $text ) {
 	$rows = array();

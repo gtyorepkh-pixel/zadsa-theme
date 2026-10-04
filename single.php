@@ -15,7 +15,7 @@ while ( have_posts() ) :
 			<div class="prose entry-content"><?php the_content(); ?></div>
 			<?php $psid = (int) get_post_meta( get_the_ID(), '_zad_post_service', true );
 			if ( $psid && 'publish' === get_post_status( $psid ) ) : $psw = zad_wa_link( 'مرحباً، قرأت مقال: ' . get_the_title() . ' وأرغب بخدمة: ' . get_the_title( $psid ), $psid ); ?>
-				<div class="svc-cta"><div><span class="eyebrow">الحل المناسب</span><h3><?php echo esc_html( get_the_title( $psid ) ); ?></h3><p><?php echo esc_html( get_post_meta( $psid, '_zad_tagline', true ) ?: wp_trim_words( get_the_excerpt( $psid ), 22 ) ); ?></p></div>
+				<div class="svc-cta"><div><span class="eyebrow">الحل المناسب</span><h3><?php echo esc_html( zad_card_title( $psid ) ); ?></h3><p><?php echo esc_html( get_post_meta( $psid, '_zad_tagline', true ) ?: wp_trim_words( get_the_excerpt( $psid ), 22 ) ); ?></p></div>
 				<div class="svc-cta__b"><a class="btn btn--accent" href="<?php echo esc_url( get_permalink( $psid ) ); ?>">تفاصيل الخدمة</a><?php if ( $psw ) : ?><a class="btn btn--wa" href="<?php echo esc_url( $psw ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> واتساب</a><?php endif; ?></div></div>
 			<?php endif; ?>
 			<?php echo zad_author_box(); // phpcs:ignore ?>

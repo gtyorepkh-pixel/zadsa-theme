@@ -43,33 +43,32 @@ add_filter( 'body_class', function ( $c ) {
 add_filter( 'excerpt_length', function () { return 24; } );
 add_filter( 'excerpt_more', function () { return '…'; } );
 
-/** "All our services" sidebar grouped by category, current page highlighted. */
-function zad_services_sidebar_data() {
-	$data = get_transient( 'zad_sbar_data' );
-	if ( is_array( $data ) ) {
-		return $data;
-	}
+function zad_sbar_enabled() { return (bool) zad_opt( 'zad_sbar_on', true ); }
+
+/** Sidebar data for one service page: only services of the SAME section (service_cat) and the SAME city (service_area). */
+function zad_services_sidebar_data( $current_id = 0 ) {
+	if ( ! $current_id ) { return array(); }
+	$key  = 'zad_sbar_' . (int) get_option( 'zad_nav_ver', 1 ) . '_' . (int) $current_id;
+	$data = get_transient( $key );
+	if ( is_array( $data ) ) { return $data; }
 	$data = array();
-	$cats = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true ) );
+	$cats = wp_get_post_terms( $current_id, 'service_cat' );
+	$city = array();
+	$ar   = wp_get_post_terms( $current_id, 'service_area' );
+	if ( $ar && ! is_wp_error( $ar ) ) { foreach ( $ar as $t ) { $city[] = $t->parent ? (int) $t->parent : (int) $t->term_id; } }
+	$city = array_values( array_unique( $city ) );
 	if ( $cats && ! is_wp_error( $cats ) ) {
 		foreach ( $cats as $c ) {
+			$tq = array( 'relation' => 'AND', array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) );
+			if ( $city ) { $tq[] = array( 'taxonomy' => 'service_area', 'terms' => $city, 'include_children' => true ); }
 			$items = array();
-			foreach ( get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 30, 'no_found_rows' => true, 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) ), 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) ) as $p ) {
-				$items[] = array( (int) $p->ID, get_permalink( $p ), get_the_title( $p ) );
+			foreach ( get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 30, 'no_found_rows' => true, 'tax_query' => $tq, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) ) as $p ) {
+				$items[] = array( (int) $p->ID, get_permalink( $p ), zad_card_title( $p->ID ) );
 			}
 			if ( $items ) { $data[] = array( 'term' => (int) $c->term_id, 'name' => $c->name, 'items' => $items ); }
 		}
 	}
-	// Services that were never given a category (existing content) are grouped by their type, so the list is never empty.
-	foreach ( zad_service_types() as $pt ) {
-		$items = array();
-		foreach ( get_posts( array( 'post_type' => $pt, 'numberposts' => 60, 'no_found_rows' => true, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ), 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'operator' => 'NOT EXISTS' ) ) ) ) as $p ) {
-			$items[] = array( (int) $p->ID, get_permalink( $p ), get_the_title( $p ) );
-		}
-		$o = get_post_type_object( $pt );
-		if ( $items && $o ) { $data[] = array( 'term' => 0, 'pt' => $pt, 'name' => $o->labels->name, 'items' => $items ); }
-	}
-	set_transient( 'zad_sbar_data', $data, 12 * HOUR_IN_SECONDS );
+	set_transient( $key, $data, 12 * HOUR_IN_SECONDS );
 	return $data;
 }
 
@@ -81,7 +80,7 @@ function zad_services_sidebar( $current_id = 0 ) {
 	} else {
 		echo '<button type="button" class="sbar__cta" data-open-wizard>' . zad_icon( 'bolt', 20 ) . ' اطلب معاينة مجانية</button>'; // phpcs:ignore
 	}
-	foreach ( zad_services_sidebar_data() as $g ) {
+	foreach ( zad_services_sidebar_data( $current_id ) as $g ) {
 		$open = ! empty( $g['term'] ) ? has_term( $g['term'], 'service_cat', $current_id ) : ( ! empty( $g['pt'] ) && get_post_type( $current_id ) === $g['pt'] );
 		echo '<details class="sbar__grp"' . ( $open ? ' open' : '' ) . '><summary><span>' . esc_html( $g['name'] ) . '</span></summary><ul>'; // phpcs:ignore
 		foreach ( $g['items'] as $it ) {
@@ -101,7 +100,7 @@ function zad_services_sidebar( $current_id = 0 ) {
 /** Drop cached menus/lists when content or terms change. */
 function zad_flush_nav_cache() {
 	delete_transient( 'zad_mega_html' );
-	delete_transient( 'zad_sbar_data' );
+	update_option( 'zad_nav_ver', time(), false ); // invalidates the per-page sidebar caches
 	delete_transient( 'zad_wiz_map' );
 }
 add_action( 'save_post', 'zad_flush_nav_cache' );

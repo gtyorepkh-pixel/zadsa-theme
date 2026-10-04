@@ -151,7 +151,7 @@ while ( have_posts() ) :
 
 	<!-- 3. Intro (content) + all-services sidebar -->
 	<section class="sec">
-		<div class="wrap slayout">
+		<div class="wrap slayout<?php echo zad_sbar_enabled() ? '' : ' slayout--solo'; ?>">
 			<div class="slayout__main">
 				<?php $ctitle = trim( (string) $m( 'content_title' ) ); if ( '' !== $ctitle ) : // optional H2 only when filled; never the page title (it is already the H1) ?>
 				<h2 class="h-line"><?php echo esc_html( $ctitle ); ?></h2>
@@ -164,11 +164,13 @@ while ( have_posts() ) :
 				<div class="prose entry-content"><?php echo $ix_before; // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 				<p><a class="btn btn--accent" href="#quote" data-scroll-quote><?php echo zad_icon( 'bolt', 20 ); // phpcs:ignore ?> <?php echo esc_html( $cta ); ?></a></p>
 			</div>
+			<?php if ( zad_sbar_enabled() ) : ?>
 			<aside class="slayout__side">
 				<div class="sticky">
 					<?php zad_services_sidebar( $id ); ?>
 				</div>
 			</aside>
+			<?php endif; ?>
 		</div>
 	</section>
 
@@ -441,7 +443,7 @@ while ( have_posts() ) :
 	<?php endif; ?>
 
 	<!-- 15b. Guides -->
-	<?php $gp = zad_service_guides( $id, 4 ); // same category / the service's own keywords; nothing suitable = no section
+	<?php $gp = zad_opt( 'zad_svc_guides_show', false ) ? zad_service_guides( $id, 4 ) : array(); // global switch (off by default) + articles picked by hand on the page; nothing picked = no section
 	if ( $gp ) : ?>
 	<section class="sec"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">أدلة تهمّك</span><h2>مقالات ونصائح مفيدة</h2></header>

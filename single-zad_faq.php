@@ -29,14 +29,14 @@ while ( have_posts() ) :
 				<a class="fork__t fork__t--svc" href="<?php echo esc_url( get_permalink( $sid ) ); ?>">
 					<span class="fork__n">01</span>
 					<span class="fork__k">هل تحتاج الخدمة؟</span>
-					<strong><?php echo esc_html( get_the_title( $sid ) ); ?></strong>
+					<strong><?php echo esc_html( zad_card_title( $sid ) ); ?></strong>
 					<span class="fork__go">تفاصيل الخدمة والسعر <?php echo zad_icon( 'arrow', 16 ); // phpcs:ignore ?></span>
 				</a>
 				<?php endif; if ( $aid ) : ?>
 				<a class="fork__t fork__t--art" href="<?php echo esc_url( get_permalink( $aid ) ); ?>">
 					<span class="fork__n">0<?php echo $sid ? '2' : '1'; ?></span>
 					<span class="fork__k">لقراءة شرح أكثر · <?php echo esc_html( zad_reading_time( $aid ) ); ?></span>
-					<strong><?php echo esc_html( get_the_title( $aid ) ); ?></strong>
+					<strong><?php echo esc_html( zad_card_title( $aid ) ); ?></strong>
 					<span class="fork__go"><?php echo esc_html( $albl ); ?> <?php echo zad_icon( 'arrow', 16 ); // phpcs:ignore ?></span>
 				</a>
 				<?php endif; ?>
@@ -58,7 +58,7 @@ while ( have_posts() ) :
 			$rel = new WP_Query( $rq );
 			if ( $rel->have_posts() ) : ?>
 				<h2 class="h-line" style="margin-top:36px">أسئلة ذات صلة</h2>
-				<div class="faqlinks"><?php while ( $rel->have_posts() ) { $rel->the_post(); echo '<a href="' . esc_url( get_permalink() ) . '"><span>' . esc_html( get_the_title() ) . '</span>' . zad_icon( 'arrow', 18 ) . '</a>'; } wp_reset_postdata(); // phpcs:ignore ?></div>
+				<div class="faqlinks"><?php while ( $rel->have_posts() ) { $rel->the_post(); echo '<a href="' . esc_url( get_permalink() ) . '"><span>' . esc_html( zad_card_title() ) . '</span>' . zad_icon( 'arrow', 18 ) . '</a>'; } wp_reset_postdata(); // phpcs:ignore ?></div>
 			<?php endif; ?>
 		</article>
 		<aside class="slayout__side"><div class="sticky" id="quote">

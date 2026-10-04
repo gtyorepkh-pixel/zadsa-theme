@@ -243,41 +243,31 @@ function zad_coverage_save( $post_id, $in ) {
 
 
 /* ---------- "Guides" on a service page: same category or the service's own keywords only ---------- */
-function zad_service_keywords( $title ) {
-	$t     = preg_replace( '/[\x{064B}-\x{065F}]/u', '', wp_strip_all_tags( (string) $title ) );
-	$words = preg_split( '/[\s\-–—|،,:]+/u', $t, -1, PREG_SPLIT_NO_EMPTY );
-	$city  = (string) zad_opt( 'zad_city_name', 'الرياض' );
-	$stop  = array( 'شركة', 'شركات', 'خدمة', 'خدمات', 'أفضل', 'افضل', 'رخيص', 'في', 'و', 'من', 'الى', 'إلى', 'على', 'عن', 'مع', 'السعودية', 'مؤسسة', 'الرياض', 'جدة', 'الدمام', $city );
-	$out   = array();
-	foreach ( $words as $w ) {
-		$bare = preg_replace( '/^ب(?=ال)/u', '', $w ); // بالرياض → الرياض
-		if ( in_array( $w, $stop, true ) || in_array( $bare, $stop, true ) || mb_strlen( $w ) < 3 ) { continue; }
-		$out[] = $w;
-	}
-	return array_slice( array_values( array_unique( $out ) ), 0, 2 );
-}
 function zad_is_placeholder_post( $p ) {
 	return 'hello-world' === $p->post_name || in_array( trim( (string) $p->post_title ), array( 'Hello world!', 'مرحبا بالعالم!', 'أهلاً بالعالم!', 'أهلا بالعالم!' ), true );
 }
-/** Up to $limit published posts that belong with this service; empty array = hide the section. */
+/** Articles picked by hand in the service editor (_zad_guides). Empty = the section is not shown (never auto-filled). */
 function zad_service_guides( $id, $limit = 4 ) {
-	$found = array();
-	$push  = function ( $posts ) use ( &$found ) {
-		foreach ( (array) $posts as $p ) { if ( $p instanceof WP_Post && ! zad_is_placeholder_post( $p ) ) { $found[ $p->ID ] = $p; } }
-	};
-	$cats = get_the_terms( $id, 'service_cat' );
-	$cids = array();
-	if ( $cats && ! is_wp_error( $cats ) ) {
-		foreach ( $cats as $c ) {
-			$t = get_term_by( 'slug', $c->slug, 'category' ) ?: get_term_by( 'name', $c->name, 'category' );
-			if ( $t ) { $cids[] = (int) $t->term_id; }
-		}
+	$ids = array_values( array_filter( array_map( 'intval', (array) get_post_meta( $id, '_zad_guides', true ) ) ) );
+	if ( ! $ids ) { return array(); }
+	$out = array();
+	foreach ( get_posts( array( 'post_type' => zad_article_types(), 'post__in' => $ids, 'orderby' => 'post__in', 'post_status' => 'publish', 'numberposts' => $limit, 'ignore_sticky_posts' => true ) ) as $p ) {
+		if ( ! zad_is_placeholder_post( $p ) ) { $out[] = $p; }
 	}
-	$base = array( 'post_type' => 'post', 'post_status' => 'publish', 'numberposts' => $limit * 3, 'ignore_sticky_posts' => true );
-	if ( $cids ) { $push( get_posts( $base + array( 'category__in' => $cids ) ) ); }
-	if ( count( $found ) < $limit ) {
-		$kw = zad_service_keywords( get_the_title( $id ) );
-		if ( $kw ) { $push( get_posts( $base + array( 's' => implode( ' ', $kw ) ) ) ); }
+	return $out;
+}
+
+/** Editor field: choose the articles for «مقالات ونصائح مفيدة». */
+function zad_guides_box( $post_id ) {
+	$sel = array_map( 'intval', (array) get_post_meta( $post_id, '_zad_guides', true ) );
+	echo '<h4>مقالات ونصائح مفيدة <small>(اختيار يدوي؛ فارغ = لا يظهر القسم. يظهر فقط إن فُعِّل من إعدادات القالب)</small></h4><input type="hidden" name="zad[guides_present]" value="1"><select name="zad[guides][]" multiple size="8" style="width:100%">';
+	foreach ( get_posts( array( 'post_type' => zad_article_types(), 'post_status' => 'publish', 'numberposts' => 300, 'orderby' => 'date', 'order' => 'DESC' ) ) as $a ) {
+		echo '<option value="' . (int) $a->ID . '"' . ( in_array( (int) $a->ID, $sel, true ) ? ' selected' : '' ) . '>' . esc_html( $a->post_title ) . '</option>';
 	}
-	return array_slice( array_values( $found ), 0, $limit );
+	echo '</select><p class="description">اضغط Ctrl/⌘ لاختيار أكثر من مقال (حتى 4 تظهر). الترتيب حسب القائمة.</p>';
+}
+function zad_guides_save( $post_id, $in ) {
+	if ( empty( $in['guides_present'] ) ) { return; }
+	$ids = isset( $in['guides'] ) ? array_values( array_unique( array_filter( array_map( 'absint', (array) $in['guides'] ) ) ) ) : array();
+	update_post_meta( $post_id, '_zad_guides', array_slice( $ids, 0, 12 ) );
 }

@@ -5,7 +5,7 @@
 	</a>
 	<div class="scard__body">
 		<span class="scard__cat"><?php echo esc_html( get_the_date() ); ?></span>
-		<h3 class="scard__title"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
+		<h3 class="scard__title"><a href="<?php the_permalink(); ?>"><?php echo esc_html( zad_card_title() ); ?></a></h3>
 		<p class="scard__desc"><?php echo esc_html( wp_trim_words( get_the_excerpt(), 20 ) ); ?></p>
 		<a class="more" href="<?php the_permalink(); ?>">اقرأ المزيد <?php echo zad_icon( 'arrow', 16 ); // phpcs:ignore ?></a>
 	</div>
