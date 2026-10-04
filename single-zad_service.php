@@ -90,8 +90,9 @@ while ( have_posts() ) :
 
 				<div class="shero__side">
 					<?php $hc = zad_hero_card( $id, (bool) $prices );
-					if ( ( 'q30' === $hc && '' === zad_q30_html( $id, 'hero-a' ) ) || ( 'dx' === $hc && '' === zad_dx_html( $id, 'hero-b' ) ) ) { $hc = $prices ? 'est' : 'form'; } // never leave the side empty
-					if ( 'q30' === $hc ) : echo zad_q30_html( $id, 'hero-a' ); // phpcs:ignore
+					if ( ( 'ticket' === $hc && '' === zad_ticket_html( $id ) ) || ( 'q30' === $hc && '' === zad_q30_html( $id, 'hero-a' ) ) || ( 'dx' === $hc && '' === zad_dx_html( $id, 'hero-b' ) ) ) { $hc = $prices ? 'est' : 'form'; } // never leave the side empty
+					if ( 'ticket' === $hc ) : echo zad_ticket_html( $id ); // phpcs:ignore
+					elseif ( 'q30' === $hc ) : echo zad_q30_html( $id, 'hero-a' ); // phpcs:ignore
 					elseif ( 'dx' === $hc ) : echo zad_dx_html( $id, 'hero-b' ); // phpcs:ignore
 					elseif ( 'est' === $hc ) : ?>
 					<div class="est" data-est data-wa="<?php echo esc_attr( zad_whatsapp( $id ) ); ?>" data-title="<?php echo esc_attr( $title ); ?>" data-unit="<?php echo esc_attr( $unit ); ?>">
@@ -129,7 +130,7 @@ while ( have_posts() ) :
 					<?php else : ?>
 						<?php echo zad_quote_form( array( 'service_id' => $id, 'id' => 'hq', 'title' => 'اطلب ' . $title, 'compact' => true ) ); // phpcs:ignore ?>
 					<?php endif; ?>
-					<?php $fc = zad_float_cards(); if ( $fc ) : ?>
+					<?php $fc = ( 'ticket' === $hc ) ? array() : zad_float_cards(); if ( $fc ) : ?>
 					<ul class="fcards" aria-label="مزايا الخدمة"><?php foreach ( $fc as $n => $c ) : ?>
 						<li class="fcard fcard--<?php echo (int) ( $n + 1 ); ?>"><span class="fcard__ic"><?php echo zad_icon( $c[2], 24 ); // phpcs:ignore ?></span><span class="fcard__tx"><b><?php echo esc_html( $c[0] ); ?></b><small><?php echo esc_html( $c[1] ); ?></small></span></li>
 					<?php endforeach; ?></ul>

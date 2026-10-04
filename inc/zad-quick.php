@@ -11,13 +11,15 @@
 
 defined( 'ABSPATH' ) || exit;
 
-function zad_quick_sources() { return array( 'hero-a' => 'الهيرو (أ)', 'hero-b' => 'الهيرو (ب)', 'sec-a' => 'قسم الطلب الأخير (أ)', 'sec-b' => 'قسم التشخيص (ب)', 'home-b' => 'الرئيسية (ب)', 'est' => 'مُقدّر السعر' ); }
+function zad_quick_sources() { return array( 'hero-a' => 'الهيرو (أ)', 'hero-b' => 'الهيرو (ب)', 'sec-a' => 'قسم الطلب الأخير (أ)', 'sec-b' => 'قسم التشخيص (ب)', 'home-b' => 'الرئيسية (ب)', 'est' => 'مُقدّر السعر', 'hero_ticket' => 'الهيرو (تذكرة الحجز)' ); }
 
 /* ---------------- which card in the hero ---------------- */
 function zad_hero_card( $id, $has_prices ) {
+	$all = array( 'ticket', 'est', 'q30', 'dx', 'form' );
 	$c = (string) get_post_meta( $id, '_zad_hero_card', true );
-	if ( ! in_array( $c, array( 'est', 'q30', 'dx', 'form' ), true ) ) { $c = (string) zad_opt( 'zad_hero_default', 'est' ); }
-	if ( ! in_array( $c, array( 'est', 'q30', 'dx', 'form' ), true ) ) { $c = 'est'; }
+	if ( ! in_array( $c, $all, true ) ) { $c = (string) zad_opt( 'zad_hero_default', 'ticket' ); }
+	if ( ! in_array( $c, $all, true ) ) { $c = 'ticket'; }
+	if ( 'ticket' === $c && '' === zad_ticket_html( $id ) ) { $c = $has_prices ? 'est' : 'form'; } // fewer than two tiles: the card would look broken
 	if ( 'est' === $c && ! $has_prices ) { $c = 'form'; }
 	if ( 'dx' === $c && ! zad_dx_data( $id ) ) { $c = $has_prices ? 'est' : 'form'; }
 	return $c;
@@ -141,7 +143,7 @@ function zad_quick_box( $post_id ) {
 	$hc = $g( 'hero_card' ); $fin = $g( 'final_req' ); $sec = $g( 'dx_sec' );
 	echo '<h4>بطاقة الهيرو وطلب الخدمة</h4><div class="zad-grid">';
 	echo '<p><label>بطاقة الهيرو لهذه الصفحة<select name="zad[hero_card]">';
-	foreach ( array( '' => 'الافتراضي (من الإعدادات)', 'est' => 'مُقدّر السعر', 'q30' => 'اطلب في 30 ثانية (أ)', 'dx' => 'شخّص مشكلتك (ب)', 'form' => 'نموذج الطلب' ) as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $hc, $k, false ) . '>' . esc_html( $l ) . '</option>'; }
+	foreach ( array( '' => 'الافتراضي (من الإعدادات)', 'ticket' => 'تذكرة الحجز', 'est' => 'مُقدّر السعر', 'q30' => 'اطلب في 30 ثانية (أ)', 'dx' => 'شخّص مشكلتك (ب)', 'form' => 'نموذج الطلب' ) as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $hc, $k, false ) . '>' . esc_html( $l ) . '</option>'; }
 	echo '</select></label></p><p><label>قسم الطلب الأخير في آخر الصفحة<select name="zad[final_req]">';
 	foreach ( array( '' => 'نموذج الطلب (الحالي)', 'q30' => 'اطلب في 30 ثانية (أ)' ) as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $fin, $k, false ) . '>' . esc_html( $l ) . '</option>'; }
 	echo '</select></label></p><p><label>قسم «شخّص مشكلتك» بعد التعريف<select name="zad[dx_sec]">';
@@ -149,15 +151,16 @@ function zad_quick_box( $post_id ) {
 	echo '</select></label></p></div>';
 	echo '<p><label>خيارات «الخدمة» في (أ) <small>(سطر لكل خيار، حتى 4؛ فارغ = أنواع الخدمة الفرعية)</small><textarea name="zad[q_svcs]" rows="3" style="width:100%">' . esc_textarea( (string) $g( 'q_svcs' ) ) . '</textarea></label></p>';
 	echo '<p><label>خيارات «الحي» في (أ) <small>(سطر لكل حي، حتى 4؛ فارغ = أحياء التغطية)</small><textarea name="zad[q_hoods]" rows="3" style="width:100%">' . esc_textarea( (string) $g( 'q_hoods' ) ) . '</textarea></label></p>';
+	echo '<p><label>مربعات تذكرة الحجز <small>(سطر لكل مربع، حتى 6: الاسم | السعر من | الأيقونة (اختياري) | الخدمة أو الرابط (اختياري). فارغ = من أعراض «شخّص مشكلتك» ثم من جدول الأسعار. الأيقونات: roach ant termite bedbug rodent mosquito sofa tank ac house truck box other)</small><textarea name="zad[hero_tiles]" rows="5" style="width:100%" placeholder="صراصير | 150 | roach | مكافحة الصراصير' . "\n" . 'نمل أبيض | 400 | termite | /pest-control/termites/">' . esc_textarea( (string) $g( 'hero_tiles' ) ) . '</textarea></label></p>';
 	$dxnote = ( function_exists( 'zad_ix_wiz_active' ) && zad_ix_wiz_active( $post_id ) && '' !== trim( (string) $g( 'dx' ) ) ) ? '<p class="description" style="color:#b45309">⚠ مخفي لأن أداة التشخيص التفاعلية مفعّلة في هذه الصفحة.</p>' : '';
 	echo '<h4>الأعراض لـ«شخّص مشكلتك»</h4>' . $dxnote . '<p><label><small>سطر لكل عرض: العرض | الخدمة المقترحة | السعر (نص تكتبه أنت، مثل: من 150 ريال) | رابط الخدمة (اختياري) | إيموجي (اختياري). فارغ = لا يظهر القسم.</small><textarea name="zad[dx]" rows="5" style="width:100%" placeholder="صراصير في المطبخ | مكافحة الصراصير | من 150 ريال | /pest-control/cockroaches/ | 🪳">' . esc_textarea( (string) $g( 'dx' ) ) . '</textarea></label></p>';
 }
 
 function zad_quick_save( $post_id, $in ) {
 	if ( ! array_key_exists( 'hero_card', $in ) ) { return; }
-	$hc = in_array( $in['hero_card'], array( 'est', 'q30', 'dx', 'form' ), true ) ? $in['hero_card'] : '';
+	$hc = in_array( $in['hero_card'], array( 'ticket', 'est', 'q30', 'dx', 'form' ), true ) ? $in['hero_card'] : '';
 	update_post_meta( $post_id, '_zad_hero_card', $hc );
 	update_post_meta( $post_id, '_zad_final_req', 'q30' === ( $in['final_req'] ?? '' ) ? 'q30' : '' );
 	update_post_meta( $post_id, '_zad_dx_sec', 'off' === ( $in['dx_sec'] ?? '' ) ? 'off' : '' );
-	foreach ( array( 'q_svcs', 'q_hoods', 'dx' ) as $k ) { update_post_meta( $post_id, '_zad_' . $k, sanitize_textarea_field( $in[ $k ] ?? '' ) ); }
+	foreach ( array( 'q_svcs', 'q_hoods', 'dx', 'hero_tiles' ) as $k ) { update_post_meta( $post_id, '_zad_' . $k, sanitize_textarea_field( $in[ $k ] ?? '' ) ); }
 }
