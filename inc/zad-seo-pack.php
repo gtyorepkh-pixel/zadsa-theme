@@ -89,7 +89,11 @@ function zad_archive_default( $kind, $field ) {
 /** What the current request is, for defaults: array( 'term'|'archive', object|kind ) or null. */
 function zad_seo_target() {
 	if ( is_tax( zad_seo_tax_list() ) ) { return array( 'term', get_queried_object() ); }
-	if ( function_exists( 'zad_is_services_archive' ) && zad_is_services_archive() ) { return array( 'archive', 'services' ); }
+	if ( function_exists( 'zad_is_services_archive' ) && zad_is_services_archive() ) {
+		$pt = function_exists( 'zad_query_pt' ) ? zad_query_pt() : '';
+		// Native /services/ vs an adopted custom type (/cleaning/, /pest-control/ …): each type gets its own defaults.
+		return ( '' === $pt || 'zad_service' === $pt ) ? array( 'archive', 'services' ) : array( 'type', $pt );
+	}
 	if ( function_exists( 'zad_is_faq_archive' ) && zad_is_faq_archive() ) { return array( 'archive', 'faq' ); }
 	return null;
 }
@@ -102,7 +106,20 @@ function zad_seo_archive_value( $field ) {
 		$own = trim( (string) get_term_meta( $t[1]->term_id, 'title' === $field ? '_zad_seo_title' : '_zad_seo_desc', true ) );
 		return '' !== $own ? $own : zad_term_default( $t[1], $field );
 	}
+	if ( 'type' === $t[0] ) { return zad_type_default( $t[1], $field ); }
 	return zad_archive_default( $t[1], $field );
+}
+
+/** Defaults for the archive of an adopted service type (e.g. /cleaning/). The archive-content module's own title/description override these. */
+function zad_type_default( $pt, $field ) {
+	$o = get_post_type_object( $pt );
+	if ( ! $o ) { return ''; }
+	$label = trim( preg_replace( '/^\s*(?:صفحات|صفحة)\s+/u', '', (string) $o->labels->name ) );
+	if ( '' === $label ) { return ''; }
+	if ( 0 !== mb_strpos( $label, 'خدمات' ) && 0 !== mb_strpos( $label, 'خدمة' ) ) { $label = 'خدمات ' . $label; }
+	$brand = zad_brand_name();
+	$city  = (string) zad_opt( 'zad_city_name', 'الرياض' );
+	return 'title' === $field ? $label . ' في ' . $city . ' | ' . $brand : 'تعرّف على ' . $label . ' من ' . $brand . ' في ' . $city . ': معاينة مجانية وتواصل سريع عبر واتساب أو الاتصال.';
 }
 
 /* ------------------------------------------------------------------ */
@@ -143,7 +160,7 @@ foreach ( array( 'service_area', 'service_cat', 'faq_cat' ) as $zad_tx ) {
 /** The intro block printed first on term pages and on /services/, /faq/. */
 function zad_archive_intro_html() {
 	$t = zad_seo_target();
-	if ( ! $t || is_paged() ) { return ''; }
+	if ( ! $t || is_paged() || 'type' === $t[0] ) { return ''; } // adopted types use the archive-content page
 	$txt = '';
 	if ( 'term' === $t[0] ) { $txt = zad_term_intro( $t[1] ); }
 	else { $txt = trim( (string) zad_opt( 'services' === $t[1] ? 'zad_services_intro' : 'zad_faq_intro', '' ) ); }
