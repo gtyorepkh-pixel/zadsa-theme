@@ -39,12 +39,30 @@
 				if (String(s.id) === String(keep)) o.selected = true;
 				sel.appendChild(o);
 			});
+			renderSvcs(keep);
+		}
+		function renderSvcs(keep) {
+			var box = $('[data-wiz-svcs]', wiz); if (!box) return;
+			var list = svcs.filter(function (s) { return !cat || s.cat === cat; });
+			if (!cat && svcs.length > 8) { list = svcs.filter(function (s) { return String(s.id) === String(keep); }); }
+			box.innerHTML = '';
+			if (!list.length) { var h = document.createElement('p'); h.className = 'wz__hint'; h.textContent = 'اختر القسم لتظهر خدماته'; box.appendChild(h); return; }
+			list.forEach(function (s) {
+				var b = document.createElement('button'); b.type = 'button'; b.className = 'wz__svc' + (String(s.id) === String(keep) ? ' is-on' : ''); b.textContent = s.name;
+				b.addEventListener('click', function () {
+					hidSvc.value = s.id; sel.value = s.id; err(1, '');
+					$$('.wz__svc', box).forEach(function (x) { x.classList.toggle('is-on', x === b); });
+				});
+				box.appendChild(b);
+			});
 		}
 		function open() {
 			wiz.classList.add('is-open'); wiz.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden';
 			form.elements.source.value = location.href;
 			var c = wiz.getAttribute('data-current');
 			if (c && c !== '0' && !hidSvc.value) { hidSvc.value = c; }
+			var cs = svcs.filter(function (x) { return String(x.id) === String(hidSvc.value); })[0];
+			if (cs && !cat) { cat = cs.cat; $$('[data-wiz-cats] .wiz__cat', wiz).forEach(function (x) { x.classList.toggle('is-on', +x.getAttribute('data-cat') === cat); }); }
 			fillServices();
 			var ar = wiz.getAttribute('data-area');
 			if (ar && form.elements.area && !form.elements.area.value) { $$('[data-wiz-city] button', wiz).forEach(function (b) { if (b.getAttribute('data-city') === ar) b.click(); }); }
@@ -58,6 +76,7 @@
 			$('[data-wiz-back]', wiz).hidden = n === 1;
 			$('[data-wiz-next]', wiz).hidden = n === 3;
 			$('[data-wiz-submit]', wiz).hidden = n !== 3;
+			var lb = $('[data-step-lbl]', wiz); if (lb) lb.textContent = 'الخطوة ' + n + ' من 3 · ' + ['اختر خدمتك', 'اختر وقتك', 'بياناتك'][n - 1];
 			if (n === 3) summary();
 		}
 		function err(n, msg) { var e = $('[data-err="' + n + '"]', wiz); if (!e) return; e.hidden = !msg; e.textContent = msg || ''; }
@@ -90,6 +109,17 @@
 			});
 		}
 		chips('[data-wiz-city]', 'area', 'data-city'); chips('[data-wiz-time]', 'time', 'data-time');
+		var dIn = form.elements.date;
+		function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+		$$('[data-wiz-day] button', wiz).forEach(function (b) {
+			b.addEventListener('click', function () {
+				var on = b.classList.contains('is-on');
+				$$('[data-wiz-day] button', wiz).forEach(function (x) { x.classList.remove('is-on'); });
+				if (on) { dIn.value = ''; return; }
+				b.classList.add('is-on'); var d = new Date(); d.setDate(d.getDate() + (+b.getAttribute('data-day'))); dIn.value = iso(d);
+			});
+		});
+		dIn.addEventListener('change', function () { $$('[data-wiz-day] button', wiz).forEach(function (x) { x.classList.remove('is-on'); }); });
 		var geo = $('[data-wiz-geo]', wiz);
 		geo.addEventListener('click', function () {
 			var lbl = $('span', geo);
