@@ -58,8 +58,7 @@ function zad_q30_data( $id ) {
 /* ---------------- (أ) ---------------- */
 function zad_q30_html( $id, $src = 'hero-a' ) {
 	$d  = zad_q30_data( $id );
-	$wa = zad_whatsapp( $id );
-	if ( ! $wa ) { return ''; }
+	$wa = zad_whatsapp( $id ); // may be empty: the final button then opens the booking sheet instead of WhatsApp
 	$o  = '<div class="q30" data-q30 data-wa="' . esc_attr( $wa ) . '" data-title="' . esc_attr( get_the_title( $id ) ) . '" data-url="' . esc_url( get_permalink( $id ) ) . '" data-src="' . esc_attr( $src ) . '" data-post="' . (int) $id . '">';
 	$o .= '<div class="q30__head"><span class="q30__bolt">' . zad_icon( 'bolt', 20 ) . '</span><div><strong>اطلب في 30 ثانية</strong><small>اختر وأرسل — وتصلنا رسالة منظمة على واتساب</small></div></div><div class="q30__body">';
 	$o .= '<div><div class="q30__lab"><i>1</i> الخدمة</div><div class="q30__opts" data-g="svc">';
@@ -77,7 +76,7 @@ function zad_q30_html( $id, $src = 'hero-a' ) {
 		}
 		$o .= '</div></div>';
 	}
-	$o .= '<a class="btn btn--wa btn--block" data-go href="#" target="_blank" rel="noopener">' . zad_icon( 'whatsapp', 20 ) . ' أرسل الطلب عبر واتساب</a><p class="q30__note">نرد عليك خلال دقائق</p></div>';
+	$o .= '<a class="btn btn--wa btn--block" data-go href="#" target="_blank" rel="noopener">' . ( $wa ? zad_icon( 'whatsapp', 20 ) . ' أرسل الطلب عبر واتساب' : zad_icon( 'bolt', 20 ) . ' أرسل الطلب' ) . '</a><p class="q30__note">نرد عليك خلال دقائق</p></div>';
 	return $o . '</div>';
 }
 
@@ -85,7 +84,7 @@ function zad_q30_html( $id, $src = 'hero-a' ) {
 function zad_dx_html( $id, $src = 'hero-b' ) {
 	$data = zad_dx_data( $id );
 	$wa   = zad_whatsapp( $id );
-	if ( ! $data || ! $wa ) { return ''; }
+	if ( ! $data ) { return ''; }
 	$o  = '<div class="dx" data-dx data-wa="' . esc_attr( $wa ) . '" data-title="' . esc_attr( $id ? get_the_title( $id ) : get_bloginfo( 'name' ) ) . '" data-url="' . esc_url( $id ? get_permalink( $id ) : home_url( '/' ) ) . '" data-src="' . esc_attr( $src ) . '" data-post="' . (int) $id . '">';
 	$o .= '<div class="dx__head"><strong>شخّص مشكلتك</strong><small>3 خطوات سريعة — والنتيجة فورية</small><div class="dx__bar"><i class="on"></i><i></i><i></i></div></div><div class="dx__body">';
 	$o .= '<div class="dx__step on" data-s="1"><p class="dx__q">ماذا تلاحظ؟</p><div class="dx__tiles">';
@@ -93,7 +92,7 @@ function zad_dx_html( $id, $src = 'hero-b' ) {
 	$o .= '</div></div><div class="dx__step" data-s="2"><p class="dx__q">ما حجم المكان؟</p><div class="dx__tiles">';
 	foreach ( array( array( 'شقة', '🏢' ), array( 'دور في فيلا', '🏠' ), array( 'فيلا كاملة', '🏡' ), array( 'منشأة تجارية', '🏬' ) ) as $z ) { $o .= '<button type="button" class="dx__tile" data-size="' . esc_attr( $z[0] ) . '"><span>' . $z[1] . '</span>' . esc_html( $z[0] ) . '</button>'; }
 	$o .= '</div><button type="button" class="dx__back" data-back>→ رجوع</button></div>';
-	$o .= '<div class="dx__step" data-s="3"><div class="dx__res"><small>الخدمة المقترحة لك</small><h3 data-rsv></h3><div class="dx__price" data-rpr hidden></div><div class="dx__sum" data-rsm></div><a class="btn btn--wa btn--block" data-go href="#" target="_blank" rel="noopener">' . zad_icon( 'whatsapp', 20 ) . ' أرسل نتيجتي عبر واتساب</a><a class="dx__more" data-more href="#" hidden>تفاصيل الخدمة ←</a><p class="dx__why">السعر تقريبي ويُؤكَّد بعد المعاينة.</p></div><button type="button" class="dx__back" data-reset>↺ ابدأ من جديد</button></div>';
+	$o .= '<div class="dx__step" data-s="3"><div class="dx__res"><small>الخدمة المقترحة لك</small><h3 data-rsv></h3><div class="dx__price" data-rpr hidden></div><div class="dx__sum" data-rsm></div><a class="btn btn--wa btn--block" data-go href="#" target="_blank" rel="noopener">' . ( $wa ? zad_icon( 'whatsapp', 20 ) . ' أرسل نتيجتي عبر واتساب' : zad_icon( 'bolt', 20 ) . ' أرسل نتيجتي' ) . '</a><a class="dx__more" data-more href="#" hidden>تفاصيل الخدمة ←</a><p class="dx__why">السعر تقريبي ويُؤكَّد بعد المعاينة.</p></div><button type="button" class="dx__back" data-reset>↺ ابدأ من جديد</button></div>';
 	$o .= '</div><script type="application/json" data-dx-json>' . wp_json_encode( $data, JSON_UNESCAPED_UNICODE ) . '</script></div>';
 	return $o;
 }

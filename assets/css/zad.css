@@ -1151,3 +1151,7 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .wz .wiz__done{padding:26px 20px}
 [data-theme=dark] .wiz .wiz__panel.wz{--wz-bg:#0d2733;--wz-card:#12303d}
 @media (min-width:640px){.wiz .wiz__panel.wz{inset:0;margin:auto;height:fit-content;width:min(560px,94vw);border-radius:26px;max-height:90vh}}
+
+/* "What the service includes": cards must not blend into the tinted floor */
+.featgrid li{background:#fff;border:1px solid color-mix(in srgb,var(--primary) 16%,var(--line));border-inline-start:4px solid var(--ok);box-shadow:0 6px 16px -12px rgba(11,46,58,.45)}
+[data-theme=dark] .featgrid li{background:#12303d;border-color:#1f4656}

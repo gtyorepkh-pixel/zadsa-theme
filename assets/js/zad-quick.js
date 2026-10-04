@@ -11,7 +11,9 @@
 			if (navigator.sendBeacon) { navigator.sendBeacon(ajax(), fd); } else { fetch(ajax(), { method: 'POST', body: fd, keepalive: true, credentials: 'same-origin' }); }
 		} catch (e) {}
 	}
-	function wa(root, text) { return 'https://wa.me/' + root.dataset.wa + '?text=' + encodeURIComponent(text); }
+	function wa(root, text) { return root.dataset.wa ? 'https://wa.me/' + root.dataset.wa + '?text=' + encodeURIComponent(text) : '#'; }
+	/* No WhatsApp number configured: the final button opens the booking sheet with the same message. */
+	function send(root, go, text, e) { go._note = text; if (!root.dataset.wa) { e.preventDefault(); if (window.zadOpenWizard) { window.zadOpenWizard(text); } return false; } return true; }
 
 	/* ---------- (أ) ---------- */
 	$$('[data-q30]').forEach(function (root) {
@@ -25,7 +27,7 @@
 			t += '\nالوقت المفضل: ' + sel('when');
 			if (pick.label) { t += '\nالباقة: ' + pick.label + (pick.price ? ' (' + pick.price + ')' : ''); }
 			t += '\nالصفحة: ' + root.dataset.url;
-			go.href = wa(root, t);
+			go.href = wa(root, t); go._note = t;
 		}
 		$$('[data-g] button', root).forEach(function (b) {
 			b.addEventListener('click', function () {
@@ -48,7 +50,7 @@
 			});
 			document.addEventListener('click', function (e) { if (!pop.hidden && !root.contains(e.target)) { pop.hidden = true; pbtn.setAttribute('aria-expanded', 'false'); } });
 		}
-		go.addEventListener('click', function () { build(); beacon(root); });
+		go.addEventListener('click', function (e) { build(); if (send(root, go, go._note, e)) { beacon(root); } });
 		build();
 	});
 
@@ -67,12 +69,12 @@
 				var sm = $('[data-rsm]', root); sm.innerHTML = ''; [cur.label, size].forEach(function (x) { var s = document.createElement('span'); s.textContent = x; sm.appendChild(s); });
 				if (cur.url) { more.href = cur.url; more.hidden = false; } else { more.hidden = true; }
 				var txt = 'مرحباً، ألاحظ: ' + cur.label + '\nالمكان: ' + size + '\nالخدمة المقترحة: ' + cur.svc + (cur.price ? ' (' + cur.price + ')' : '') + '\nالصفحة: ' + root.dataset.url;
-				go.href = wa(root, txt); step(3);
+				go.href = wa(root, txt); go._note = txt; step(3);
 			});
 		});
 		$$('[data-back]', root).forEach(function (b) { b.addEventListener('click', function () { step(1); }); });
 		$$('[data-reset]', root).forEach(function (b) { b.addEventListener('click', function () { cur = null; step(1); }); });
-		go.addEventListener('click', function () { beacon(root); });
+		go.addEventListener('click', function (e) { if (send(root, go, go._note || '', e)) { beacon(root); } });
 	});
 	}
 	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }

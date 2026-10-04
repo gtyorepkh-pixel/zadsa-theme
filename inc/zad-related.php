@@ -132,6 +132,18 @@ function zad_cov_chips( $text ) {
 	return $chips;
 }
 
+/** Chips from the page's service_area terms (links: city pages for top-level terms, term archives otherwise). */
+function zad_cov_area_chips( $post_id ) {
+	$out   = array();
+	$areas = $post_id ? get_the_terms( $post_id, 'service_area' ) : false;
+	if ( ! $areas || is_wp_error( $areas ) ) { return $out; }
+	foreach ( $areas as $t ) {
+		$u = ( 0 === (int) $t->parent && function_exists( 'zad_city_url' ) ) ? zad_city_url( $post_id, $t ) : get_term_link( $t );
+		$out[] = array( $t->name, is_wp_error( $u ) ? '' : (string) $u );
+	}
+	return $out;
+}
+
 function zad_cov_chip_li( $c ) {
 	return '<li>' . ( $c[1]
 		? '<a class="cov__chip cov__chip--link" href="' . esc_url( $c[1] ) . '">' . zad_icon( 'pin', 16 ) . '<span>' . esc_html( $c[0] ) . '</span></a>'
@@ -150,6 +162,7 @@ function zad_coverage_html( $post_id = 0, $home = false ) {
 		if ( '' !== $v ) { $own[ $k ] = $v; }
 	}
 	$glob = function ( $k ) { return (string) zad_opt( 'zad_cov_' . $k, '' ); };
+	$area_chips = $post_id ? zad_cov_area_chips( $post_id ) : array();
 	$page_has = isset( $own['title'] ) || isset( $own['text'] ) || isset( $own['chips'] ) || isset( $own['note'] );
 	if ( $page_has ) {
 		$d = array();
@@ -158,8 +171,18 @@ function zad_coverage_html( $post_id = 0, $home = false ) {
 	} elseif ( $home || zad_opt( 'zad_cov_services', false ) ) {
 		$d = array();
 		foreach ( zad_cov_keys() as $k ) { $d[ $k ] = $glob( $k ); }
+	} elseif ( $area_chips ) { // no coverage data on the page: build it from the page's areas (replaces the old plain section)
+		$d = array( 'title' => 'نصل إليك في أي منطقة', 'text' => '', 'chips' => '', 'note' => '' );
+		foreach ( array( 'eyebrow', 'sub', 'box', 'stats' ) as $k ) { $d[ $k ] = $glob( $k ); }
+		if ( '' === $d['eyebrow'] ) { $d['eyebrow'] = 'تغطيتنا'; }
 	} else { return ''; }
 	$chips = zad_cov_chips( $d['chips'] );
+	if ( $chips && $area_chips ) { // own chips without a link borrow the link of the same-named area
+		$byname = array();
+		foreach ( $area_chips as $a ) { $byname[ mb_strtolower( trim( $a[0] ) ) ] = $a[1]; }
+		foreach ( $chips as $i => $c ) { if ( '' === $c[1] ) { $chips[ $i ][1] = $byname[ mb_strtolower( trim( $c[0] ) ) ] ?? ''; } }
+	}
+	if ( ! $chips ) { $chips = $area_chips; }
 	if ( '' === trim( $d['title'] ) && ! $chips ) { return ''; }
 	$stats = array();
 	foreach ( array_slice( preg_split( '/\r\n|\r|\n/', (string) $d['stats'] ), 0, 3 ) as $l ) { $c = array_pad( array_map( 'trim', explode( '|', $l ) ), 2, '' ); if ( '' !== $c[0] ) { $stats[] = $c; } }

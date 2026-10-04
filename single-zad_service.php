@@ -63,7 +63,8 @@ while ( have_posts() ) :
 			<?php zad_render_crumbs( zad_current_crumbs() ); ?>
 			<div class="shero__grid">
 				<div class="shero__text">
-					<?php if ( $provider ) : ?><span class="pill"><?php echo zad_icon( 'badge', 18 ); // phpcs:ignore ?> <?php echo esc_html( $provider ); ?></span><?php endif; ?>
+					<?php $hbadge = trim( (string) $m( 'badge' ) ) ?: trim( (string) zad_opt( 'zad_provider', '' ) ); // page badge, else the explicit provider option; never the bare site name
+					if ( $hbadge ) : ?><span class="pill"><?php echo zad_icon( 'badge', 18 ); // phpcs:ignore ?> <?php echo esc_html( $hbadge ); ?></span><?php endif; ?>
 					<h1><?php echo esc_html( $title ); ?></h1>
 					<?php if ( $tagline ) : ?><p class="shero__tag"><?php echo esc_html( $tagline ); ?></p><?php endif; ?>
 					<?php if ( $rating ) : ?>
@@ -87,7 +88,9 @@ while ( have_posts() ) :
 				</div>
 
 				<div class="shero__side">
-					<?php $hc = zad_hero_card( $id, (bool) $prices ); if ( 'q30' === $hc ) : echo zad_q30_html( $id, 'hero-a' ); // phpcs:ignore
+					<?php $hc = zad_hero_card( $id, (bool) $prices );
+					if ( ( 'q30' === $hc && '' === zad_q30_html( $id, 'hero-a' ) ) || ( 'dx' === $hc && '' === zad_dx_html( $id, 'hero-b' ) ) ) { $hc = $prices ? 'est' : 'form'; } // never leave the side empty
+					if ( 'q30' === $hc ) : echo zad_q30_html( $id, 'hero-a' ); // phpcs:ignore
 					elseif ( 'dx' === $hc ) : echo zad_dx_html( $id, 'hero-b' ); // phpcs:ignore
 					elseif ( 'est' === $hc ) : ?>
 					<div class="est" data-est data-wa="<?php echo esc_attr( zad_whatsapp( $id ) ); ?>" data-title="<?php echo esc_attr( $title ); ?>" data-unit="<?php echo esc_attr( $unit ); ?>">
@@ -416,13 +419,6 @@ while ( have_posts() ) :
 	<?php endif; ?>
 
 	<!-- 14. Coverage -->
-	<?php if ( $area_names ) : ?>
-	<section class="sec sec--cream"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow">تغطيتنا</span><h2>نصل إليك في أي منطقة</h2></header>
-		<ul class="chips"><?php foreach ( $areas as $t ) : ?><li><a href="<?php echo esc_url( 0 === (int) $t->parent ? zad_city_url( $id, $t ) : get_term_link( $t ) ); ?>"><?php echo zad_icon( 'pin', 16 ); // phpcs:ignore ?> <?php echo esc_html( $t->name ); ?></a></li><?php endforeach; ?></ul>
-	</div></section>
-	<?php endif; ?>
-
 	<!-- 15. FAQ -->
 	<?php if ( $faq ) : ?>
 	<section class="sec"><div class="wrap wrap--narrow">
