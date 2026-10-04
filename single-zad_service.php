@@ -153,7 +153,9 @@ while ( have_posts() ) :
 	<section class="sec">
 		<div class="wrap slayout">
 			<div class="slayout__main">
-				<h2 class="h-line"><?php echo esc_html( $title ); ?></h2>
+				<?php $ctitle = trim( (string) $m( 'content_title' ) ); if ( '' !== $ctitle ) : // optional H2 only when filled; never the page title (it is already the H1) ?>
+				<h2 class="h-line"><?php echo esc_html( $ctitle ); ?></h2>
+				<?php endif; ?>
 				<?php
 				ob_start();
 				the_content();

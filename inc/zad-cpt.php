@@ -157,6 +157,7 @@ function zad_service_metabox( $post ) {
 					<?php endforeach; ?>
 				</select></label></p>
 			<p><label>شارة على البطاقة<input type="text" name="zad[badge]" value="<?php echo esc_attr( $g( 'badge' ) ); ?>" placeholder="الأكثر طلباً"></label></p>
+			<p><label>عنوان قسم المحتوى (H2 اختياري)<input type="text" name="zad[content_title]" value="<?php echo esc_attr( $g( 'content_title' ) ); ?>" placeholder="فارغ = لا يظهر عنوان قبل المحتوى"></label></p>
 			<p><label>نص زر الطلب<input type="text" name="zad[cta_text]" value="<?php echo esc_attr( $g( 'cta_text' ) ); ?>" placeholder="اطلب الخدمة الآن"></label></p>
 			<p><label><input type="checkbox" name="zad[featured]" value="1" <?php checked( $g( 'featured' ), '1' ); ?>> خدمة مميزة (تظهر في الرئيسية)</label></p>
 		</div>
@@ -292,7 +293,7 @@ add_action( 'save_post', function ( $post_id ) {
 	}
 	$in = isset( $_POST['zad'] ) ? wp_unslash( (array) $_POST['zad'] ) : array();
 
-	$text = array( 'tagline', 'icon', 'badge', 'cta_text', 'price_unit', 'duration', 'warranty', 'response', 'phone', 'whatsapp' );
+	$text = array( 'tagline', 'icon', 'badge', 'content_title', 'cta_text', 'price_unit', 'duration', 'warranty', 'response', 'phone', 'whatsapp' );
 	foreach ( $text as $k ) {
 		update_post_meta( $post_id, '_zad_' . $k, isset( $in[ $k ] ) ? sanitize_text_field( $in[ $k ] ) : '' );
 	}
