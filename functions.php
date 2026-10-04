@@ -6,7 +6,7 @@
  */
 
 define('MEMO_VERSION_VERSION', '1.1');
-define( 'ZAD_VERSION', '3.3.0' );
+define( 'ZAD_VERSION', '3.4.0' );
 define( 'MEMO_THEME_DIR', trailingslashit( get_template_directory() ) );
 define( 'MEMO_THEME_URI', trailingslashit( esc_url( get_template_directory_uri() ) ) );
 
@@ -45,6 +45,7 @@ require_once MEMO_THEME_DIR .'inc/zad-404.php';
 require_once MEMO_THEME_DIR .'inc/zad-schemacheck.php';
 require_once MEMO_THEME_DIR .'inc/zad-faqmigrate.php';
 require_once MEMO_THEME_DIR .'inc/zad-faqconvert.php';
+require_once MEMO_THEME_DIR .'inc/zad-svcconvert.php';
 require_once MEMO_THEME_DIR .'inc/zad-assets.php';
 require_once MEMO_THEME_DIR .'inc/zad-related.php';
 require_once MEMO_THEME_DIR .'inc/zad-steps.php';

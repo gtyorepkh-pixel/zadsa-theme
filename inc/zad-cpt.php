@@ -6,9 +6,27 @@ function zad_slug( $opt, $default ) {
 	return $v ? $v : $default;
 }
 
+/** URL base of the theme's own service type: the option if set, /service/ beside adopted types, otherwise the old /services/ (native sites keep their URLs). */
+function zad_service_pt_slug( $adopted ) {
+	$o = sanitize_title_with_dashes( (string) zad_opt( 'zad_service_slug', '' ) );
+	if ( $o ) { return $o; }
+	return $adopted ? 'service' : zad_slug( 'zad_services_slug', 'services' );
+}
+
+/** Two menus must not both be called «الخدمات»: an adopted type carrying that label gets its own name. */
+add_filter( 'register_post_type_args', function ( $args, $pt ) {
+	$map = apply_filters( 'zad_type_label_map', array( 'cleaning' => 'التنظيف', 'pest_control' => 'مكافحة الحشرات', 'moving' => 'نقل الأثاث', 'drain_cleaning' => 'تسليك المجاري' ) );
+	if ( 'zad_service' !== $pt && isset( $map[ $pt ] ) && isset( $args['labels'] ) && is_array( $args['labels'] ) && in_array( $args['labels']['name'] ?? '', array( 'الخدمات', 'خدمات' ), true ) ) {
+		$args['labels']['name'] = $map[ $pt ];
+		$args['labels']['menu_name'] = $map[ $pt ];
+		if ( isset( $args['labels']['all_items'] ) ) { $args['labels']['all_items'] = 'كل ' . $map[ $pt ]; }
+	}
+	return $args;
+}, 20, 2 );
+
 /** Re-flush rewrite rules automatically when a URL base option changes. */
 add_action( 'init', function () {
-	$h = md5( zad_slug( 'zad_services_slug', 'services' ) . '|' . zad_slug( 'zad_areas_slug', 'areas' ) . '|' . zad_slug( 'zad_faq_slug', 'faq' ) . '|' . implode( ',', zad_service_types() ) . '|' . implode( ',', zad_faq_types() ) . '|' . implode( ',', zad_article_types() ) );
+	$h = md5( zad_slug( 'zad_services_slug', 'services' ) . '|' . zad_opt( 'zad_service_slug', '' ) . '|' . zad_slug( 'zad_areas_slug', 'areas' ) . '|' . zad_slug( 'zad_faq_slug', 'faq' ) . '|' . implode( ',', zad_service_types() ) . '|' . implode( ',', zad_faq_types() ) . '|' . implode( ',', zad_article_types() ) );
 	if ( get_option( 'zad_rw_hash' ) !== $h ) {
 		flush_rewrite_rules( false );
 		update_option( 'zad_rw_hash', $h, false );
@@ -25,9 +43,9 @@ function zad_register_content_types() {
 	$slug     = zad_slug( 'zad_services_slug', 'services' );
 	$area     = zad_slug( 'zad_areas_slug', 'areas' );
 	$existing = zad_existing_types( 'service' );
-	$types    = $existing ? array_keys( $existing ) : array( 'zad_service' );
+	$types    = array_values( array_unique( array_merge( array_keys( $existing ), array( 'zad_service' ) ) ) ); // zad_service always exists (a mu-plugin may register it first: mu-plugins/zad-core-service.php)
 
-	if ( ! $existing ) {
+	if ( ! post_type_exists( 'zad_service' ) ) {
 	register_post_type( 'zad_service', array(
 		'labels'        => array(
 			'name'               => 'الخدمات',
@@ -43,8 +61,8 @@ function zad_register_content_types() {
 			'menu_name'          => 'الخدمات',
 		),
 		'public'        => true,
-		'has_archive'   => $slug,
-		'rewrite'       => array( 'slug' => $slug, 'with_front' => false ),
+		'has_archive'   => $existing ? false : $slug, // beside adopted types: single pages only, no public archive
+		'rewrite'       => array( 'slug' => zad_service_pt_slug( (bool) $existing ), 'with_front' => false ),
 		'menu_icon'     => 'dashicons-hammer',
 		'menu_position' => 5,
 		'show_in_rest'  => true,
