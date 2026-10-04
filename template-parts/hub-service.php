@@ -154,7 +154,7 @@ if ( $faqs ) { $toc['faq'] = 'أسئلة شائعة'; }
 				<div class="hubcities">
 					<?php foreach ( $cities as $c ) : ?>
 						<div class="hubcity"><h3><?php echo zad_icon( 'pin', 20 ); // phpcs:ignore ?> <?php echo esc_html( $c['t']->name ); ?></h3>
-						<ul><?php foreach ( array_slice( $c['s'], 0, 6 ) as $sv ) : ?><li><a href="<?php echo esc_url( zad_city_url( $sv->ID, $c['t'] ) ); ?>"><?php echo esc_html( zad_city_title( $sv->ID, $c['t'] ) ); ?></a></li><?php endforeach; ?></ul></div>
+						<ul><?php foreach ( array_slice( $c['s'], 0, 6 ) as $sv ) : ?><li><a href="<?php echo esc_url( zad_area_page_url( $sv->ID, $c['t'] ) ?: get_permalink( $sv ) ); ?>"><?php echo esc_html( zad_service_base_name( $sv->ID ) . ' في ' . $c['t']->name ); ?></a></li><?php endforeach; ?></ul></div>
 					<?php endforeach; ?>
 				</div>
 			</section>

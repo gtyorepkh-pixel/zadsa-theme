@@ -514,9 +514,6 @@ add_filter( 'zad_current_crumbs', function ( $c ) {
 	if ( '' === $manual && ! $simple ) {
 		return $c;
 	}
-	if ( zad_current_city() ) {
-		return $c;
-	}
 	return zad_path_crumbs( $id );
 } );
 

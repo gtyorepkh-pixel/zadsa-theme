@@ -7,8 +7,7 @@ while ( have_posts() ) :
 	$m    = function ( $k ) use ( $id ) { return get_post_meta( $id, '_zad_' . $k, true ); };
 	$arr  = function ( $k ) use ( $m ) { return array_values( array_filter( (array) $m( $k ), function ( $r ) { return is_array( $r ); } ) ); };
 
-	$city     = zad_current_city();
-	$title    = $city ? zad_city_title( $id, $city ) : get_the_title();
+	$title    = get_the_title();
 	$tagline  = $m( 'tagline' );
 	$features = zad_lines( $m( 'features' ) );
 	$stats    = $arr( 'stats' );
@@ -150,7 +149,6 @@ while ( have_posts() ) :
 		<div class="wrap slayout">
 			<div class="slayout__main">
 				<h2 class="h-line"><?php echo esc_html( $title ); ?></h2>
-				<?php if ( $city ) : ?><div class="cityblock"><?php echo zad_icon( 'pin', 22 ); // phpcs:ignore ?><p><?php echo esc_html( zad_city_text( $id, $city ) ); ?></p></div><?php endif; ?>
 				<?php
 				ob_start();
 				the_content();

@@ -132,14 +132,13 @@ function zad_cov_chips( $text ) {
 	return $chips;
 }
 
-/** Chips from the page's service_area terms (links: city pages for top-level terms, term archives otherwise). */
+/** Chips from the page's service_area terms (links: real hierarchical page, else an open area archive, else plain text). */
 function zad_cov_area_chips( $post_id ) {
 	$out   = array();
 	$areas = $post_id ? get_the_terms( $post_id, 'service_area' ) : false;
 	if ( ! $areas || is_wp_error( $areas ) ) { return $out; }
 	foreach ( $areas as $t ) {
-		$u = ( 0 === (int) $t->parent && function_exists( 'zad_city_url' ) ) ? zad_city_url( $post_id, $t ) : get_term_link( $t );
-		$out[] = array( $t->name, is_wp_error( $u ) ? '' : (string) $u );
+		$out[] = array( $t->name, zad_area_link( $post_id, $t ) );
 	}
 	return $out;
 }

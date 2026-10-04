@@ -80,8 +80,7 @@ function zad_opening_hours() {
 
 function zad_current_url() {
 	if ( is_singular() ) {
-		$city = function_exists( 'zad_current_city' ) ? zad_current_city() : null;
-		return $city ? zad_city_url( get_queried_object_id(), $city ) : get_permalink();
+		return get_permalink();
 	}
 	if ( is_tax() || is_category() || is_tag() ) {
 		return get_term_link( get_queried_object() );
@@ -108,11 +107,6 @@ function zad_current_crumbs_base() {
 	if ( zad_is_service() ) {
 		$id = get_queried_object_id();
 		$c  = zad_service_crumbs( $id );
-		$city = zad_current_city();
-		if ( $city ) {
-			$c[ count( $c ) - 1 ][1] = get_permalink( $id );
-			$c[] = array( $city->name, '' );
-		}
 		return $c;
 	}
 	if ( zad_is_faq() ) {
@@ -309,9 +303,8 @@ function zad_graph() {
 
 function zad_service_schema( $id ) {
 	$home = home_url( '/' );
-	$city = zad_current_city();
-	$name = $city ? zad_city_title( $id, $city ) : get_the_title( $id );
-	$url  = $city ? zad_city_url( $id, $city ) : get_permalink( $id );
+	$name = get_the_title( $id );
+	$url  = get_permalink( $id );
 	$cats = get_the_terms( $id, 'service_cat' );
 	$cat  = ( $cats && ! is_wp_error( $cats ) ) ? $cats[0]->name : '';
 
@@ -319,14 +312,12 @@ function zad_service_schema( $id ) {
 	$terms = get_the_terms( $id, 'service_area' );
 	if ( $terms && ! is_wp_error( $terms ) ) {
 		foreach ( $terms as $t ) {
-			if ( $city && $t->term_id !== $city->term_id && $t->parent !== $city->term_id ) { continue; }
 			$areas[] = array( '@type' => 0 === (int) $t->parent ? 'City' : 'Place', 'name' => $t->name );
 		}
 	}
 	$desc = get_post_meta( $id, '_zad_tagline', true );
 	$ex   = get_the_excerpt( $id );
 	$desc = trim( wp_strip_all_tags( $ex ?: $desc ) );
-	if ( $city ) { $desc = zad_city_text( $id, $city ); }
 
 	$s = array(
 		'@context'    => 'https://schema.org',
@@ -379,7 +370,6 @@ add_action( 'wp_head', function () {
 	}
 	$site  = zsc_site_nodes();
 	$nav   = zad_nav_schema();
-	$city  = is_singular() && function_exists( 'zad_current_city' ) ? zad_current_city() : null;
 	$id    = is_singular() ? get_queried_object_id() : 0;
 	$ptype = $id ? get_post_type( $id ) : '';
 
@@ -387,11 +377,6 @@ add_action( 'wp_head', function () {
 		$nodes = array_merge( $site, zsc_home_nodes() );
 		if ( $nav ) { $nodes[] = $nav; }
 		zad_print_graph( $nodes );
-	} elseif ( $city && zad_is_service() ) {
-		// virtual service+city page: company graph + city-specific Service
-		$nodes = array_slice( $site, 0, 3 );
-		zad_print_graph( zsc_with_breadcrumb( $nodes, zad_current_url() ) );
-		zad_print_schema( zad_service_schema( $id ) );
 	} elseif ( $id && in_array( $ptype, zad_service_types(), true ) && 'none' !== zsc_meta( $id, 'mode' ) ) {
 		$nodes = zsc_with_breadcrumb( array_merge( $site, zsc_service_nodes( $id ) ), get_permalink( $id ) );
 		if ( $nav ) { $nodes[] = $nav; }

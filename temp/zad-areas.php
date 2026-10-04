@@ -20,7 +20,7 @@ $svcs   = get_posts( array( 'post_type' => zad_service_types(), 'numberposts' =>
 				<h3 class="areabox__t">الخدمات في <?php echo esc_html( $c->name ); ?></h3>
 				<ul class="areabox__svcs">
 					<?php foreach ( $svcs as $sv ) : if ( has_term( $c->term_id, 'service_area', $sv ) ) : ?>
-						<li><a href="<?php echo esc_url( zad_city_url( $sv->ID, $c ) ); ?>"><?php echo zad_icon( 'check', 16 ); // phpcs:ignore ?> <?php echo esc_html( zad_city_title( $sv->ID, $c ) ); ?></a></li>
+						<li><a href="<?php echo esc_url( zad_area_page_url( $sv->ID, $c ) ?: get_permalink( $sv ) ); ?>"><?php echo zad_icon( 'check', 16 ); // phpcs:ignore ?> <?php echo esc_html( zad_service_base_name( $sv->ID ) . ' في ' . $c->name ); ?></a></li>
 					<?php endif; endforeach; ?>
 				</ul>
 			</section>

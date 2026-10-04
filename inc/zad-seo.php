@@ -30,13 +30,7 @@ function zad_seo_metabox( $post ) {
 	<p><label>صورة المشاركة (OG) — رقم الصورة في المكتبة، أو اتركه لتُستخدم الصورة البارزة
 		<input type="number" name="zad_seo[img]" value="<?php echo esc_attr( $g( 'img' ) ); ?>" style="width:140px"></label></p>
 	<p><label><input type="checkbox" name="zad_seo[noindex]" value="1" <?php checked( $g( 'noindex' ), '1' ); ?>> عدم الفهرسة (noindex)</label></p>
-	<?php if ( in_array( $post->post_type, zad_service_types(), true ) ) : ?>
-	<hr>
-	<p><label>اسم الخدمة بدون المدينة <small>— يُستخدم لعناوين صفحات «خدمة + مدينة»، مثال: شركة رش مبيدات</small>
-		<input type="text" name="zad_seo[base]" value="<?php echo esc_attr( get_post_meta( $post->ID, '_zad_base_name', true ) ); ?>" style="width:100%"></label></p>
-	<p><label>نص تعريفي لكل مدينة <small>— سطر لكل مدينة: رابط-المدينة | النص (اختياري، وإلا يُولَّد تلقائياً)</small>
-		<textarea name="zad_seo[city_text]" rows="3" style="width:100%"><?php echo esc_textarea( get_post_meta( $post->ID, '_zad_city_text', true ) ); ?></textarea></label></p>
-	<?php endif;
+	<?php
 }
 
 add_action( 'save_post', function ( $id ) {
@@ -48,10 +42,6 @@ add_action( 'save_post', function ( $id ) {
 	update_post_meta( $id, '_zad_seo_desc', isset( $in['desc'] ) ? sanitize_textarea_field( $in['desc'] ) : '' );
 	update_post_meta( $id, '_zad_seo_img', isset( $in['img'] ) ? absint( $in['img'] ) : '' );
 	update_post_meta( $id, '_zad_seo_noindex', ! empty( $in['noindex'] ) ? '1' : '' );
-	if ( in_array( get_post_type( $id ), zad_service_types(), true ) ) {
-		update_post_meta( $id, '_zad_base_name', isset( $in['base'] ) ? sanitize_text_field( $in['base'] ) : '' );
-		update_post_meta( $id, '_zad_city_text', isset( $in['city_text'] ) ? sanitize_textarea_field( $in['city_text'] ) : '' );
-	}
 } );
 
 /* ---- computed values ---- */
@@ -66,10 +56,6 @@ function zad_seo_title() {
 	}
 	if ( is_singular() ) {
 		$id   = get_queried_object_id();
-		$city = function_exists( 'zad_current_city' ) ? zad_current_city() : null;
-		if ( $city ) {
-			return zad_city_title( $id, $city ) . ' | ' . $site;
-		}
 		$t = zad_seo_meta( $id, 'title' );
 		return $t ? $t : get_the_title( $id ) . ' | ' . $site;
 	}
@@ -91,10 +77,6 @@ function zad_seo_desc() {
 	}
 	if ( is_singular() ) {
 		$id   = get_queried_object_id();
-		$city = function_exists( 'zad_current_city' ) ? zad_current_city() : null;
-		if ( $city ) {
-			return wp_trim_words( zad_city_text( $id, $city ), 30, '' );
-		}
 		$d = zad_seo_meta( $id, 'desc' );
 		if ( $d ) {
 			return function_exists( 'zad_clean_answer' ) ? zad_clean_answer( $d ) : $d;
