@@ -8,6 +8,10 @@ while ( have_posts() ) :
 	$arr  = function ( $k ) use ( $m ) { return array_values( array_filter( (array) $m( $k ), function ( $r ) { return is_array( $r ); } ) ); };
 
 	$title    = get_the_title();
+	$first_city = '';
+	foreach ( (array) get_the_terms( $id, 'service_area' ) as $ct ) {
+		if ( $ct instanceof WP_Term && 0 === (int) $ct->parent ) { $first_city = $ct->name; break; }
+	}
 	$tagline  = $m( 'tagline' );
 	$features = zad_lines( $m( 'features' ) );
 	$stats    = $arr( 'stats' );
@@ -466,7 +470,7 @@ while ( have_posts() ) :
 		</div>
 		<?php $fin_a = ( 'q30' === get_post_meta( $id, '_zad_final_req', true ) ) ? zad_q30_html( $id, 'sec-a' ) : ''; if ( '' !== $fin_a ) : echo $fin_a; // phpcs:ignore
 		else : ?>
-		<?php echo zad_quote_form( array( 'service_id' => $id, 'id' => 'fq', 'title' => 'اترك بياناتك ونتصل بك', 'sub' => 'رد خلال دقائق', 'area' => $city ? $city->name : '' ) ); // phpcs:ignore ?>
+		<?php echo zad_quote_form( array( 'service_id' => $id, 'id' => 'fq', 'title' => 'اترك بياناتك ونتصل بك', 'sub' => 'رد خلال دقائق', 'area' => $first_city ) ); // phpcs:ignore ?>
 		<?php endif; ?>
 	</div></section>
 </main>
