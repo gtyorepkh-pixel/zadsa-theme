@@ -4,7 +4,7 @@
 /** Services list for the booking drawer: built once, cached until content changes. */
 function zad_wiz_map() {
 	$map = get_transient( 'zad_wiz_map' );
-	if ( is_array( $map ) ) {
+	if ( is_array( $map ) && $map ) {
 		return $map;
 	}
 	$map = array();
@@ -12,15 +12,14 @@ function zad_wiz_map() {
 		$t = get_the_terms( $s->ID, 'service_cat' );
 		$map[ $s->ID ] = array( 'id' => $s->ID, 'name' => $s->post_title, 'cat' => ( $t && ! is_wp_error( $t ) ) ? $t[0]->term_id : 0 );
 	}
-	set_transient( 'zad_wiz_map', $map, 12 * HOUR_IN_SECONDS );
+	if ( $map ) {
+		set_transient( 'zad_wiz_map', $map, 12 * HOUR_IN_SECONDS ); // never cache an empty list
+	}
 	return $map;
 }
 
 add_action( 'wp_footer', function () {
-	$map = zad_wiz_map();
-	if ( ! $map ) {
-		return;
-	}
+	$map = zad_wiz_map(); // may be empty: the booking sheet must still open (service step is then optional)
 	$cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true ) );
 	$areas = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
 	$cur   = zad_is_service() ? get_the_ID() : 0;

@@ -43,10 +43,11 @@
 		}
 		function renderSvcs(keep) {
 			var box = $('[data-wiz-svcs]', wiz); if (!box) return;
-			var list = svcs.filter(function (s) { return !cat || s.cat === cat; });
-			if (!cat && svcs.length > 8) { list = svcs.filter(function (s) { return String(s.id) === String(keep); }); }
+			var hasCats = $$('[data-wiz-cats] .wiz__cat', wiz).length > 0;
+			var list = svcs.filter(function (s) { return !cat || !s.cat || s.cat === cat; });
+			if (hasCats && !cat && svcs.length > 8) { list = svcs.filter(function (s) { return String(s.id) === String(keep); }); }
 			box.innerHTML = '';
-			if (!list.length) { var h = document.createElement('p'); h.className = 'wz__hint'; h.textContent = 'اختر القسم لتظهر خدماته'; box.appendChild(h); return; }
+			if (!list.length) { if (hasCats && svcs.length) { var h = document.createElement('p'); h.className = 'wz__hint'; h.textContent = 'اختر القسم لتظهر خدماته'; box.appendChild(h); } return; }
 			list.forEach(function (s) {
 				var b = document.createElement('button'); b.type = 'button'; b.className = 'wz__svc' + (String(s.id) === String(keep) ? ' is-on' : ''); b.textContent = s.name;
 				b.addEventListener('click', function () {
@@ -131,7 +132,7 @@
 			}, function () { lbl.textContent = 'تعذّر تحديد الموقع — اكتب الحي بدلاً منه'; }, { timeout: 10000 });
 		});
 		$('[data-wiz-next]', wiz).addEventListener('click', function () {
-			if (cur === 1) { if (!hidSvc.value) { err(1, 'اختر الخدمة المطلوبة للمتابعة.'); return; } err(1, ''); }
+			if (cur === 1) { if (svcs.length && !hidSvc.value) { err(1, 'اختر الخدمة المطلوبة للمتابعة.'); return; } err(1, ''); }
 			go(cur + 1);
 		});
 		$('[data-wiz-back]', wiz).addEventListener('click', function () { go(cur - 1); });
