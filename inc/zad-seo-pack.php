@@ -1,6 +1,6 @@
 <?php defined( 'ABSPATH' ) || exit;
 /**
- * SEO pack: term intros + smart defaults, thin-area noindex, sitemap hygiene, clean archive H1,
+ * SEO pack: term intros + smart defaults, sitemap hygiene, clean archive H1,
  * author pages (profile, Person, byline/box, 301 when no bio) and the "yoast" mode split.
  *
  * Modes (zad_seo_mode()):
@@ -31,12 +31,10 @@ function zad_term_city( $term ) {
 	return (string) zad_opt( 'zad_city_name', 'الرياض' );
 }
 
-/** Explicitly noindexed, or a thin neighbourhood: no intro text and fewer than two services. */
+/** Only an explicit noindex (checkbox on the term) keeps a term out of the index and the sitemap. No automatic rules. */
 function zad_term_noindexed( $term ) {
 	if ( ! $term || is_wp_error( $term ) ) { return false; }
-	if ( '1' === (string) get_term_meta( $term->term_id, '_zad_noindex', true ) ) { return true; }
-	if ( 'service_area' !== $term->taxonomy ) { return false; }
-	return '' === zad_term_intro( $term ) && (int) $term->count < 2;
+	return '1' === (string) get_term_meta( $term->term_id, '_zad_noindex', true );
 }
 
 /** IDs of noindexed terms in a taxonomy (cached; flushed when terms or posts change). */
@@ -113,13 +111,13 @@ function zad_seo_archive_value( $field ) {
 foreach ( array( 'service_area', 'service_cat', 'faq_cat' ) as $zad_tx ) {
 	add_action( $zad_tx . '_add_form_fields', function () {
 		wp_nonce_field( 'zad_term_seo', 'zad_term_nonce' );
-		echo '<div class="form-field"><label for="zad_intro">مقدمة نصية للصفحة</label><textarea name="zad_term[intro]" id="zad_intro" rows="4"></textarea><p>تظهر أول الصفحة. بدونها وبأقل من خدمتين يُمنع فهرسة الحي تلقائياً.</p></div>';
+		echo '<div class="form-field"><label for="zad_intro">مقدمة نصية للصفحة</label><textarea name="zad_term[intro]" id="zad_intro" rows="4"></textarea><p>تظهر أول الصفحة.</p></div>';
 	} );
 	add_action( $zad_tx . '_edit_form_fields', function ( $term ) {
 		wp_nonce_field( 'zad_term_seo', 'zad_term_nonce' );
 		$g   = function ( $k ) use ( $term ) { return (string) get_term_meta( $term->term_id, $k, true ); };
 		$mode = zad_seo_mode();
-		echo '<tr class="form-field"><th><label for="zad_intro">مقدمة نصية للصفحة</label></th><td><textarea name="zad_term[intro]" id="zad_intro" rows="5" class="large-text">' . esc_textarea( $g( '_zad_intro' ) ) . '</textarea><p class="description">تظهر أول الصفحة. إن تُركت فارغة والحي فيه أقل من خدمتين فالصفحة noindex تلقائياً وتغيب عن خريطة الموقع.</p></td></tr>';
+		echo '<tr class="form-field"><th><label for="zad_intro">مقدمة نصية للصفحة</label></th><td><textarea name="zad_term[intro]" id="zad_intro" rows="5" class="large-text">' . esc_textarea( $g( '_zad_intro' ) ) . '</textarea><p class="description">تظهر أول الصفحة.</p></td></tr>';
 		if ( 'yoast' === $mode ) {
 			echo '<tr class="form-field"><th>السيو</th><td><p class="description">العنوان والوصف وrobots من Yoast. إن تُركت حقوله فارغة يعطيه الثيم قيمة افتراضية: «' . esc_html( zad_term_default( $term, 'title' ) ) . '».</p></td></tr>';
 			return;
@@ -249,7 +247,7 @@ foreach ( array( 'wpseo_opengraph_image', 'wpseo_twitter_image' ) as $zad_h ) {
 		return $d ? $d[0] : $img;
 	}, 20 );
 }
-/** Thin / noindexed neighbourhoods and terms: noindex,follow + out of Yoast's sitemap. */
+/** Terms explicitly marked noindex: noindex,follow + out of Yoast's sitemap. */
 add_filter( 'wpseo_robots', function ( $r ) {
 	if ( 'yoast' !== zad_seo_mode() || ! is_string( $r ) ) { return $r; }
 	if ( is_tax( zad_seo_tax_list() ) && zad_term_noindexed( get_queried_object() ) ) { return 'noindex, follow'; }
