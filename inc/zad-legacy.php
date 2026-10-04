@@ -31,7 +31,7 @@ add_action( 'init', function () {
 		if ( ! in_array( $norm, $want, true ) || ( function_exists( 'zad_faqconv_retired' ) && zad_faqconv_retired() && $k === zad_faqconv_cfg( 'from' ) ) ) {
 			continue;
 		}
-		$lbl = ( apply_filters( 'zad_legacy_type_labels', array( 'moving' => 'نقل وتخزين الأثاث', 'drain_cleaning' => 'تسليك المجاري', 'cleaning' => 'التنظيف', 'pest_control' => 'مكافحة الحشرات', 'faq' => 'الأسئلة القديمة' ) )[ $k ] ?? ucwords( str_replace( array( '-', '_' ), ' ', $k ) ) ) . ' (مؤقت)';
+		$lbl = ( apply_filters( 'zad_legacy_type_labels', array( 'drain_cleaning' => 'تسليك المجاري', 'cleaning' => 'التنظيف', 'pest_control' => 'مكافحة الحشرات', 'faq' => 'الأسئلة القديمة' ) )[ $k ] ?? ucwords( str_replace( array( '-', '_' ), ' ', $k ) ) ) . ' (مؤقت)';
 		register_post_type( $k, array(
 			'labels'        => array( 'name' => $lbl, 'singular_name' => $lbl, 'menu_name' => $lbl ),
 			'public'        => true,

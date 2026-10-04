@@ -1,7 +1,7 @@
 <?php
 /**
  * Tool: «تحويل صفحات الخدمات» (Tools menu).
- * Moves pages that are really services (regular posts, and pages of the old "moving" type) into the theme's zad_service:
+ * Moves pages that are really services (regular posts) into the theme's zad_service:
  *  - only post_type (and, where you edit it, post_name) changes: same ID, dates, content, thumbnail and every meta (Yoast included);
  *  - new URL = /{service base}/{same slug}/ ; the old URL gets a 301 (Redirection plugin when active, plus the theme's own map);
  *  - sections (service_cat) and cities (service_area) are suggested from the old categories and are editable before running;
@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 
 const ZAD_SVCC_BACKUP = '_zad_svcc_content_backup';
 
-function zad_svcc_source_types() { return apply_filters( 'zad_svcc_source_types', array( 'post', 'moving' ) ); }
+function zad_svcc_source_types() { return apply_filters( 'zad_svcc_source_types', array( 'post' ) ); }
 
 /* ---------------- own 301 map (works without the Redirection plugin, and after it is removed) ---------------- */
 add_action( 'template_redirect', function () {
@@ -121,7 +121,7 @@ function zad_svcc_old_terms( $post ) {
 function zad_svcc_new_url( $slug ) { return home_url( '/' . zad_type_base( 'zad_service' ) . '/' . rawurlencode( urldecode( $slug ) ) . '/' ); }
 
 function zad_svcc_slug_default( $post ) {
-	$map = apply_filters( 'zad_svcc_slug_map', array( 'moving' => array( 'transport' => 'furniture-moving', 'storage' => 'furniture-storage' ) ) );
+	$map = apply_filters( 'zad_svcc_slug_map', array() );
 	$cur = urldecode( $post->post_name );
 	return $map[ $post->post_type ][ $cur ] ?? $cur;
 }
@@ -344,7 +344,7 @@ function zad_svcc_page() {
 	}
 	$posts = zad_svcc_sources();
 	$log   = get_option( 'zad_svcc_log' );
-	echo '<p>ينقل الصفحات التي هي خدمات فعلاً (مقالات عادية وصفحات النوع <code>moving</code>) إلى نوع الخدمات <code>zad_service</code>. نفس الرقم والتاريخ والمحتوى والصورة وكل الحقول (ومنها Yoast). الرابط الجديد: <code>/' . esc_html( zad_type_base( 'zad_service' ) ) . '/{الرابط القديم نفسه}/</code>، والقديم يُحوَّل 301. لا يلمس روابط pest_control وcleaning والصفحات العادية.</p>';
+	echo '<p>ينقل الصفحات التي هي خدمات فعلاً (المقالات العادية) إلى نوع الخدمات <code>zad_service</code>. نفس الرقم والتاريخ والمحتوى والصورة وكل الحقول (ومنها Yoast). الرابط الجديد: <code>/' . esc_html( zad_type_base( 'zad_service' ) ) . '/{الرابط القديم نفسه}/</code>، والقديم يُحوَّل 301. لا يلمس روابط pest_control وcleaning والصفحات العادية.</p>';
 	if ( ! post_type_exists( 'zad_service' ) ) { echo '<div class="notice notice-error"><p>نوع <code>zad_service</code> غير مسجّل.</p></div></div>'; return; }
 	if ( $posts ) {
 		$cities = zad_svcc_known_cities();

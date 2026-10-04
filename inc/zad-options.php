@@ -31,7 +31,7 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_ftr_ink', 'type' => 'color', 'title' => 'نص الفوتر', 'default' => '#b4c2c6' ),
 		array( 'type' => 'subheading', 'content' => 'ربط الأنواع الحالية بالتصميم (للمواقع القائمة). الروابط الحالية لا تتغير أبداً — نكتب فقط «رابط» كل نوع كما هو في موقعك.' ),
 		array( 'id' => 'zad_schema_mode', 'type' => 'select', 'title' => 'سكيما وSEO الثيم', 'options' => array( 'auto' => 'تلقائي (Yoast مفعّل ← وضع yoast، وإلا الثيم؛ ويتنحّى إن وُجد mu-plugin للسكيما)', 'yoast' => 'وضع yoast: الثيم يطبع السكيما فقط، وYoast يتولى العنوان والوصف والـ canonical والـ robots وOG وخريطة الموقع', 'theme' => 'الثيم يتولّى السكيما وSEO (أوقف الإضافة القديمة أولاً)', 'off' => 'إيقاف سكيما وSEO الثيم تماماً' ), 'default' => 'auto', 'desc' => 'يمنع تكرار بيانات Google. إن وُجد ملف zad-schema.php في mu-plugins فالوضع التلقائي يترك له السكيما وعناوين الصفحات.' ),
-		array( 'id' => 'zad_service_slugs', 'type' => 'text', 'title' => 'أنواع تُعرض بتصميم «الخدمة»', 'default' => 'pest-control,cleaning,moving,drain-cleaning', 'desc' => 'روابط الأنواع (CPT) مفصولة بفاصلة. مثال: pest-control,cleaning,moving,drain-cleaning' ),
+		array( 'id' => 'zad_service_slugs', 'type' => 'text', 'title' => 'أنواع تُعرض بتصميم «الخدمة»', 'default' => 'pest-control,cleaning,drain-cleaning', 'desc' => 'روابط الأنواع (CPT) مفصولة بفاصلة. مثال: pest-control,cleaning,moving,drain-cleaning' ),
 		array( 'id' => 'zad_area_keywords', 'type' => 'text', 'title' => 'كلمات تدل على صفحات الأحياء', 'default' => 'حي,hay-,district,neighborhood', 'desc' => 'الصفحات التي يحوي عنوانها أو رابطها إحدى هذه الكلمات تُعتبر «صفحة حي» وتُستثنى من القوائم (الفهارس، المقارنة، الرئيسية، القائمة، الأسعار…). فاصلة بين الكلمات. ويمكنك تحديد صفحة بعينها يدوياً من شاشة تحريرها.' ),
 		array( 'id' => 'zad_area_children', 'type' => 'switcher', 'title' => 'اعتبار الصفحات الفرعية صفحات أحياء', 'default' => true, 'desc' => 'إن كان النوع هرمياً (صفحة أب وصفحات أبناء مثل /cleaning/sofa/malqa/) فالأبناء تُعتبر صفحات أحياء.' ),
 		array( 'id' => 'zad_noindex_tag', 'type' => 'switcher', 'title' => 'noindex لأرشيف الوسوم', 'default' => false, 'desc' => 'اختياري (مغلق افتراضياً). يعمل مع robots الثيم.' ),
@@ -282,7 +282,7 @@ CSF::createSection( $zad_prefix, array(
 		array(
 			'id' => 'zad_hubs', 'type' => 'group', 'title' => 'الأقسام', 'button_title' => 'إضافة قسم',
 			'fields' => array(
-				array( 'id' => 'slug', 'type' => 'text', 'title' => 'رابط النوع', 'desc' => 'مثال: pest-control أو cleaning أو moving' ),
+				array( 'id' => 'slug', 'type' => 'text', 'title' => 'رابط النوع', 'desc' => 'مثال: pest-control أو cleaning' ),
 				array( 'id' => 'headline', 'type' => 'text', 'title' => 'العنوان الرئيسي' ),
 				array( 'id' => 'lead', 'type' => 'textarea', 'title' => 'مقدمة قصيرة تحت العنوان' ),
 				array( 'id' => 'body', 'type' => 'wp_editor', 'title' => 'نظرة عامة (نص تحريري)', 'media_buttons' => false ),
