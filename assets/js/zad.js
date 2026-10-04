@@ -473,6 +473,14 @@
 		paint();
 	}
 
+	/* ---- WhatsApp buttons in cards / price rows: one delegated handler (no per-card href) ---- */
+	document.addEventListener('click', function (e) {
+		var b = e.target.closest ? e.target.closest('[data-wa-text]') : null;
+		if (!b || !b.getAttribute('data-wa')) { return; }
+		e.preventDefault();
+		window.open('https://wa.me/' + b.getAttribute('data-wa') + '?text=' + encodeURIComponent(b.getAttribute('data-wa-text')), '_blank', 'noopener');
+	});
+
 	/* ---- Sitemap: live search ---- */
 	$$('[data-smx]').forEach(function (box) {
 		var input = $('[data-smx-search]', box), none = $('[data-smx-none]', box);

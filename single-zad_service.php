@@ -37,7 +37,7 @@ while ( have_posts() ) :
 	$ba_ids   = array_values( array_filter( array_map( 'intval', explode( ',', (string) $m( 'ba' ) ) ) ) );
 	$ba_text  = zad_lines( $m( 'ba_text' ) );
 	$video    = $m( 'video' );
-	$ctx      = function ( $n ) use ( $gallery ) { $g = array_values( $gallery ); if ( empty( $g[ $n ] ) ) { return; } $cap = wp_get_attachment_caption( $g[ $n ] ) ?: get_post_meta( $g[ $n ], '_wp_attachment_image_alt', true ); echo '<div class="wrap"><figure class="ctximg">' . wp_get_attachment_image( $g[ $n ], 'large', false, array( 'loading' => 'lazy' ) ) . ( $cap ? '<figcaption>' . esc_html( $cap ) . '</figcaption>' : '' ) . '</figure></div>'; };
+	$ctx      = function ( $n ) use ( $gallery ) { $g = array_values( $gallery ); if ( empty( $g[ $n ] ) ) { return; } $cap = wp_get_attachment_caption( $g[ $n ] ) ?: get_post_meta( $g[ $n ], '_wp_attachment_image_alt', true ); echo '<div class="wrap"><figure class="ctximg">' . wp_get_attachment_image( $g[ $n ], 'large', false, array( 'loading' => 'lazy', 'alt' => zad_img_alt( $g[ $n ], get_the_ID() ) ) ) . ( $cap ? '<figcaption>' . esc_html( $cap ) . '</figcaption>' : '' ) . '</figure></div>'; };
 	$rating   = $m( 'rating' );
 	$reviews  = (int) $m( 'reviews' );
 	$areas    = get_the_terms( $id, 'service_area' );
@@ -67,6 +67,7 @@ while ( have_posts() ) :
 					<?php $hbadge = trim( (string) $m( 'badge' ) ) ?: trim( (string) zad_opt( 'zad_provider', '' ) ); // page badge, else the explicit provider option; never the bare site name
 					if ( $hbadge ) : ?><span class="pill"><?php echo zad_icon( 'badge', 18 ); // phpcs:ignore ?> <?php echo esc_html( $hbadge ); ?></span><?php endif; ?>
 					<h1><?php echo esc_html( $title ); ?></h1>
+					<?php echo zad_eeat_line( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 					<?php if ( $tagline ) : ?><p class="shero__tag"><?php echo esc_html( $tagline ); ?></p><?php endif; ?>
 					<?php if ( $rating ) : ?>
 						<p class="rate"><?php echo zad_stars( $rating ); // phpcs:ignore ?> <b><?php echo esc_html( $rating ); ?></b><?php if ( $reviews ) : ?> <span>(<?php echo esc_html( number_format_i18n( $reviews ) ); ?> تقييم)</span><?php endif; ?></p>
@@ -216,7 +217,7 @@ while ( have_posts() ) :
 		<div class="cardgrid cardgrid--4">
 			<?php foreach ( $subs as $w ) : ?>
 				<div class="icard icard--line"><h3><?php echo esc_html( $w['t'] ); ?></h3><p><?php echo esc_html( $w['d'] ); ?></p>
-				<?php if ( $wa ) : ?><a class="more" href="<?php echo esc_url( zad_wa_link( 'مرحباً، أرغب بخدمة: ' . $w['t'], $id ) ); ?>" target="_blank" rel="noopener">اطلب الآن <?php echo zad_icon( 'arrow', 16 ); // phpcs:ignore ?></a><?php endif; ?></div>
+				<?php $wa_at = zad_wa_attrs( 'مرحباً، أرغب بخدمة: ' . $w['t'], $id ); if ( $wa_at ) : ?><button type="button" class="more"<?php echo $wa_at; // phpcs:ignore ?>>اطلب الآن <?php echo zad_icon( 'arrow', 16 ); // phpcs:ignore ?></button><?php endif; ?></div>
 			<?php endforeach; ?>
 		</div>
 	</div></section>
@@ -271,7 +272,7 @@ while ( have_posts() ) :
 					<?php if ( $has_det ) : ?><td data-l="التفاصيل" class="tbl__det"><?php echo esc_html( $r['details'] ); ?></td><?php endif; ?>
 					<td data-l="السعر"><b><?php echo esc_html( $r['price'] ); ?></b></td>
 					<?php if ( $has_war ) : ?><td data-l="الضمان"><?php echo esc_html( $r['warranty'] ?: '—' ); ?></td><?php endif; ?>
-					<td><a class="iconbtn iconbtn--wa" href="<?php echo esc_url( zad_wa_link( 'مرحباً، أرغب بـ: ' . $r['name'], $id ) ); ?>" target="_blank" rel="noopener" aria-label="اطلب عبر واتساب"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?></a></td>
+					<td><?php $wa_at = zad_wa_attrs( 'مرحباً، أرغب بـ: ' . $r['name'], $id ); if ( $wa_at ) : ?><button type="button" class="iconbtn iconbtn--wa"<?php echo $wa_at; // phpcs:ignore ?> aria-label="اطلب عبر واتساب"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?></button><?php endif; ?></td>
 				</tr>
 			<?php endforeach; ?>
 			</tbody>
@@ -370,8 +371,8 @@ while ( have_posts() ) :
 				$cap = isset( $ba_text[ $i / 2 ] ) ? array_map( 'trim', explode( '|', $ba_text[ $i / 2 ] ) ) : array( '', '' ); ?>
 				<figure class="ba" data-ba>
 					<div class="ba__stage">
-						<?php echo wp_get_attachment_image( $ba_ids[ $i + 1 ], 'large', false, array( 'loading' => 'lazy', 'class' => 'ba__after' ) ); ?>
-						<div class="ba__before"><?php echo wp_get_attachment_image( $ba_ids[ $i ], 'large', false, array( 'loading' => 'lazy' ) ); ?></div>
+						<?php echo wp_get_attachment_image( $ba_ids[ $i + 1 ], 'large', false, array( 'loading' => 'lazy', 'class' => 'ba__after', 'alt' => zad_img_alt( $ba_ids[ $i + 1 ] ) ) ); ?>
+						<div class="ba__before"><?php echo wp_get_attachment_image( $ba_ids[ $i ], 'large', false, array( 'loading' => 'lazy', 'alt' => zad_img_alt( $ba_ids[ $i ] ) ) ); ?></div>
 						<span class="ba__tag ba__tag--b">قبل</span><span class="ba__tag ba__tag--a">بعد</span>
 						<input type="range" min="0" max="100" value="50" aria-label="مقارنة قبل وبعد">
 					</div>
@@ -385,7 +386,8 @@ while ( have_posts() ) :
 	<?php if ( $video ) : ?>
 	<section class="sec sec--dark" id="video"><div class="wrap wrap--narrow">
 		<header class="sec__head"><span class="eyebrow">شاهد الفرق بنفسك</span><h2>شاهد خدماتنا عن قرب</h2></header>
-		<div class="vframe" data-video="<?php echo esc_url( $video ); ?>"<?php echo $thumb ? ' style="--poster:url(\'' . esc_url( wp_get_attachment_image_url( $thumb, 'large' ) ) . '\')"' : ''; ?>>
+		<?php $vyt = zad_youtube_id( $video ); $vposter = $vyt ? 'https://i.ytimg.com/vi/' . $vyt . '/hqdefault.jpg' : ( $thumb ? wp_get_attachment_image_url( $thumb, 'large' ) : '' ); ?>
+		<div class="vframe" data-video="<?php echo esc_url( $video ); ?>"<?php echo $vposter ? ' style="--poster:url(\'' . esc_url( $vposter ) . '\')"' : ''; ?>>
 			<button type="button" class="vframe__play" aria-label="تشغيل الفيديو"><svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M8 5v14l11-7Z"/></svg></button>
 		</div>
 	</div></section>

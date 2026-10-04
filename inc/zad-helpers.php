@@ -234,6 +234,17 @@ function zad_digits_en( $s ) {
 	return strtr( (string) $s, array( '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9', '٬' => ',', '٫' => '.' ) );
 }
 
+/** YouTube video id from a watch / youtu.be / embed / shorts URL, or ''. */
+function zad_youtube_id( $url ) {
+	return preg_match( '#(?:youtube(?:-nocookie)?\.com/(?:watch\?(?:[^\s]*&)?v=|embed/|shorts/)|youtu\.be/)([\w-]{6,})#i', (string) $url, $m ) ? $m[1] : '';
+}
+
+/** data-wa attributes for a card button (no href: one central click handler in zad.js opens wa.me). '' when there is no number. */
+function zad_wa_attrs( $text, $post_id = 0 ) {
+	$n = zad_whatsapp( $post_id );
+	return $n ? ' data-wa="' . esc_attr( $n ) . '" data-wa-text="' . esc_attr( $text ) . '"' : '';
+}
+
 /** Remove Saudi mobile numbers (05xxxxxxxx / 9665xxxxxxxx / +966 5…) from a display string. */
 function zad_strip_phones( $s ) {
 	$t = zad_digits_en( (string) $s );

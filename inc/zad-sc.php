@@ -356,9 +356,11 @@ add_filter( 'zsc_page_data', function ( $d, $post ) {
 	if ( ! $v['url'] && ! $v['embed'] ) {
 		$url = (string) get_post_meta( $id, '_zad_video', true );
 		if ( $url ) {
-			$v['url']      = $url;
+			$yt            = function_exists( 'zad_youtube_id' ) ? zad_youtube_id( $url ) : '';
+			$v['url']      = $yt ? '' : $url; // a YouTube page is not a media file: embedUrl only
+			if ( $yt ) { $v['embed'] = 'https://www.youtube.com/embed/' . $yt; }
 			$v['name']     = $v['name'] ? $v['name'] : zsc_clean_name( get_the_title( $post ) ) . ' — فيديو';
-			$v['thumb']    = $v['thumb'] ? $v['thumb'] : (string) get_the_post_thumbnail_url( $post, 'large' );
+			$v['thumb']    = $v['thumb'] ? $v['thumb'] : ( $yt ? 'https://i.ytimg.com/vi/' . $yt . '/hqdefault.jpg' : (string) get_the_post_thumbnail_url( $post, 'large' ) );
 			$v['date']     = $v['date'] ? $v['date'] : get_the_date( 'Y-m-d', $post );
 			$v['duration'] = $v['duration'] ? $v['duration'] : (int) get_post_meta( $id, '_zad_video_duration', true );
 			$d['video']    = $v;
@@ -515,6 +517,9 @@ function zsc_service_nodes( $post ) {
 	}
 	$webpage['about']      = array( '@id' => $url . '#service' );
 	$webpage['mainEntity'] = array( '@id' => $url . '#service' );
+	$webpage['lastReviewed'] = get_post_modified_time( 'c', true, $post );
+	$reviewer = function_exists( 'zad_reviewer_id' ) ? zsc_person_node( zad_reviewer_id( $post ) ) : null;
+	if ( $reviewer ) { $webpage['reviewedBy'] = array( '@id' => $reviewer['@id'] ); $nodes[] = $reviewer; }
 	return apply_filters( 'zsc_service_nodes', array_merge( array( $webpage, $service ), $nodes ), $post );
 }
 

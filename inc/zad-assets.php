@@ -112,7 +112,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	if ( ! zad_opt( 'zad_lean', false ) || is_admin() ) { return; }
 	$html = is_singular() ? (string) get_post_field( 'post_content', get_queried_object_id() ) : '';
 	if ( '' === $html || ! zad_lean_needs_blocks( $html ) ) {
-		foreach ( array( 'wp-block-library', 'wp-block-library-theme', 'classic-theme-styles' ) as $h ) { wp_dequeue_style( $h ); }
+		foreach ( array( 'wp-block-library', 'wp-block-library-theme', 'classic-theme-styles', 'global-styles' ) as $h ) { wp_dequeue_style( $h ); } // global-styles = WordPress's inline theme.json CSS (often 10–25KB)
 	}
 	if ( false === strpos( $html, 'wp-block-embed-wordpress' ) ) { wp_deregister_script( 'wp-embed' ); }
 	// Owner rules, one per line:  handle > needle   (drop the handle unless the page content contains needle)

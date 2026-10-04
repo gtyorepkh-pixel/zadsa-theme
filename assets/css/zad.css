@@ -1219,3 +1219,6 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .tk__more{display:block;text-align:center;font-size:13px;font-weight:700;margin-top:-8px}
 @media (max-width:480px){.tk{width:100%}.tk__top,.tk__bot{padding-inline:18px}.tk__row{flex-direction:column;align-items:stretch}.tk__price,.tk__when{flex:none}.tk__seg{justify-content:space-between}.tk__seg button{flex:1}.tk__tile{font-size:13px}}
 .slayout--solo{grid-template-columns:minmax(0,860px);justify-content:center}
+button.iconbtn{border:0;padding:0;cursor:pointer;font:inherit}button.more{background:none;border:0;padding:0;font:inherit;font-weight:800;cursor:pointer;color:var(--primary);text-align:start}
+picture{display:contents}
+.eeat{margin:0 0 10px;font-size:.92rem;font-weight:700;opacity:.9}.eeat a{color:inherit}

@@ -70,11 +70,11 @@ function zad_services_sidebar_data( $current_id = 0 ) {
 			$parent = get_post( $cur->post_parent );
 			$items  = array();
 			if ( $parent && 'publish' === $parent->post_status ) { $items[] = zad_sbar_item( $parent ); }
-			foreach ( get_posts( array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $cur->post_parent, 'post__not_in' => array( (int) $current_id ), 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
+			foreach ( get_posts( array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $cur->post_parent, 'post__not_in' => array( (int) $current_id ), 'zad_all' => true, 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
 			if ( $items ) { $data[] = array( 'name' => $parent ? zad_card_title( $parent->ID ) : 'خدماتنا', 'open' => true, 'items' => $items ); }
 		} else {
 			$items = array();
-			foreach ( get_posts( array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $current_id, 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
+			foreach ( get_posts( array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $current_id, 'zad_all' => true, 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
 			if ( $items ) { $data[] = array( 'name' => zad_card_title( $current_id ), 'open' => true, 'items' => $items ); }
 		}
 	}
@@ -89,7 +89,7 @@ function zad_services_sidebar_data( $current_id = 0 ) {
 				$tq = array( 'relation' => 'AND', array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) );
 				if ( $city ) { $tq[] = array( 'taxonomy' => 'service_area', 'terms' => $city, 'include_children' => true ); }
 				$items = array();
-				foreach ( get_posts( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => 30, 'no_found_rows' => true, 'post__not_in' => array( (int) $current_id ), 'tax_query' => $tq, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
+				foreach ( get_posts( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => 30, 'no_found_rows' => true, 'zad_all' => true, 'post__not_in' => array( (int) $current_id ), 'tax_query' => $tq, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
 				if ( $items ) { $data[] = array( 'name' => $c->name, 'open' => true, 'items' => $items ); }
 			}
 		}
@@ -98,7 +98,7 @@ function zad_services_sidebar_data( $current_id = 0 ) {
 		$ids = array_values( array_filter( array_map( 'intval', (array) get_post_meta( $current_id, '_zad_related', true ) ) ) );
 		if ( $ids ) {
 			$items = array();
-			foreach ( get_posts( array( 'post_type' => 'any', 'post__in' => $ids, 'post__not_in' => array( (int) $current_id ), 'post_status' => 'publish', 'numberposts' => 12, 'orderby' => 'post__in', 'no_found_rows' => true ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
+			foreach ( get_posts( array( 'post_type' => 'any', 'post__in' => $ids, 'post__not_in' => array( (int) $current_id ), 'post_status' => 'publish', 'numberposts' => 12, 'orderby' => 'post__in', 'zad_all' => true, 'no_found_rows' => true ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
 			if ( $items ) { $data[] = array( 'name' => 'قد يهمّك أيضاً', 'open' => true, 'items' => $items ); }
 		}
 	}
@@ -289,15 +289,79 @@ add_filter( 'image_make_intermediate_size', function ( $file ) {
 	return $file;
 } );
 function zad_hero_sizes() { return '100vw'; }
-function zad_hero_img( $tid ) {
-	return wp_get_attachment_image( $tid, 'full', false, array( 'class' => 'shero__bg', 'alt' => '', 'sizes' => zad_hero_sizes(), 'loading' => 'eager', 'decoding' => 'async', 'fetchpriority' => 'high' ) );
+
+/** alt for an image shown on a page: the image's own alt, else its caption, else the page title. */
+function zad_img_alt( $att_id, $page_id = 0 ) {
+	$a = trim( (string) get_post_meta( $att_id, '_wp_attachment_image_alt', true ) );
+	if ( '' === $a ) { $a = trim( wp_strip_all_tags( (string) wp_get_attachment_caption( $att_id ) ) ); }
+	if ( '' === $a ) { $a = trim( wp_strip_all_tags( html_entity_decode( get_the_title( $page_id ? $page_id : get_queried_object_id() ), ENT_QUOTES, 'UTF-8' ) ) ); }
+	return $a;
 }
+
+/** Hero image: eager, high priority (never lazy), alt falls back to the page title. */
+function zad_hero_img( $tid ) {
+	return wp_get_attachment_image( $tid, 'full', false, array( 'class' => 'shero__bg', 'alt' => zad_img_alt( $tid ), 'sizes' => zad_hero_sizes(), 'loading' => 'eager', 'decoding' => 'async', 'fetchpriority' => 'high' ) );
+}
+
+/** URL → file path inside uploads ('' when the URL is not an upload). */
+function zad_upload_path( $url ) {
+	static $u = null;
+	if ( null === $u ) { $u = wp_get_upload_dir(); }
+	$base = set_url_scheme( $u['baseurl'] );
+	$url  = set_url_scheme( strtok( (string) $url, '?' ) );
+	return 0 === strpos( $url, $base ) ? $u['basedir'] . substr( $url, strlen( $base ) ) : '';
+}
+
+/**
+ * Modern formats next to an upload: "photo.jpg.avif" or "photo.avif" (what WebP/AVIF converters write).
+ * Returns array( 'avif' => srcset, 'webp' => srcset ) for the formats whose file exists for EVERY candidate of the img.
+ */
+function zad_modern_srcsets( $html ) {
+	if ( ! preg_match( '/\ssrc="([^"]+)"/', $html, $s ) ) { return array(); }
+	$cands = array();
+	if ( preg_match( '/\ssrcset="([^"]+)"/', $html, $ss ) ) {
+		foreach ( explode( ',', $ss[1] ) as $part ) { $p = preg_split( '/\s+/', trim( $part ) ); if ( ! empty( $p[0] ) ) { $cands[] = array( $p[0], $p[1] ?? '' ); } }
+	}
+	if ( ! $cands ) { $cands[] = array( $s[1], '' ); }
+	$key = 'zad_pic_' . md5( wp_json_encode( $cands ) );
+	$hit = get_transient( $key );
+	if ( is_array( $hit ) ) { return $hit; }
+	$out = array();
+	foreach ( array( 'avif', 'webp' ) as $fmt ) {
+		$list = array();
+		foreach ( $cands as $c ) {
+			$path = zad_upload_path( $c[0] );
+			if ( '' === $path ) { $list = array(); break; }
+			$alt = array( array( $path . '.' . $fmt, $c[0] . '.' . $fmt ), array( preg_replace( '/\.[A-Za-z0-9]+$/', '.' . $fmt, $path ), preg_replace( '/\.[A-Za-z0-9]+(\?.*)?$/', '.' . $fmt, $c[0] ) ) );
+			$found = '';
+			foreach ( $alt as $a ) { if ( is_readable( $a[0] ) ) { $found = $a[1]; break; } }
+			if ( '' === $found ) { $list = array(); break; }
+			$list[] = trim( $found . ' ' . $c[1] );
+		}
+		if ( $list ) { $out[ $fmt ] = implode( ', ', $list ); }
+	}
+	set_transient( $key, $out, DAY_IN_SECONDS );
+	return $out;
+}
+
+add_filter( 'wp_get_attachment_image', function ( $html ) {
+	if ( is_admin() || is_feed() || false !== strpos( $html, '<picture' ) || 0 !== strpos( ltrim( $html ), '<img' ) ) { return $html; }
+	$src = zad_modern_srcsets( $html );
+	if ( ! $src ) { return $html; }
+	$sizes = preg_match( '/\ssizes="([^"]+)"/', $html, $m ) ? ' sizes="' . esc_attr( $m[1] ) . '"' : '';
+	$o = '<picture>';
+	foreach ( array( 'avif' => 'image/avif', 'webp' => 'image/webp' ) as $fmt => $type ) {
+		if ( isset( $src[ $fmt ] ) ) { $o .= '<source type="' . $type . '" srcset="' . esc_attr( $src[ $fmt ] ) . '"' . $sizes . '>'; }
+	}
+	return $o . $html . '</picture>';
+}, 20 );
 add_action( 'wp_head', function () {
 	if ( ! is_singular() || ! function_exists( 'zad_is_service' ) || ! zad_is_service() ) {
 		return;
 	}
 	$tid = get_post_thumbnail_id( get_queried_object_id() );
 	$url = $tid ? wp_get_attachment_image_url( $tid, 'full' ) : '';
+	if ( $url && false !== strpos( (string) wp_get_attachment_image( $tid, 'full', false, array( 'sizes' => zad_hero_sizes() ) ), '<picture' ) ) { $url = ''; } // AVIF/WebP in use: a JPG preload would download the wrong file
 	if ( $url ) {
 		$set = wp_get_attachment_image_srcset( $tid, 'full' );
 		echo '<link rel="preload" as="image" href="' . esc_url( $url ) . '"' . ( $set ? ' imagesrcset="' . esc_attr( $set ) . '" imagesizes="' . esc_attr( zad_hero_sizes() ) . '"' : '' ) . ' fetchpriority="high">' . "\n"; // phpcs:ignore

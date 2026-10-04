@@ -67,6 +67,26 @@ add_action( 'pre_get_posts', function ( $q ) {
 	$q->set( 'posts_per_page', 12 );
 } );
 
+/** Reviewer of a service page: the theme setting (a user), else the page author. */
+function zad_reviewer_id( $post = null ) {
+	$post = get_post( $post );
+	$uid  = (int) zad_opt( 'zad_reviewer', 0 );
+	return ( $uid && get_userdata( $uid ) ) ? $uid : ( $post ? (int) $post->post_author : 0 );
+}
+
+/** «آخر تحديث: … · راجعه: …» under the service H1. */
+function zad_eeat_line( $post = null ) {
+	$post = get_post( $post );
+	if ( ! $post ) { return ''; }
+	$o = '<p class="eeat">آخر تحديث: <time datetime="' . esc_attr( get_post_modified_time( 'c', true, $post ) ) . '">' . esc_html( get_the_modified_date( 'j F Y', $post ) ) . '</time>';
+	$uid = zad_reviewer_id( $post );
+	if ( $uid ) {
+		$name = get_the_author_meta( 'display_name', $uid );
+		$o   .= ' · راجعه: ' . ( zad_author_has_bio( $uid ) ? '<a href="' . esc_url( get_author_posts_url( $uid ) ) . '" rel="author">' . esc_html( $name ) . '</a>' : esc_html( $name ) );
+	}
+	return $o . '</p>';
+}
+
 /** "بقلم {name}" under the article title (only when the author has a public page). */
 function zad_author_byline( $post = null ) {
 	$post = get_post( $post );

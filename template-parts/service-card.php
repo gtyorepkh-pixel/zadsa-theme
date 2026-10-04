@@ -32,7 +32,7 @@ $wa    = zad_wa_link( 'مرحباً، أرغب بطلب خدمة: ' . zad_card_t
 		<div class="scard__foot">
 			<span class="scard__price"><?php if ( $price ) : ?><small>يبدأ من</small> <b><?php echo esc_html( number_format_i18n( $price ) ); ?></b> <?php echo esc_html( $unit ); ?><?php else : ?><small>السعر بعد المعاينة</small><?php endif; ?></span>
 			<span class="scard__actions">
-				<?php if ( $wa ) : ?><a class="iconbtn iconbtn--wa" href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener" aria-label="واتساب"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?></a><?php endif; ?>
+				<?php $wa_at = zad_wa_attrs( 'مرحباً، أرغب بطلب خدمة: ' . zad_card_title( $id ), $id ); if ( $wa_at ) : ?><button type="button" class="iconbtn iconbtn--wa"<?php echo $wa_at; // phpcs:ignore ?> aria-label="واتساب"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?></button><?php endif; ?>
 				<a class="iconbtn" href="<?php the_permalink(); ?>" aria-label="التفاصيل"><?php echo zad_icon( 'arrow', 20 ); // phpcs:ignore ?></a>
 			</span>
 		</div>
