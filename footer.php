@@ -78,11 +78,10 @@ $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'n
 </div>
 <div class="fab" data-fab>
 	<div class="fab__actions" id="fab-actions">
-		<button type="button" class="fab__a fab__a--book" data-open-wizard aria-label="اترك رسالة"><?php echo zad_icon( 'calendar', 22 ); // phpcs:ignore ?><span>اترك رسالة</span></button>
 		<?php if ( $phone ) : ?><a class="fab__a fab__a--call" href="<?php echo esc_url( zad_tel_href( $phone ) ); ?>" aria-label="اتصال"><?php echo zad_icon( 'phone', 22 ); // phpcs:ignore ?><span>اتصال</span></a><?php endif; ?>
 		<?php if ( $wa ) : ?><a class="fab__a fab__a--wa" href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener" aria-label="واتساب"><?php echo zad_icon( 'whatsapp', 22 ); // phpcs:ignore ?><span>واتساب</span></a><?php endif; ?>
 	</div>
-	<button type="button" class="fab__main" data-fab-toggle aria-expanded="false" aria-controls="fab-actions" aria-label="تواصل معنا"><?php echo zad_icon( 'bolt', 26 ); // phpcs:ignore ?><span class="fab__badge">3</span></button>
+	<button type="button" class="fab__main" data-fab-toggle aria-expanded="false" aria-controls="fab-actions" aria-label="تواصل معنا"><?php echo zad_icon( 'bolt', 26 ); // phpcs:ignore ?><span class="fab__badge">2</span></button>
 </div>
 <button type="button" class="totop" data-totop aria-label="العودة للأعلى"><?php echo zad_icon( 'up', 22 ); // phpcs:ignore ?></button>
 <?php endif; ?>
