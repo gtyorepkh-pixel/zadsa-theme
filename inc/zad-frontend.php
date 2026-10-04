@@ -45,27 +45,61 @@ add_filter( 'excerpt_more', function () { return '…'; } );
 
 function zad_sbar_enabled() { return (bool) zad_opt( 'zad_sbar_on', true ); }
 
-/** Sidebar data for one service page: only services of the SAME section (service_cat) and the SAME city (service_area). */
+/** [ id, url, display title ] for the sidebar. */
+function zad_sbar_item( $p ) { return array( (int) $p->ID, get_permalink( $p ), zad_card_title( $p->ID ) ); }
+
+/**
+ * Sidebar data for one service page, in this order:
+ *  1. hierarchical page with a parent: the parent first, then its published siblings (same type; menu_order, then title; not the current page);
+ *  2. top-level hierarchical page: its published child pages;
+ *  3. otherwise the same section (service_cat) and the same city (service_area), if the page has them;
+ *  4. otherwise the pages picked in «ذات صلة» (related_csv);
+ *  5. otherwise nothing (the sidebar then only shows the request / call buttons).
+ */
 function zad_services_sidebar_data( $current_id = 0 ) {
 	if ( ! $current_id ) { return array(); }
-	$key  = 'zad_sbar_' . (int) get_option( 'zad_nav_ver', 1 ) . '_' . (int) $current_id;
+	$key  = 'zad_sbar2_' . (int) get_option( 'zad_nav_ver', 1 ) . '_' . (int) $current_id;
 	$data = get_transient( $key );
 	if ( is_array( $data ) ) { return $data; }
 	$data = array();
-	$cats = wp_get_post_terms( $current_id, 'service_cat' );
-	$city = array();
-	$ar   = wp_get_post_terms( $current_id, 'service_area' );
-	if ( $ar && ! is_wp_error( $ar ) ) { foreach ( $ar as $t ) { $city[] = $t->parent ? (int) $t->parent : (int) $t->term_id; } }
-	$city = array_values( array_unique( $city ) );
-	if ( $cats && ! is_wp_error( $cats ) ) {
-		foreach ( $cats as $c ) {
-			$tq = array( 'relation' => 'AND', array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) );
-			if ( $city ) { $tq[] = array( 'taxonomy' => 'service_area', 'terms' => $city, 'include_children' => true ); }
+	$cur  = get_post( $current_id );
+	$pt   = $cur ? $cur->post_type : '';
+	$ord  = array( 'menu_order' => 'ASC', 'title' => 'ASC' );
+	if ( $cur && is_post_type_hierarchical( $pt ) ) {
+		if ( $cur->post_parent ) {
+			$parent = get_post( $cur->post_parent );
+			$items  = array();
+			if ( $parent && 'publish' === $parent->post_status ) { $items[] = zad_sbar_item( $parent ); }
+			foreach ( get_posts( array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $cur->post_parent, 'post__not_in' => array( (int) $current_id ), 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
+			if ( $items ) { $data[] = array( 'name' => $parent ? zad_card_title( $parent->ID ) : 'خدماتنا', 'open' => true, 'items' => $items ); }
+		} else {
 			$items = array();
-			foreach ( get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 30, 'no_found_rows' => true, 'tax_query' => $tq, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) ) as $p ) {
-				$items[] = array( (int) $p->ID, get_permalink( $p ), zad_card_title( $p->ID ) );
+			foreach ( get_posts( array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $current_id, 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
+			if ( $items ) { $data[] = array( 'name' => zad_card_title( $current_id ), 'open' => true, 'items' => $items ); }
+		}
+	}
+	if ( ! $data ) { // same section and same city, when the page is categorised
+		$cats = wp_get_post_terms( $current_id, 'service_cat' );
+		$city = array();
+		$ar   = wp_get_post_terms( $current_id, 'service_area' );
+		if ( $ar && ! is_wp_error( $ar ) ) { foreach ( $ar as $t ) { $city[] = $t->parent ? (int) $t->parent : (int) $t->term_id; } }
+		$city = array_values( array_unique( $city ) );
+		if ( $cats && ! is_wp_error( $cats ) ) {
+			foreach ( $cats as $c ) {
+				$tq = array( 'relation' => 'AND', array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) );
+				if ( $city ) { $tq[] = array( 'taxonomy' => 'service_area', 'terms' => $city, 'include_children' => true ); }
+				$items = array();
+				foreach ( get_posts( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => 30, 'no_found_rows' => true, 'post__not_in' => array( (int) $current_id ), 'tax_query' => $tq, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
+				if ( $items ) { $data[] = array( 'name' => $c->name, 'open' => true, 'items' => $items ); }
 			}
-			if ( $items ) { $data[] = array( 'term' => (int) $c->term_id, 'name' => $c->name, 'items' => $items ); }
+		}
+	}
+	if ( ! $data ) { // pages picked by hand in «ذات صلة»
+		$ids = array_values( array_filter( array_map( 'intval', (array) get_post_meta( $current_id, '_zad_related', true ) ) ) );
+		if ( $ids ) {
+			$items = array();
+			foreach ( get_posts( array( 'post_type' => 'any', 'post__in' => $ids, 'post__not_in' => array( (int) $current_id ), 'post_status' => 'publish', 'numberposts' => 12, 'orderby' => 'post__in', 'no_found_rows' => true ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
+			if ( $items ) { $data[] = array( 'name' => 'قد يهمّك أيضاً', 'open' => true, 'items' => $items ); }
 		}
 	}
 	set_transient( $key, $data, 12 * HOUR_IN_SECONDS );
@@ -81,7 +115,7 @@ function zad_services_sidebar( $current_id = 0 ) {
 		echo '<button type="button" class="sbar__cta" data-open-wizard>' . zad_icon( 'bolt', 20 ) . ' اطلب معاينة مجانية</button>'; // phpcs:ignore
 	}
 	foreach ( zad_services_sidebar_data( $current_id ) as $g ) {
-		$open = ! empty( $g['term'] ) ? has_term( $g['term'], 'service_cat', $current_id ) : ( ! empty( $g['pt'] ) && get_post_type( $current_id ) === $g['pt'] );
+		$open = ! empty( $g['open'] );
 		echo '<details class="sbar__grp"' . ( $open ? ' open' : '' ) . '><summary><span>' . esc_html( $g['name'] ) . '</span></summary><ul>'; // phpcs:ignore
 		foreach ( $g['items'] as $it ) {
 			echo '<li><a href="' . esc_url( $it[1] ) . '"' . ( (int) $it[0] === (int) $current_id ? ' class="is-on" aria-current="page"' : '' ) . '>' . esc_html( $it[2] ) . '</a></li>';
