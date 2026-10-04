@@ -83,7 +83,11 @@
 	$$('[data-ixw]').forEach(function (box) {
 		var qs = $$('.ixw__q', box), res = $('[data-ixw-res]', box), form = $('.ixw__form', box),
 			prev = $('[data-ixw-prev]', box), next = $('[data-ixw-next]', box), step = 0, tiers = [];
-		try { tiers = JSON.parse(box.getAttribute('data-tiers') || '[]'); } catch (e) {}
+		/* Tiers come from the server-rendered HTML (title / text / plan), not from JSON. */
+		$$('[data-ixw-tiers] .ixw__tier', box).forEach(function (el) {
+			tiers.push({ min: parseInt(el.getAttribute('data-min'), 10) || 0, title: ($('[data-t-title]', el) || {}).textContent || '', text: ($('[data-t-text]', el) || {}).textContent || '', plan: $$('[data-t-plan] li', el).map(function (li) { return li.textContent; }) });
+		});
+		tiers.sort(function (a, b) { return a.min - b.min; });
 		function render() {
 			qs.forEach(function (q, i) { q.hidden = i !== step; });
 			prev.hidden = step === 0;

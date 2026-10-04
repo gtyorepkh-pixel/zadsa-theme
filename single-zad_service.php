@@ -55,7 +55,8 @@ while ( have_posts() ) :
 <main id="main">
 
 	<!-- 1. HERO + instant price estimator -->
-	<section class="shero<?php echo $thumb ? ' shero--photo' : ''; ?>"<?php echo $thumb ? ' style="--hero-img:url(\'' . esc_url( wp_get_attachment_image_url( $thumb, 'full' ) ) . '\')"' : ''; ?>>
+	<section class="shero<?php echo $thumb ? ' shero--photo' : ''; ?>">
+		<?php echo $thumb ? zad_hero_img( $thumb ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 		<div class="wrap">
 			<?php zad_render_crumbs( zad_current_crumbs() ); ?>
 			<div class="shero__grid">

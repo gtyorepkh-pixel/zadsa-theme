@@ -12,7 +12,7 @@ uasort( $groups, function ( $a, $b ) { return count( $b ) <=> count( $a ); } );
 if ( isset( $groups[0] ) ) { $g0 = $groups[0]; unset( $groups[0] ); $groups[0] = $g0; }
 $total = count( $all->posts );
 ?>
-<main id="main" class="kb">
+<main id="main" class="kb"><?php echo zad_archive_intro_html(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 	<section class="kbhero">
 		<div class="wrap">
 			<?php zad_render_crumbs( array( array( 'الرئيسية', home_url( '/' ) ), array( 'الأسئلة', '' ) ) ); ?>

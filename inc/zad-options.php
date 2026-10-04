@@ -30,7 +30,7 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_ftr_head', 'type' => 'color', 'title' => 'عناوين وأيقونات الفوتر', 'default' => '#3fbfae' ),
 		array( 'id' => 'zad_ftr_ink', 'type' => 'color', 'title' => 'نص الفوتر', 'default' => '#b4c2c6' ),
 		array( 'type' => 'subheading', 'content' => 'ربط الأنواع الحالية بالتصميم (للمواقع القائمة). الروابط الحالية لا تتغير أبداً — نكتب فقط «رابط» كل نوع كما هو في موقعك.' ),
-		array( 'id' => 'zad_schema_mode', 'type' => 'select', 'title' => 'سكيما وSEO الثيم', 'options' => array( 'auto' => 'تلقائي (يتنحّى إن وُجد mu-plugin للسكيما)', 'theme' => 'الثيم يتولّى السكيما وSEO (أوقف الإضافة القديمة أولاً)', 'off' => 'إيقاف سكيما وSEO الثيم تماماً' ), 'default' => 'auto', 'desc' => 'يمنع تكرار بيانات Google. إن وُجد ملف zad-schema.php في mu-plugins فالوضع التلقائي يترك له السكيما وعناوين الصفحات.' ),
+		array( 'id' => 'zad_schema_mode', 'type' => 'select', 'title' => 'سكيما وSEO الثيم', 'options' => array( 'auto' => 'تلقائي (Yoast مفعّل ← وضع yoast، وإلا الثيم؛ ويتنحّى إن وُجد mu-plugin للسكيما)', 'yoast' => 'وضع yoast: الثيم يطبع السكيما فقط، وYoast يتولى العنوان والوصف والـ canonical والـ robots وOG وخريطة الموقع', 'theme' => 'الثيم يتولّى السكيما وSEO (أوقف الإضافة القديمة أولاً)', 'off' => 'إيقاف سكيما وSEO الثيم تماماً' ), 'default' => 'auto', 'desc' => 'يمنع تكرار بيانات Google. إن وُجد ملف zad-schema.php في mu-plugins فالوضع التلقائي يترك له السكيما وعناوين الصفحات.' ),
 		array( 'id' => 'zad_service_slugs', 'type' => 'text', 'title' => 'أنواع تُعرض بتصميم «الخدمة»', 'default' => 'pest-control,cleaning,moving,drain-cleaning', 'desc' => 'روابط الأنواع (CPT) مفصولة بفاصلة. مثال: pest-control,cleaning,moving,drain-cleaning' ),
 		array( 'id' => 'zad_area_keywords', 'type' => 'text', 'title' => 'كلمات تدل على صفحات الأحياء', 'default' => 'حي,hay-,district,neighborhood', 'desc' => 'الصفحات التي يحوي عنوانها أو رابطها إحدى هذه الكلمات تُعتبر «صفحة حي» وتُستثنى من القوائم (الفهارس، المقارنة، الرئيسية، القائمة، الأسعار…). فاصلة بين الكلمات. ويمكنك تحديد صفحة بعينها يدوياً من شاشة تحريرها.' ),
 		array( 'id' => 'zad_area_children', 'type' => 'switcher', 'title' => 'اعتبار الصفحات الفرعية صفحات أحياء', 'default' => true, 'desc' => 'إن كان النوع هرمياً (صفحة أب وصفحات أبناء مثل /cleaning/sofa/malqa/) فالأبناء تُعتبر صفحات أحياء.' ),
@@ -181,6 +181,8 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_tiktok', 'type' => 'text', 'title' => 'تيك توك' ),
 		array( 'id' => 'zad_snapchat', 'type' => 'text', 'title' => 'سناب شات' ),
 		array( 'id' => 'zad_og_default', 'type' => 'media', 'title' => 'صورة المشاركة الافتراضية (OG)', 'desc' => '1200×630 تقريباً.' ),
+		array( 'id' => 'zad_services_intro', 'type' => 'textarea', 'title' => 'مقدمة صفحة /services/', 'desc' => 'فقرة نصية تظهر أول صفحة كل الخدمات.' ),
+		array( 'id' => 'zad_faq_intro', 'type' => 'textarea', 'title' => 'مقدمة صفحة /faq/', 'desc' => 'فقرة نصية تظهر أول صفحة الأسئلة الشائعة.' ),
 		array( 'id' => 'zad_site_desc', 'type' => 'textarea', 'title' => 'وصف الموقع (للسكيما والصفحة الرئيسية)', 'default' => $zb['description'] ),
 	),
 ) );

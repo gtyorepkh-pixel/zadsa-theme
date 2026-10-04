@@ -1155,3 +1155,21 @@ button,input,select,textarea,optgroup{font-family:inherit}
 /* "What the service includes": cards must not blend into the tinted floor */
 .featgrid li{background:#fff;border:1px solid color-mix(in srgb,var(--primary) 16%,var(--line));border-inline-start:4px solid var(--ok);box-shadow:0 6px 16px -12px rgba(11,46,58,.45)}
 [data-theme=dark] .featgrid li{background:#12303d;border-color:#1f4656}
+
+/* Term intros, author pages, byline + author box */
+.termintro{padding-block:22px 0}.termintro .prose{max-width:820px}
+.authorhd__in{display:flex;gap:20px;align-items:center;margin-block-start:8px}
+.authorhd__img{inline-size:112px;block-size:112px;border-radius:50%;object-fit:cover;background:#fff;border:3px solid rgba(255,255,255,.35);flex:none}
+.authorhd__bio{margin:8px 0 0;max-width:720px;color:#dbe9ec;line-height:1.9}
+@media(max-width:640px){.authorhd__in{flex-direction:column;align-items:flex-start}.authorhd__img{inline-size:88px;block-size:88px}}
+.byline{margin:0 0 14px;color:var(--muted);font-weight:700}.byline a{color:var(--primary);text-decoration:none}.byline a:hover{text-decoration:underline}
+.abox{display:flex;gap:16px;align-items:flex-start;margin:28px 0;padding:18px;border:1px solid var(--line);border-inline-start:5px solid var(--accent);border-radius:var(--r);background:var(--tint)}
+.abox__img{inline-size:72px;block-size:72px;border-radius:50%;object-fit:cover;flex:none;background:#fff}
+.abox__k{display:block;font-size:.8rem;color:var(--muted);font-weight:700}.abox__n{display:block;font-size:1.1rem}
+.abox p{margin:6px 0 10px;line-height:1.9}.abox__all{font-weight:800;color:var(--primary)}
+@media(max-width:560px){.abox{flex-direction:column}}
+
+/* Hero photo as <img> (same look as the old CSS background: cover + dark overlay) */
+.shero--photo{position:relative;isolation:isolate;background:#074250}
+.shero__bg{position:absolute;inset:0;inline-size:100%;block-size:100%;object-fit:cover;object-position:center;z-index:-2}
+.shero--photo::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(100deg,rgba(5,38,50,.94) 0%,rgba(7,60,78,.82) 45%,rgba(12,104,126,.5) 100%)}

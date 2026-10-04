@@ -5,7 +5,7 @@ $cr   = array( array( 'الرئيسية', home_url( '/' ) ), array( 'الأسئ�
 if ( $term ) { $cr[] = array( $term->name, '' ); }
 get_template_part( 'template-parts/page-hero', null, array( 'title' => $term ? $term->name : 'الأسئلة الشائعة', 'sub' => '<p>' . esc_html( $term && $term->description ? $term->description : 'إجابات واضحة على أكثر ما يسألنا عنه عملاؤنا.' ) . '</p>', 'crumbs' => $cr ) );
 ?>
-<main id="main" class="sec"><div class="wrap">
+<main id="main" class="sec"><?php echo zad_archive_intro_html(); // phpcs:ignore WordPress.Security.EscapeOutput ?><div class="wrap">
 	<div class="filters">
 		<?php if ( $cats && ! is_wp_error( $cats ) ) : ?>
 			<nav class="chips chips--filter" aria-label="أقسام الأسئلة">

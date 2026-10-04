@@ -352,20 +352,27 @@ function zad_hours_text() {
 }
 
 
-/** Who outputs schema + meta tags: 'theme' or 'other' (mu-plugin / SEO plugin) or 'off'. */
-function zad_schema_owner() {
+/**
+ * SEO mode: 'theme' (theme prints schema + meta) | 'yoast' (theme prints schema only; Yoast prints meta + sitemap)
+ *           | 'other' (a mu-plugin owns schema) | 'off'.
+ * 'auto': mu-plugin zad-schema.php present → other; Yoast active → yoast; otherwise theme.
+ */
+function zad_seo_mode() {
 	$mode = zad_opt( 'zad_schema_mode', 'auto' );
-	if ( 'off' === $mode ) {
-		return 'off';
-	}
-	if ( 'theme' === $mode ) {
-		return 'theme';
+	if ( in_array( $mode, array( 'off', 'theme', 'yoast' ), true ) ) {
+		return $mode;
 	}
 	$mu = defined( 'WPMU_PLUGIN_DIR' ) ? WPMU_PLUGIN_DIR : WP_CONTENT_DIR . '/mu-plugins';
 	if ( file_exists( $mu . '/zad-schema.php' ) ) {
 		return 'other';
 	}
-	return 'theme';
+	return defined( 'WPSEO_VERSION' ) ? 'yoast' : 'theme';
+}
+
+/** Who outputs schema: 'theme' (also in yoast mode: the theme owns the schema) or 'other' or 'off'. */
+function zad_schema_owner() {
+	$m = zad_seo_mode();
+	return ( 'theme' === $m || 'yoast' === $m ) ? 'theme' : $m;
 }
 
 /** Current post-type query var as a single string (WordPress returns an array for multi-type archives). */

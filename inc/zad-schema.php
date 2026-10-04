@@ -89,6 +89,9 @@ function zad_current_url() {
 	if ( is_post_type_archive() ) {
 		return get_post_type_archive_link( zad_query_pt() );
 	}
+	if ( is_author() ) {
+		return get_author_posts_url( get_queried_object_id() );
+	}
 	return home_url( '/' );
 }
 
@@ -358,6 +361,9 @@ function zad_service_schema( $id ) {
 	}
 	if ( $offers ) {
 		$s['hasOfferCatalog'] = array( '@type' => 'OfferCatalog', 'name' => 'أسعار ' . $name, 'itemListElement' => $offers );
+		$nums = array();
+		foreach ( zad_price_rows( $id ) as $r ) { $sp = zad_price_spec( $r['price'] ); if ( $sp ) { foreach ( array( 'price', 'minPrice', 'maxPrice' ) as $k ) { if ( isset( $sp[ $k ] ) ) { $nums[] = (float) $sp[ $k ]; } } } }
+		if ( $nums ) { $s['offers'] = array( '@type' => 'AggregateOffer', 'priceCurrency' => 'SAR', 'lowPrice' => min( $nums ), 'highPrice' => max( $nums ), 'offerCount' => count( $offers ), 'url' => $url ); }
 	}
 	return $s;
 }
@@ -390,6 +396,15 @@ add_action( 'wp_head', function () {
 		$nodes = zsc_with_breadcrumb( array_merge( $site, zsc_service_nodes( $id ) ), get_permalink( $id ) );
 		if ( $nav ) { $nodes[] = $nav; }
 		zad_print_graph( $nodes );
+	} elseif ( is_author() ) {
+		$uid    = get_queried_object_id();
+		$person = zsc_person_node( $uid );
+		$aurl   = get_author_posts_url( $uid );
+		$page   = array( '@type' => 'ProfilePage', '@id' => $aurl . '#webpage', 'url' => $aurl, 'name' => get_the_author_meta( 'display_name', $uid ), 'isPartOf' => array( '@id' => home_url( '/#website' ) ), 'inLanguage' => 'ar' );
+		if ( $person ) { $page['mainEntity'] = array( '@id' => $person['@id'] ); }
+		$nodes = array_merge( array_slice( $site, 0, 2 ), array( $page ) );
+		if ( $person ) { $nodes[] = $person; }
+		zad_print_graph( zsc_with_breadcrumb( $nodes, $aurl ) );
 	} elseif ( $id && zsc_is_article_page( $id ) ) {
 		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), zsc_article_nodes( $id ) ), get_permalink( $id ) ) );
 	} elseif ( $id ) {

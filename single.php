@@ -10,6 +10,7 @@ while ( have_posts() ) :
 <main id="main" class="sec">
 	<div class="wrap slayout">
 		<article class="slayout__main">
+			<?php echo zad_author_byline(); // phpcs:ignore ?>
 			<?php if ( has_post_thumbnail() ) : ?><div class="post-thumb"><?php the_post_thumbnail( 'large' ); ?></div><?php endif; ?>
 			<div class="prose entry-content"><?php the_content(); ?></div>
 			<?php $psid = (int) get_post_meta( get_the_ID(), '_zad_post_service', true );
@@ -17,6 +18,7 @@ while ( have_posts() ) :
 				<div class="svc-cta"><div><span class="eyebrow">الحل المناسب</span><h3><?php echo esc_html( get_the_title( $psid ) ); ?></h3><p><?php echo esc_html( get_post_meta( $psid, '_zad_tagline', true ) ?: wp_trim_words( get_the_excerpt( $psid ), 22 ) ); ?></p></div>
 				<div class="svc-cta__b"><a class="btn btn--accent" href="<?php echo esc_url( get_permalink( $psid ) ); ?>">تفاصيل الخدمة</a><?php if ( $psw ) : ?><a class="btn btn--wa" href="<?php echo esc_url( $psw ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> واتساب</a><?php endif; ?></div></div>
 			<?php endif; ?>
+			<?php echo zad_author_box(); // phpcs:ignore ?>
 			<div class="footer-meta"><?php memo_tags_in(); ?></div>
 			<?php echo memo_sharing_buttons(); // phpcs:ignore ?>
 			<?php if ( comments_open() || get_comments_number() ) { comments_template(); } ?>

@@ -246,7 +246,7 @@ function zad_ix_module_html( $k, $ix, $post_id ) {
 			usort( $tiers, function ( $a, $b ) { return $a['min'] <=> $b['min']; } );
 			$wa = zad_whatsapp( $post_id );
 			$o .= zad_ix_head( $d, 'افحص بنفسك' );
-			$o .= '<div class="ixw" data-ixw data-svc="' . esc_attr( $title ) . '" data-wa="' . esc_attr( $wa ) . '" data-tiers="' . esc_attr( wp_json_encode( $tiers ) ) . '"><form class="ixw__form" novalidate>';
+			$o .= '<div class="ixw" data-ixw data-svc="' . esc_attr( $title ) . '" data-wa="' . esc_attr( $wa ) . '"><form class="ixw__form" novalidate>';
 			foreach ( $qs as $qi => $q ) {
 				$o .= '<fieldset class="ixw__q" data-qi="' . (int) $qi . '" data-type="' . esc_attr( $q[1] ) . '"><legend><span class="ixw__n">' . ( $qi + 1 ) . '</span>' . esc_html( $q[0] ) . ( 'multi' === $q[1] ? ' <small>(يمكن اختيار أكثر من إجابة)</small>' : '' ) . '</legend><div class="ixw__opts">';
 				foreach ( $q[2] as $oi => $op ) {
@@ -255,6 +255,15 @@ function zad_ix_module_html( $k, $ix, $post_id ) {
 				$o .= '</div></fieldset>';
 			}
 			$o .= '<div class="ixw__nav"><button type="button" class="btn btn--ghost" data-ixw-prev hidden>السابق</button><button type="button" class="btn btn--accent" data-ixw-next>التالي</button></div></form>';
+			if ( $tiers ) { // printed on the server (crawlable); hidden until the tool picks one for the result
+				$o .= '<div class="ixw__tiers" data-ixw-tiers hidden><h3>الخطط حسب حجم المشكلة</h3>';
+				foreach ( $tiers as $t ) {
+					$o .= '<section class="ixw__tier" data-min="' . (int) $t['min'] . '"><h4 data-t-title>' . esc_html( $t['title'] ) . '</h4><p data-t-text>' . esc_html( $t['text'] ) . '</p>';
+					if ( $t['plan'] ) { $o .= '<ol data-t-plan>'; foreach ( $t['plan'] as $st ) { $o .= '<li>' . esc_html( $st ) . '</li>'; } $o .= '</ol>'; }
+					$o .= '</section>';
+				}
+				$o .= '</div>';
+			}
 			$o .= '<div class="ixw__res ix-printable" data-ixw-res hidden aria-live="polite"><span class="ixw__badge" data-res-title></span><p data-res-text></p><h3>الخطة المبدئية</h3><ol data-res-plan></ol><h3>إجاباتك</h3><ul class="ixw__ans" data-res-ans></ul><p class="ixw__disc">خطة مبدئية حسب إجاباتك وليست عرض سعر. يحدد الفني الخطة النهائية والسعر بعد المعاينة.</p>';
 			$o .= '<div class="ixw__cta"><button type="button" class="btn btn--accent" data-ixw-book>' . zad_icon( 'bolt', 20 ) . ' احجز معاينة بهذه الخطة</button>';
 			if ( $wa ) { $o .= '<a class="btn btn--wa" data-ixw-wa target="_blank" rel="noopener" href="' . esc_url( 'https://wa.me/' . $wa ) . '">' . zad_icon( 'whatsapp', 20 ) . ' أرسلها واتساب</a>'; }

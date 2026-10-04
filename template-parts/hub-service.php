@@ -61,7 +61,7 @@ if ( $cities ) { $toc['cities'] = 'مناطق التغطية'; }
 if ( $gq->have_posts() ) { $toc['guides'] = 'أدلة مفيدة'; }
 if ( $faqs ) { $toc['faq'] = 'أسئلة شائعة'; }
 ?>
-<main id="main" class="hub">
+<main id="main" class="hub"><?php echo zad_archive_intro_html(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 	<section class="hubhero">
 		<div class="wrap">
 			<?php zad_render_crumbs( zad_current_crumbs() ?: array( array( 'الرئيسية', home_url( '/' ) ), array( $label, '' ) ) ); ?>

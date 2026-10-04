@@ -58,6 +58,8 @@ require_once MEMO_THEME_DIR .'inc/zad-tts.php';
 require_once MEMO_THEME_DIR .'inc/zad-listen.php';
 require_once MEMO_THEME_DIR .'inc/zad-sitemap.php';
 require_once MEMO_THEME_DIR .'inc/zad-demo.php';
+require_once MEMO_THEME_DIR .'inc/zad-seo-pack.php';
+require_once MEMO_THEME_DIR .'inc/zad-author.php';
 require_once MEMO_THEME_DIR .'inc/hs-tools/hs-tools.php';
 require_once MEMO_THEME_DIR .'inc/zad-diag.php';
 require_once get_theme_file_path() .'/_inc/_admin/admin-options.php';
@@ -146,34 +148,6 @@ function add_enhanced_seo_dates_to_cpt($content) {
     return $content;
 }
 add_filter( 'do_redirect_guess_404_permalink', '__return_false' );
-/**
- * إضافة صندوق الكاتب في نهاية المحتوى
- */
-add_filter('the_content', 'add_author_box_to_all_site_content');
-function add_author_box_to_all_site_content($content) {
-    if (is_singular() && !zad_is_service() && !zad_is_faq() && is_main_query()) {
-        $author_id    = get_the_author_meta('ID');
-        $author_name  = get_the_author_meta('display_name');
-        $author_bio   = get_the_author_meta('description');
-        $author_url   = get_author_posts_url($author_id);
-        $author_avatar = get_avatar($author_id, 90);
-
-        $author_box = '<div class="author-box">';
-        $author_box .= '<div class="author-avatar">' . $author_avatar . '</div>';
-        $author_box .= '<div class="author-info">';
-        $author_box .= '<h4>بقلم: <a href="' . $author_url . '">' . $author_name . '</a></h4>';
-        
-        if ($author_bio) {
-            $author_box .= '<p>' . $author_bio . '</p>';
-        } else {
-            $author_box .= '<p>خبير محتوى في موقع زاد السعودية، متخصص في تقديم حلول منزلية فنية دقيقة بناءً على تجارب ميدانية.</p>';
-        }
-        
-        $author_box .= '</div></div>'; 
-        return $content . $author_box;
-    }
-    return $content;
-}
 // Trustindex widget (id configured in theme options) appended to singular content.
 add_filter( 'the_content', 'insert_trustindex_custom_placement', 5 );
 function insert_trustindex_custom_placement( $content ) {

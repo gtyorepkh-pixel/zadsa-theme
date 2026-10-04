@@ -1,11 +1,11 @@
 <?php defined( 'ABSPATH' ) || exit;
 /**
- * Built-in SEO: per-page title/description/OG image/noindex, canonical, Open Graph, Twitter, hreflang, geo.
+ * Built-in SEO: per-page title/description/OG image/noindex, canonical, Open Graph, Twitter, geo (no hreflang).
  * Disabled automatically when Yoast, Rank Math or All in One SEO is active.
  */
 
 function zad_seo_active() {
-	return 'theme' !== zad_schema_owner() || defined( 'WPSEO_VERSION' ) || defined( 'RANK_MATH_VERSION' ) || defined( 'AIOSEO_VERSION' );
+	return 'theme' !== zad_schema_owner() || 'yoast' === zad_seo_mode() || defined( 'WPSEO_VERSION' ) || defined( 'RANK_MATH_VERSION' ) || defined( 'AIOSEO_VERSION' );
 }
 
 /* ---- meta box ---- */
@@ -16,6 +16,10 @@ add_action( 'add_meta_boxes', function () {
 } );
 
 function zad_seo_metabox( $post ) {
+	if ( 'yoast' === zad_seo_mode() ) {
+		echo '<p>السيو (العنوان والوصف وrobots وصورة المشاركة) في هذه الصفحة يُدار من <b>Yoast SEO</b>. الثيم يطبع السكيما فقط، ويعطي Yoast قيمة افتراضية ذكية إن تُركت حقوله فارغة.</p>';
+		return;
+	}
 	wp_nonce_field( 'zad_seo_save', 'zad_seo_nonce' );
 	$g = function ( $k ) use ( $post ) { return get_post_meta( $post->ID, '_zad_seo_' . $k, true ); };
 	?>
@@ -69,6 +73,9 @@ function zad_seo_title() {
 		$t = zad_seo_meta( $id, 'title' );
 		return $t ? $t : get_the_title( $id ) . ' | ' . $site;
 	}
+	if ( function_exists( 'zad_seo_archive_value' ) ) {
+		return zad_seo_archive_value( 'title' );
+	}
 	return '';
 }
 
@@ -99,6 +106,10 @@ function zad_seo_desc() {
 		$ex = get_the_excerpt( $id );
 		return $ex ? wp_trim_words( wp_strip_all_tags( $ex ), 30, '' ) : wp_trim_words( wp_strip_all_tags( get_post_field( 'post_content', $id ) ), 30, '' );
 	}
+	if ( function_exists( 'zad_seo_archive_value' ) ) {
+		$v = zad_seo_archive_value( 'desc' );
+		if ( '' !== $v ) { return $v; }
+	}
 	if ( is_tax() || is_category() ) {
 		$d = term_description();
 		return $d ? wp_trim_words( wp_strip_all_tags( $d ), 30, '' ) : '';
@@ -121,6 +132,10 @@ function zad_seo_image() {
 	$og = zad_opt( 'zad_og_default' );
 	if ( is_array( $og ) && ! empty( $og['url'] ) ) {
 		return array( $og['url'], 1200, 630 );
+	}
+	if ( is_front_page() ) { // no default OG image set: the home hero photo
+		$h = zad_opt( 'zad_hero_img' );
+		if ( is_array( $h ) && ! empty( $h['url'] ) ) { return array( $h['url'], 0, 0 ); }
 	}
 	$logo = zad_opt( 'memopt_logo' );
 	return ( is_array( $logo ) && ! empty( $logo['url'] ) ) ? array( $logo['url'], 0, 0 ) : null;
@@ -163,10 +178,8 @@ add_action( 'wp_head', function () {
 		echo '<meta name="description" content="' . esc_attr( $desc ) . '">' . "\n";
 	}
 	remove_action( 'wp_head', 'rel_canonical' );
-	if ( $url ) {
+	if ( $url && ! is_search() ) { // search results: noindex and no canonical; the theme prints no hreflang
 		echo '<link rel="canonical" href="' . esc_url( $url ) . '">' . "\n";
-		echo '<link rel="alternate" hreflang="ar-sa" href="' . esc_url( $url ) . '">' . "\n";
-		echo '<link rel="alternate" hreflang="x-default" href="' . esc_url( $url ) . '">' . "\n";
 	}
 	$og = array( 'og:locale' => 'ar_SA', 'og:type' => $type, 'og:title' => $ttl, 'og:description' => $desc, 'og:url' => $url, 'og:site_name' => get_bloginfo( 'name' ) );
 	foreach ( $og as $k => $v ) {

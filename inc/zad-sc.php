@@ -525,14 +525,20 @@ function zsc_person_node( $user_id ) {
 	if ( ! $user ) { return null; }
 	$slug = $user->user_nicename;
 	$a    = $cfg['authors'][ $slug ] ?? array();
-	$p    = array( '@type' => 'Person', '@id' => $home . '#/schema/person/' . $slug, 'name' => ! empty( $a['name'] ) ? $a['name'] : $user->display_name, 'url' => get_author_posts_url( $user_id, $slug ), 'worksFor' => array( '@id' => $home . '#organization' ) );
+	$aurl = get_author_posts_url( $user_id, $slug );
+	$bio  = function_exists( 'zad_author_has_bio' ) ? zad_author_has_bio( $user_id ) : true;
+	// Fixed id = author page + #person (same node on the author page and in every article). Authors without a bio have no public page: no url.
+	$p    = array( '@type' => 'Person', '@id' => $aurl . '#person', 'name' => ! empty( $a['name'] ) ? $a['name'] : $user->display_name, 'worksFor' => array( '@id' => $home . '#organization' ) );
+	if ( $bio ) { $p['url'] = $aurl; }
 	if ( ! empty( $a['job_title'] ) ) { $p['jobTitle'] = $a['job_title']; }
 	$desc = ! empty( $a['description'] ) ? $a['description'] : trim( (string) get_the_author_meta( 'description', $user_id ) );
 	if ( '' !== $desc ) { $p['description'] = $desc; }
 	if ( ! empty( $a['credential'] ) ) { $p['hasCredential'] = array( '@type' => 'EducationalOccupationalCredential', 'credentialCategory' => 'degree', 'name' => $a['credential'] ); }
 	if ( ! empty( $a['knows_about'] ) ) { $p['knowsAbout'] = $a['knows_about']; }
-	if ( ! empty( $a['same_as'] ) ) { $p['sameAs'] = $a['same_as']; }
-	if ( ! empty( $a['image'] ) ) { $p['image'] = array( '@type' => 'ImageObject', 'url' => $a['image'], 'caption' => $p['name'] ); }
+	$same = ! empty( $a['same_as'] ) ? $a['same_as'] : ( function_exists( 'zad_author_sameas' ) ? zad_author_sameas( $user_id ) : array() );
+	if ( $same ) { $p['sameAs'] = $same; }
+	$img = ! empty( $a['image'] ) ? $a['image'] : ( function_exists( 'zad_author_image' ) ? zad_author_image( $user_id ) : '' );
+	if ( $img ) { $p['image'] = array( '@type' => 'ImageObject', 'url' => $img, 'caption' => $p['name'] ); }
 	return $p;
 }
 
@@ -559,7 +565,7 @@ function zsc_article_nodes( $post ) {
 	if ( $d['description'] ) { $webpage['description'] = $d['description']; }
 	if ( $image ) { $webpage['primaryImageOfPage'] = array( '@id' => $url . '#primaryimage' ); $webpage['image'] = array( '@id' => $url . '#primaryimage' ); }
 	$article = array(
-		'@type' => 'Article', '@id' => $url . '#article', 'headline' => $headline, 'url' => $url,
+		'@type' => in_array( $post->post_type, zad_faq_types(), true ) ? 'Article' : 'BlogPosting', '@id' => $url . '#article', 'headline' => $headline, 'url' => $url,
 		'mainEntityOfPage' => array( '@id' => $url . '#webpage' ), 'isPartOf' => array( '@id' => $url . '#webpage' ),
 		'datePublished' => get_post_time( 'c', true, $post ), 'dateModified' => get_post_modified_time( 'c', true, $post ),
 		'publisher' => array( '@id' => $home . '#organization' ), 'inLanguage' => 'ar',
@@ -582,7 +588,7 @@ function zsc_home_nodes() {
 	$desc = $id ? (string) get_post_meta( $id, '_yoast_wpseo_metadesc', true ) : '';
 	if ( '' === $desc || false !== strpos( $desc, '%%' ) ) { $desc = zad_opt( 'zad_site_desc', $b['description'] ); }
 	$page = array(
-		'@type' => array( 'WebPage', 'AboutPage' ), '@id' => $home . '#webpage', 'url' => $home,
+		'@type' => 'WebPage', '@id' => $home . '#webpage', 'url' => $home,
 		'name' => wp_strip_all_tags( html_entity_decode( wp_get_document_title(), ENT_QUOTES, 'UTF-8' ) ), 'description' => $desc,
 		'isPartOf' => array( '@id' => $home . '#website' ), 'about' => array( '@id' => $home . '#organization' ),
 		'mainEntity' => array( '@id' => $home . '#localbusiness' ), 'primaryImageOfPage' => array( '@id' => $home . '#logo' ), 'inLanguage' => 'ar',

@@ -246,7 +246,11 @@ add_filter( 'the_content', function ( $content ) {
 }, 9 );
 
 
-/** Hero photo of a service page is a CSS background (invisible to the preload scanner): preload it. */
+/** Hero photo of a service page: a real <img> (srcset, sizes, high priority, eager) behind the overlay. Mobile loads the 768px size. */
+function zad_hero_sizes() { return '(max-width: 768px) 768px, 100vw'; }
+function zad_hero_img( $tid ) {
+	return wp_get_attachment_image( $tid, 'full', false, array( 'class' => 'shero__bg', 'alt' => '', 'sizes' => zad_hero_sizes(), 'loading' => 'eager', 'decoding' => 'async', 'fetchpriority' => 'high' ) );
+}
 add_action( 'wp_head', function () {
 	if ( ! is_singular() || ! function_exists( 'zad_is_service' ) || ! zad_is_service() ) {
 		return;
@@ -254,7 +258,8 @@ add_action( 'wp_head', function () {
 	$tid = get_post_thumbnail_id( get_queried_object_id() );
 	$url = $tid ? wp_get_attachment_image_url( $tid, 'full' ) : '';
 	if ( $url ) {
-		echo '<link rel="preload" as="image" href="' . esc_url( $url ) . '" fetchpriority="high">' . "\n"; // phpcs:ignore
+		$set = wp_get_attachment_image_srcset( $tid, 'full' );
+		echo '<link rel="preload" as="image" href="' . esc_url( $url ) . '"' . ( $set ? ' imagesrcset="' . esc_attr( $set ) . '" imagesizes="' . esc_attr( zad_hero_sizes() ) . '"' : '' ) . ' fetchpriority="high">' . "\n"; // phpcs:ignore
 	}
 }, 2 );
 
