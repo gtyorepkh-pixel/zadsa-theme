@@ -1,0 +1,20 @@
+.hs-moving-bundle .hs-progress{display:flex;gap:6px;list-style:none;margin:0 0 16px;padding:0}
+.hs-moving-bundle .hs-progress li{flex:1;text-align:center;padding:8px 4px;border-block-end:4px solid var(--hs-line);font-size:.85rem;font-weight:700;color:var(--hs-muted)}
+.hs-moving-bundle .hs-progress li.is-on{border-color:var(--hs-primary);color:var(--hs-primary)}
+.hs-moving-bundle .hs-two{display:grid;gap:12px}
+.hs-moving-bundle .hs-place{padding:14px;border:1.5px solid var(--hs-line);border-radius:var(--hs-r)}
+.hs-moving-bundle .hs-svcs{display:grid;gap:10px;margin:10px 0}
+.hs-moving-bundle .hs-svc{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--hs-line);border-radius:12px;cursor:pointer;min-block-size:56px}
+.hs-moving-bundle .hs-svc:has(input:checked){border-color:var(--hs-primary);background:color-mix(in srgb,var(--hs-primary) 7%,#fff)}
+.hs-moving-bundle .hs-svc small{display:block;color:var(--hs-muted);font-size:.85rem}
+.hs-moving-bundle .hs-extras{display:flex;flex-wrap:wrap;gap:4px 18px;padding-inline-start:12px;margin-block:-4px 6px}
+.hs-moving-bundle .hs-nav{display:flex;gap:10px;margin-block-start:14px}
+.hs-moving-bundle .hs-nav .hs-btn{flex:1}
+.hs-moving-bundle .hs-lines{list-style:none;margin:0;padding:0}
+.hs-moving-bundle .hs-lines li{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--hs-line)}
+.hs-moving-bundle .hs-lines small{display:block;color:var(--hs-muted);font-size:.8rem}
+.hs-moving-bundle .hs-lines b{white-space:nowrap}
+.hs-moving-bundle .hs-save{margin:12px 0 0;padding:10px 12px;background:color-mix(in srgb,var(--hs-ok) 10%,#fff);color:var(--hs-ok);border-radius:10px;font-weight:800}
+.hs-moving-bundle .hs-nudge{margin:10px 0 0;padding:10px 12px;background:#fff7e0;border-radius:10px;font-weight:700}
+.hs-moving-bundle .hs-total{display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 4px;font-size:1.25rem}
+@media(min-width:761px){.hs-moving-bundle .hs-two{grid-template-columns:1fr 1fr}.hs-moving-bundle .hs-nav .hs-btn{flex:0 1 220px}}

@@ -1,0 +1,48 @@
+/* HS Tools — shared styles. Every selector is scoped under .hs-tool. Colors come from the theme tokens. */
+.hs-tool{--hs-primary:var(--primary,#0b2e3a);--hs-accent:var(--accent,#f2b134);--hs-ok:var(--ok,#0d7f70);--hs-wa:var(--wa,#12803f);--hs-line:var(--line,#e4e1d6);--hs-tint:var(--tint,#f6f4ee);--hs-ink:var(--ink,#111);--hs-muted:var(--muted,#56656f);--hs-r:var(--r,14px);--hs-warn:#9a3412;--hs-warn-bg:#fff1e6;
+  direction:rtl;text-align:right;color:var(--hs-ink);background:#fff;border:1px solid var(--hs-line);border-radius:var(--hs-r);padding:20px 16px;margin:24px 0;font-size:1rem;line-height:1.8;max-width:100%;overflow-wrap:anywhere}
+.hs-tool *,.hs-tool *::before,.hs-tool *::after{box-sizing:border-box}
+.hs-tool [hidden]{display:none!important}
+.hs-tool .hs-title{margin:0 0 14px;font-size:1.35rem;line-height:1.5;color:var(--hs-primary)}
+.hs-tool .hs-sub{margin:18px 0 10px;font-size:1.1rem}
+.hs-tool .hs-lg{display:block;margin:0 0 8px;font-size:1.05rem}
+.hs-tool .hs-fine{margin:8px 0 0;font-size:.85rem;color:var(--hs-muted)}
+.hs-tool .hs-note{margin:10px 0;padding:10px 12px;background:var(--hs-tint);border-radius:10px;font-size:.92rem}
+.hs-tool .hs-err{margin:10px 0;color:#b42318;font-weight:700}
+.hs-tool .hs-ok{margin:0 0 8px;color:var(--hs-ok);font-weight:800}
+.hs-tool .hs-hp{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip-path:inset(50%);opacity:0;pointer-events:none}
+.hs-tool fieldset{border:0;margin:0 0 18px;padding:0;min-inline-size:0}
+.hs-tool legend{padding:0;margin:0 0 8px;font-weight:800;font-size:1.05rem}
+
+/* buttons */
+.hs-tool .hs-btn,.hs-tool .hs-opt{font:inherit;cursor:pointer;min-block-size:44px;border-radius:12px;border:1.5px solid var(--hs-line);background:#fff;color:var(--hs-ink);padding:8px 14px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center}
+.hs-tool .hs-btn:hover,.hs-tool .hs-opt:hover{border-color:var(--hs-primary)}
+.hs-tool .hs-btn--main{background:var(--hs-primary);border-color:var(--hs-primary);color:#fff;font-weight:800}
+.hs-tool .hs-btn--wa{background:var(--hs-wa);border-color:var(--hs-wa);color:#fff;font-weight:800;inline-size:100%}
+.hs-tool .hs-btn:disabled{opacity:.5;cursor:not-allowed}
+.hs-tool .hs-opt.is-on,.hs-tool .hs-opt[aria-pressed=true]{border-color:var(--hs-primary);background:color-mix(in srgb,var(--hs-primary) 9%,#fff);box-shadow:0 0 0 2px var(--hs-primary) inset;font-weight:800}
+.hs-tool :focus-visible{outline:3px solid var(--hs-accent);outline-offset:2px}
+.hs-tool .hs-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.hs-tool .hs-grid--icons .hs-opt{flex-direction:column;padding:14px 8px;min-block-size:88px}
+.hs-tool .hs-grid--chips{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* forms */
+.hs-tool .hs-field{margin:0 0 12px}
+.hs-tool .hs-field label{display:block;font-weight:700;font-size:.95rem}
+.hs-tool input[type=text],.hs-tool input[type=tel],.hs-tool input[type=date],.hs-tool select,.hs-tool textarea{display:block;inline-size:100%;margin-block-start:4px;min-block-size:46px;padding:10px 12px;font:inherit;font-size:16px;border:1.5px solid var(--hs-line);border-radius:10px;background:#fff;color:var(--hs-ink)}
+.hs-tool .hs-check{display:flex;align-items:center;gap:10px;min-block-size:44px;font-weight:600}
+.hs-tool .hs-check input,.hs-tool .hs-svc input{inline-size:22px;block-size:22px;accent-color:var(--hs-primary);flex:none}
+.hs-tool .hs-form{margin-block-start:18px;padding:16px;border:1.5px dashed var(--hs-line);border-radius:var(--hs-r);background:var(--hs-tint)}
+.hs-tool .hs-form__t{margin:0 0 10px;font-size:1.1rem}
+.hs-tool .hs-form.is-sent>:not(.hs-fallback):not(.hs-form__t){display:none}
+.hs-tool .hs-fallback{margin-block-start:10px}
+
+/* result cards */
+.hs-tool .hs-result:empty{display:none}
+.hs-tool .hs-best{margin-block-start:18px;padding:16px;border-radius:var(--hs-r);background:color-mix(in srgb,var(--hs-ok) 9%,#fff);border:1.5px solid var(--hs-ok)}
+.hs-tool .hs-best h3{margin:6px 0 4px;font-size:1.25rem}
+.hs-tool .hs-best--none{background:var(--hs-tint);border-color:var(--hs-line)}
+.hs-tool .hs-badge{display:inline-block;background:var(--hs-ok);color:#fff;border-radius:99px;padding:2px 12px;font-size:.82rem;font-weight:800}
+.hs-tool .hs-tip{margin:12px 0 0;padding:10px 12px;background:var(--hs-tint);border-radius:10px}
+.hs-tool .hs-price{margin:8px 0 2px}
+.hs-tool .hs-warnbox{margin:0 0 16px;padding:12px 14px;background:var(--hs-warn-bg);border:1.5px solid #f0b78a;border-inline-start:6px solid var(--hs-warn);border-radius:10px;font-weight:700;color:var(--hs-warn)}

@@ -1,0 +1,24 @@
+.hs-stain-aid .hs-pick{margin-block-end:12px}
+.hs-stain-aid .hs-q{margin-block-end:14px}
+.hs-stain-aid .hs-grid--chips .hs-opt{min-block-size:48px;font-size:.95rem}
+.hs-stain-aid .hs-timer{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 12px;background:var(--hs-tint);border-radius:12px;margin-block-end:12px}
+.hs-stain-aid .hs-clock{font-size:1.4rem;font-weight:800;font-variant-numeric:tabular-nums;min-inline-size:5ch}
+.hs-stain-aid .hs-stain{margin-block-end:18px}
+.hs-stain-aid .hs-stain h2{font-size:1.2rem;line-height:1.6;margin:0 0 6px}
+.hs-stain-aid details{border:1.5px solid var(--hs-line);border-radius:12px;margin:10px 0;padding:0 14px;background:#fff}
+.hs-stain-aid summary{cursor:pointer;min-block-size:46px;display:flex;align-items:center;font-weight:800}
+.hs-stain-aid .hs-do{border-color:var(--hs-ok);background:color-mix(in srgb,var(--hs-ok) 6%,#fff)}
+.hs-stain-aid .hs-dont{border-color:#f0b78a;background:var(--hs-warn-bg)}
+.hs-stain-aid .hs-dont summary{color:var(--hs-warn)}
+.hs-stain-aid .hs-stepslist{margin:0 0 10px;padding-inline-start:22px}
+.hs-stain-aid .hs-stepslist li{margin:8px 0}
+.hs-stain-aid .hs-js .hs-stepslist,.hs-stain-aid.hs-js .hs-stepslist{list-style:decimal}
+.hs-stain-aid .hs-stepslist label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.hs-stain-aid .hs-stepslist input{inline-size:22px;block-size:22px;flex:none;margin-block-start:4px;accent-color:var(--hs-ok)}
+.hs-stain-aid .hs-stepslist input:checked+span{text-decoration:line-through;color:var(--hs-muted)}
+.hs-stain-aid .hs-mini{font:inherit;font-size:.82rem;min-block-size:36px;margin-block-start:4px;padding:2px 12px;border:1.5px solid var(--hs-line);border-radius:99px;background:#fff;cursor:pointer}
+.hs-stain-aid .hs-min{color:var(--hs-muted);font-size:.85rem}
+.hs-stain-aid .hs-rules,.hs-stain-aid .hs-fabrics{margin-block-start:18px}
+.hs-stain-aid .hs-rules h2,.hs-stain-aid .hs-fabrics h2{font-size:1.1rem}
+.hs-stain-aid .hs-after{margin-block-start:16px;padding:14px;background:var(--hs-tint);border-radius:12px}
+@media(min-width:761px){.hs-stain-aid .hs-grid--chips{grid-template-columns:repeat(4,minmax(0,1fr))}}

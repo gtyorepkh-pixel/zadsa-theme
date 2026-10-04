@@ -58,6 +58,7 @@ require_once MEMO_THEME_DIR .'inc/zad-tts.php';
 require_once MEMO_THEME_DIR .'inc/zad-listen.php';
 require_once MEMO_THEME_DIR .'inc/zad-sitemap.php';
 require_once MEMO_THEME_DIR .'inc/zad-demo.php';
+require_once MEMO_THEME_DIR .'inc/hs-tools/hs-tools.php';
 require_once MEMO_THEME_DIR .'inc/zad-diag.php';
 require_once get_theme_file_path() .'/_inc/_admin/admin-options.php';
 
