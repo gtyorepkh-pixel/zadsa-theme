@@ -18,6 +18,12 @@ function zad_wiz_map() {
 	return $map;
 }
 
+/** «صفحات مكافحة الحشرات» (post-type label) → «مكافحة الحشرات». */
+function zad_wiz_cat_label( $name ) {
+	$n = trim( preg_replace( '/^\s*(?:صفحات|صفحة)\s+/u', '', (string) $name ) );
+	return '' === $n ? (string) $name : $n;
+}
+
 add_action( 'wp_footer', function () {
 	$map = zad_wiz_map(); // may be empty: the booking sheet must still open (service step is then optional)
 	$cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true ) );
@@ -50,7 +56,7 @@ add_action( 'wp_footer', function () {
 				<?php if ( $cats && ! is_wp_error( $cats ) ) : ?>
 					<div class="wiz__cats" data-wiz-cats>
 						<?php foreach ( $cats as $c ) : $ic = get_term_meta( $c->term_id, 'zad_icon', true ) ?: 'sparkle'; ?>
-							<button type="button" class="wiz__cat" data-cat="<?php echo (int) $c->term_id; ?>"><?php echo zad_icon( $ic, 26 ); // phpcs:ignore ?><span><?php echo esc_html( $c->name ); ?></span></button>
+							<button type="button" class="wiz__cat" data-cat="<?php echo (int) $c->term_id; ?>"><?php echo zad_icon( $ic, 26 ); // phpcs:ignore ?><span><?php echo esc_html( zad_wiz_cat_label( $c->name ) ); ?></span></button>
 						<?php endforeach; ?>
 					</div>
 				<?php endif; ?>
@@ -114,4 +120,4 @@ add_action( 'wp_footer', function () {
 	</div>
 </div>
 	<?php
-}, 20 );
+}, 5 ); // before the footer scripts (priority 20), so #zad-wizard exists when they run

@@ -3,6 +3,16 @@
 	var $ = function (s, c) { return (c || document).querySelector(s); };
 	var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
 
+	/* The booking sheet is printed in the footer (after this script may run): open it by delegation, always. */
+	document.addEventListener('click', function (e) {
+		var b = e.target.closest && e.target.closest('[data-open-wizard]');
+		if (!b) return;
+		e.preventDefault();
+		if (window.zadOpenWizard) window.zadOpenWizard();
+	});
+
+	function init() {
+
 	/* Mobile nav */
 	var nav = $('#primary-nav'), overlay = $('.nav-overlay'), burger = $('[data-nav-open]');
 	function setNav(open) {
@@ -88,7 +98,10 @@
 			$('[data-wiz-sum]', wiz).innerHTML = rows.map(function (r) { return '<div><small>' + r[0] + '</small><b></b></div>'; }).join('');
 			$$('[data-wiz-sum] b', wiz).forEach(function (b, i) { b.textContent = rows[i][1]; });
 		}
-		$$('[data-open-wizard]').forEach(function (b) { b.addEventListener('click', open); });
+		window.zadOpenWizard = function (note) {
+			if (typeof note === 'string' && note) { var ta = $('textarea[name="message"]', wiz); if (ta) ta.value = note; }
+			open();
+		};
 		$$('[data-wiz-close]', wiz).forEach(function (b) { b.addEventListener('click', close); });
 		document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && wiz.classList.contains('is-open')) close(); });
 		$$('[data-wiz-cats] .wiz__cat', wiz).forEach(function (b) {
@@ -471,4 +484,6 @@
 			if (none) { none.hidden = any; }
 		});
 	});
+	}
+	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
 })();

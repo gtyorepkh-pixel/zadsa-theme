@@ -1,5 +1,6 @@
 (function () {
 	'use strict';
+	function init() {
 	var lf = document.querySelector('[data-listen-file]');
 	if (lf) {
 		var au = lf.querySelector('audio'), rs = lf.querySelector('[data-lf-rate]'), sv = 1;
@@ -81,4 +82,6 @@
 		if (state === 'playing') { synth.cancel(); speak(); }
 	});
 	window.addEventListener('pagehide', function () { synth.cancel(); });
+	}
+	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
 })();

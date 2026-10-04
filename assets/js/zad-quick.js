@@ -1,6 +1,7 @@
 /* Quick-request cards (أ) q30 and (ب) dx. Vanilla JS, no dependencies. */
 (function () {
 	'use strict';
+	function init() {
 	function $(s, r) { return (r || document).querySelector(s); }
 	function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
 	function ajax() { return (window.ZAD && window.ZAD.ajax) || '/wp-admin/admin-ajax.php'; }
@@ -73,4 +74,6 @@
 		$$('[data-reset]', root).forEach(function (b) { b.addEventListener('click', function () { cur = null; step(1); }); });
 		go.addEventListener('click', function () { beacon(root); });
 	});
+	}
+	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
 })();

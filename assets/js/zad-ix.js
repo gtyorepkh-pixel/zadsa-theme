@@ -1,5 +1,6 @@
 (function () {
 	'use strict';
+	function init() {
 	var $ = function (s, r) { return (r || document).querySelector(s); };
 	var $$ = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
 	function track(name, data) { try { if (window.dataLayer) { window.dataLayer.push({ event: name, zad: data || {} }); } if (window.gtag) { window.gtag('event', name, data || {}); } } catch (e) {} }
@@ -129,9 +130,7 @@
 		var book = $('[data-ixw-book]', box);
 		book.addEventListener('click', function () {
 			var open = $('[data-open-wizard]');
-			var ta = $('#zad-wizard textarea[name="message"]');
-			if (ta && box._note) { ta.value = box._note; }
-			if (open) { open.click(); }
+			if (window.zadOpenWizard) { window.zadOpenWizard(box._note || ''); } else { var ta = $('#zad-wizard textarea[name="message"]'); if (ta && box._note) { ta.value = box._note; } if (open) { open.click(); } }
 			track('ix_wizard_book');
 		});
 		$$('.ixw__opt input', box).forEach(function (i) { i.addEventListener('change', function () { var q = i.closest('.ixw__q'); q.classList.remove('is-err'); if (q.getAttribute('data-type') === 'single' && step < qs.length - 1) { setTimeout(function () { if (answered(q) && qs[step] === q) { next.click(); } }, 250); } }); });
@@ -185,8 +184,8 @@
 		}
 		$('[data-ixst-book]', box).addEventListener('click', function () {
 			var open = $('[data-open-wizard]'), ta = $('#zad-wizard textarea[name="message"]');
-			if (ta) { ta.value = 'طلب بعد مشاهدة قصة: ' + box.getAttribute('data-svc') + ' — المشهد: ' + (scenes[idx].querySelector('.ixst__lab') || {}).textContent; }
-			if (open) { open.click(); }
+			var note = 'طلب بعد مشاهدة قصة: ' + box.getAttribute('data-svc') + ' — المشهد: ' + (scenes[idx].querySelector('.ixst__lab') || {}).textContent;
+			if (window.zadOpenWizard) { window.zadOpenWizard(note); } else { if (ta) { ta.value = note; } if (open) { open.click(); } }
 			track('ix_story_book');
 		});
 		show(0, false);
@@ -196,4 +195,6 @@
 			}, { threshold: [0, 0.6] }).observe(box);
 		}
 	});
+	}
+	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
 })();
