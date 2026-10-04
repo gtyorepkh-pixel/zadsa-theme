@@ -229,6 +229,11 @@ function zad_crumbs_schema( $crumbs ) {
 	return array( '@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'itemListElement' => $items );
 }
 
+/** Arabic-Indic digits → ASCII (array form: strtr() with two multibyte strings corrupts UTF-8). */
+function zad_digits_en( $s ) {
+	return strtr( (string) $s, array( '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9', '٬' => ',', '٫' => '.' ) );
+}
+
 /** Parse the price list textarea: "group | service | price | warranty". */
 function zad_parse_prices( $text ) {
 	$rows = array();
@@ -246,10 +251,49 @@ function zad_parse_prices( $text ) {
 			$c[] = '';
 		}
 		$num = 0;
-		if ( preg_match( '/\d[\d,٬]*/u', strtr( $c[2], '٠١٢٣٤٥٦٧٨٩', '0123456789' ), $m ) ) {
+		if ( preg_match( '/\d[\d,٬]*/u', zad_digits_en( $c[2] ), $m ) ) {
 			$num = (int) str_replace( array( ',', '٬' ), '', $m[0] );
 		}
 		$rows[] = array( 'group' => $c[0], 'name' => $c[1], 'price' => $c[2], 'details' => $c[3], 'warranty' => $c[4], 'num' => $num );
+	}
+	return $rows;
+}
+
+
+/** Packages textarea: "name | price | feature; feature; feature". */
+function zad_parse_packages( $text ) {
+	$out = array();
+	foreach ( zad_lines( $text ) as $l ) {
+		$c = array_map( 'trim', explode( '|', $l ) );
+		if ( '' === $c[0] ) { continue; }
+		$price = $c[1] ?? '';
+		$num   = 0;
+		if ( preg_match( '/\d[\d,٬]*/u', zad_digits_en( $price ), $m ) ) { $num = (int) str_replace( array( ',', '٬' ), '', $m[0] ); }
+		$out[] = array( 'name' => $c[0], 'price' => $price, 'num' => $num, 'feat' => isset( $c[2] ) ? array_filter( array_map( 'trim', preg_split( '/[;؛]/u', $c[2] ) ) ) : array() );
+	}
+	return $out;
+}
+
+/**
+ * Which price block a service page shows: 'table' | 'packages' | '' (none). Never both.
+ * _zad_price_mode: '' auto (table if filled, else packages) · 'table' · 'packages' (each falls back to the other when empty).
+ */
+function zad_price_view( $id ) {
+	$has_t = (bool) zad_parse_prices( get_post_meta( $id, '_zad_prices', true ) );
+	$has_p = (bool) zad_parse_packages( get_post_meta( $id, '_zad_packages', true ) );
+	$mode  = (string) get_post_meta( $id, '_zad_price_mode', true );
+	if ( 'packages' === $mode ) { return $has_p ? 'packages' : ( $has_t ? 'table' : '' ); }
+	return $has_t ? 'table' : ( $has_p ? 'packages' : '' );
+}
+
+/** Price rows of the VISIBLE block (hero estimator, schema, cards): same shape as zad_parse_prices(). */
+function zad_price_rows( $id ) {
+	$view = zad_price_view( $id );
+	if ( 'table' === $view ) { return zad_parse_prices( get_post_meta( $id, '_zad_prices', true ) ); }
+	if ( 'packages' !== $view ) { return array(); }
+	$rows = array();
+	foreach ( zad_parse_packages( get_post_meta( $id, '_zad_packages', true ) ) as $pk ) {
+		$rows[] = array( 'group' => '', 'name' => $pk['name'], 'price' => $pk['price'], 'details' => implode( '؛ ', $pk['feat'] ), 'warranty' => '', 'num' => $pk['num'] );
 	}
 	return $rows;
 }

@@ -180,7 +180,7 @@ function zad_nav_schema() {
 
 /** Price text → schema price specification (handles ranges, "from", per month). */
 function zad_price_spec( $text ) {
-	$t = strtr( (string) $text, '٠١٢٣٤٥٦٧٨٩٬', '0123456789,' );
+	$t = zad_digits_en( $text );
 	preg_match_all( '/\d[\d,]*/', $t, $m );
 	$nums = array_map( function ( $x ) { return (int) str_replace( ',', '', $x ); }, $m[0] );
 	if ( ! $nums ) {
@@ -349,7 +349,7 @@ function zad_service_schema( $id ) {
 	if ( $desc ) { $s['description'] = $desc; }
 
 	$offers = array();
-	foreach ( zad_parse_prices( get_post_meta( $id, '_zad_prices', true ) ) as $r ) {
+	foreach ( zad_price_rows( $id ) as $r ) { // rows of the block that is actually shown on the page
 		$spec = zad_price_spec( $r['price'] );
 		if ( ! $spec ) { continue; }
 		$o = array( '@type' => 'Offer', 'name' => $r['name'], 'priceCurrency' => 'SAR', 'priceSpecification' => $spec );

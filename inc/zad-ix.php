@@ -36,6 +36,12 @@ function zad_ix_order( $ix ) {
 	return array_values( array_unique( array_merge( $order, $all ) ) );
 }
 
+/** The interactive "wiz" self-check is live on this page: ix on + module enabled + questions filled. */
+function zad_ix_wiz_active( $post_id ) {
+	$ix = zad_ix_get( $post_id );
+	return ! empty( $ix['on'] ) && ! empty( $ix['en']['wiz'] ) && '' !== trim( (string) ( $ix['wiz']['questions'] ?? '' ) );
+}
+
 function zad_ix_enabled( $post_id ) {
 	$ix = zad_ix_get( $post_id );
 	return ! empty( $ix['on'] );

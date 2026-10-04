@@ -27,9 +27,9 @@ function zad_hero_card( $id, $has_prices ) {
 function zad_q_lines( $text ) { return array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) $text ) ) ) ); }
 
 /** Symptoms for (ب): page field first, then the global option. Line: العرض | الخدمة المقترحة | السعر | رابط | إيموجي */
-function zad_dx_data( $id = 0 ) {
+function zad_dx_data( $id = 0, $page_only = false ) {
 	$src = $id ? (string) get_post_meta( $id, '_zad_dx', true ) : '';
-	if ( '' === trim( $src ) ) { $src = (string) zad_opt( 'zad_dx_symptoms', '' ); }
+	if ( '' === trim( $src ) && ! ( $id && $page_only ) ) { $src = (string) zad_opt( 'zad_dx_symptoms', '' ); } // $page_only: body section never falls back to the global symptoms
 	$out = array();
 	foreach ( zad_q_lines( $src ) as $l ) {
 		$c = array_pad( array_map( 'trim', explode( '|', $l ) ), 5, '' );
@@ -51,7 +51,7 @@ function zad_q30_data( $id ) {
 		foreach ( zad_q_lines( $txt ) as $l ) { $hoods[] = trim( explode( '|', $l )[0] ); }
 	}
 	$rows = array();
-	foreach ( zad_parse_prices( get_post_meta( $id, '_zad_prices', true ) ) as $r ) { if ( '' !== $r['name'] ) { $rows[] = $r; } }
+	foreach ( zad_price_rows( $id ) as $r ) { if ( '' !== $r['name'] ) { $rows[] = $r; } }
 	return array( 'svcs' => array_slice( $svcs, 0, 4 ), 'hoods' => array_slice( $hoods, 0, 4 ), 'prices' => array_slice( $rows, 0, 8 ) );
 }
 
@@ -81,8 +81,8 @@ function zad_q30_html( $id, $src = 'hero-a' ) {
 }
 
 /* ---------------- (ب) ---------------- */
-function zad_dx_html( $id, $src = 'hero-b' ) {
-	$data = zad_dx_data( $id );
+function zad_dx_html( $id, $src = 'hero-b', $page_only = false ) {
+	$data = zad_dx_data( $id, $page_only );
 	$wa   = zad_whatsapp( $id );
 	if ( ! $data ) { return ''; }
 	$o  = '<div class="dx" data-dx data-wa="' . esc_attr( $wa ) . '" data-title="' . esc_attr( $id ? get_the_title( $id ) : get_bloginfo( 'name' ) ) . '" data-url="' . esc_url( $id ? get_permalink( $id ) : home_url( '/' ) ) . '" data-src="' . esc_attr( $src ) . '" data-post="' . (int) $id . '">';
@@ -100,7 +100,9 @@ function zad_dx_html( $id, $src = 'hero-b' ) {
 /** (ب) as a section: after the intro on a service page (auto when data exists, unless switched off per page) / on the home page. */
 function zad_dx_section( $id = 0, $src = 'sec-b', $title = '', $sub = '' ) {
 	if ( $id && 'off' === get_post_meta( $id, '_zad_dx_sec', true ) ) { return ''; }
-	$card = zad_dx_html( $id, $src );
+	// Service page: only the page's own symptoms, and never next to the interactive "wiz" self-check.
+	if ( $id && function_exists( 'zad_ix_wiz_active' ) && zad_ix_wiz_active( $id ) ) { return ''; }
+	$card = zad_dx_html( $id, $src, (bool) $id );
 	if ( '' === $card ) { return ''; }
 	return '<section class="sec sec--mint dxsec"><div class="wrap wrap--narrow"><header class="sec__head"><span class="eyebrow">ابدأ من هنا</span><h2>' . esc_html( $title ?: 'لا تعرف اسم المشكلة؟' ) . '</h2>' . ( $sub ? '<p>' . esc_html( $sub ) . '</p>' : '<p>أجب عن سؤالين ونقترح عليك الحل.</p>' ) . '</header>' . $card . '</div></section>';
 }
@@ -147,7 +149,8 @@ function zad_quick_box( $post_id ) {
 	echo '</select></label></p></div>';
 	echo '<p><label>خيارات «الخدمة» في (أ) <small>(سطر لكل خيار، حتى 4؛ فارغ = أنواع الخدمة الفرعية)</small><textarea name="zad[q_svcs]" rows="3" style="width:100%">' . esc_textarea( (string) $g( 'q_svcs' ) ) . '</textarea></label></p>';
 	echo '<p><label>خيارات «الحي» في (أ) <small>(سطر لكل حي، حتى 4؛ فارغ = أحياء التغطية)</small><textarea name="zad[q_hoods]" rows="3" style="width:100%">' . esc_textarea( (string) $g( 'q_hoods' ) ) . '</textarea></label></p>';
-	echo '<h4>الأعراض لـ«شخّص مشكلتك»</h4><p><label><small>سطر لكل عرض: العرض | الخدمة المقترحة | السعر (نص تكتبه أنت، مثل: من 150 ريال) | رابط الخدمة (اختياري) | إيموجي (اختياري). فارغ = الأعراض العامة من إعدادات الثيم.</small><textarea name="zad[dx]" rows="5" style="width:100%" placeholder="صراصير في المطبخ | مكافحة الصراصير | من 150 ريال | /pest-control/cockroaches/ | 🪳">' . esc_textarea( (string) $g( 'dx' ) ) . '</textarea></label></p>';
+	$dxnote = ( function_exists( 'zad_ix_wiz_active' ) && zad_ix_wiz_active( $post_id ) && '' !== trim( (string) $g( 'dx' ) ) ) ? '<p class="description" style="color:#b45309">⚠ مخفي لأن أداة التشخيص التفاعلية مفعّلة في هذه الصفحة.</p>' : '';
+	echo '<h4>الأعراض لـ«شخّص مشكلتك»</h4>' . $dxnote . '<p><label><small>سطر لكل عرض: العرض | الخدمة المقترحة | السعر (نص تكتبه أنت، مثل: من 150 ريال) | رابط الخدمة (اختياري) | إيموجي (اختياري). فارغ = لا يظهر القسم.</small><textarea name="zad[dx]" rows="5" style="width:100%" placeholder="صراصير في المطبخ | مكافحة الصراصير | من 150 ريال | /pest-control/cockroaches/ | 🪳">' . esc_textarea( (string) $g( 'dx' ) ) . '</textarea></label></p>';
 }
 
 function zad_quick_save( $post_id, $in ) {

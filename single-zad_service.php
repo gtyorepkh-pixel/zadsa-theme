@@ -23,12 +23,9 @@ while ( have_posts() ) :
 	$safety   = $arr( 'safety' );
 	$wrows    = $arr( 'warrantyrows' );
 	$after    = zad_lines( $m( 'aftercare' ) );
-	$pkgs     = array();
-	foreach ( zad_lines( $m( 'packages' ) ) as $l ) {
-		$c = array_map( 'trim', explode( '|', $l ) );
-		$pkgs[] = array( 'name' => $c[0], 'price' => $c[1] ?? '', 'feat' => isset( $c[2] ) ? array_filter( array_map( 'trim', preg_split( '/[;؛]/u', $c[2] ) ) ) : array() );
-	}
-	$prices   = zad_parse_prices( $m( 'prices' ) );
+	$view     = zad_price_view( $id );                       // 'table' | 'packages' | '' — only ONE price block is ever rendered
+	$prices   = zad_price_rows( $id );                       // rows of the visible block (hero estimator, "من" price)
+	$pkgs     = ( 'packages' === $view ) ? zad_parse_packages( $m( 'packages' ) ) : array();
 	$has_det  = (bool) array_filter( wp_list_pluck( $prices, 'details' ) );
 	$has_war  = (bool) array_filter( wp_list_pluck( $prices, 'warranty' ) );
 	$min      = zad_min_price( $prices ) ?: (int) $m( 'price' );
@@ -253,7 +250,7 @@ while ( have_posts() ) :
 	<?php endif; ?>
 
 	<!-- 10. Price list -->
-	<?php if ( $prices ) : ?>
+	<?php if ( 'table' === $view ) : ?>
 	<section class="sec"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">قائمة الأسعار</span><h2>أسعار <?php echo esc_html( $title ); ?></h2></header>
 		<div class="tbl"><table>

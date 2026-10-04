@@ -173,10 +173,26 @@ function zad_service_metabox( $post ) {
 		<?php zad_repeater_ui( $post->ID, 'steps', 't', 'd', 'عنوان الخطوة', 'وصف الخطوة', 'إضافة خطوة' ); ?>
 		<?php zad_steps_box( $post->ID ); ?>
 
+		<?php
+		$pm       = (string) $g( 'price_mode' );
+		$has_t    = (bool) zad_parse_prices( $g( 'prices' ) );
+		$has_p    = (bool) zad_parse_packages( $g( 'packages' ) );
+		$pview    = zad_price_view( $post->ID );
+		$both     = $has_t && $has_p;
+		?>
+		<h4>الأسعار — ماذا يظهر في الصفحة؟</h4>
+		<p><label>قسم الأسعار المعروض <small>(يظهر قسم واحد فقط: جدول الأسعار أو الباقات، ولا يظهران معاً)</small>
+			<select name="zad[price_mode]">
+				<option value=""<?php selected( $pm, '' ); ?>>تلقائي (الجدول إن وُجد، وإلا الباقات)</option>
+				<option value="table"<?php selected( $pm, 'table' ); ?>>جدول الأسعار</option>
+				<option value="packages"<?php selected( $pm, 'packages' ); ?>>الباقات</option>
+			</select></label>
+			<?php if ( $pview ) : ?><span class="description"> المعروض حالياً: <b><?php echo 'table' === $pview ? 'جدول الأسعار' : 'الباقات'; ?></b></span><?php endif; ?></p>
 		<h4>كيف نحدد السعر (عوامل التسعير)</h4>
 		<?php zad_repeater_ui( $post->ID, 'factors', 't', 'd', 'العنوان', 'الوصف', 'إضافة عامل' ); ?>
 
 		<h4>قائمة الأسعار <small>(سطر لكل بند: الفئة | الخدمة | السعر | التفاصيل | الضمان — الفئة والتفاصيل والضمان اختيارية. يُستخدم أيضاً في مقدّر السعر الفوري)</small></h4>
+		<?php if ( $both && 'table' !== $pview ) : ?><p class="description" style="color:#b45309">⚠ مخفي — المعروض حالياً: الباقات</p><?php endif; ?>
 		<p><textarea name="zad[prices]" rows="8" style="width:100%" placeholder="غرف خاصة | غرفة صغيرة | 400 ريال / شهرياً | مناسبة لشقة صغيرة | &#10;خدمات إضافية | النقل والتغليف | 300 - 650 ريال | تُدفع مرة واحدة"><?php echo esc_textarea( $g( 'prices' ) ); ?></textarea></p>
 
 		<h4>علامات الإصابة / المشكلة <small>(كيف تعرف أنك تحتاج الخدمة)</small></h4>
@@ -190,6 +206,7 @@ function zad_service_metabox( $post ) {
 		<p><label>إرشادات ما بعد الخدمة (سطر لكل إرشاد)<textarea name="zad[aftercare]" rows="3" style="width:100%"><?php echo esc_textarea( $g( 'aftercare' ) ); ?></textarea></label></p>
 
 		<h4>الباقات <small>(سطر لكل باقة: الاسم | السعر | ميزة؛ ميزة؛ ميزة)</small></h4>
+		<?php if ( $both && 'packages' !== $pview ) : ?><p class="description" style="color:#b45309">⚠ مخفي — المعروض حالياً: جدول الأسعار</p><?php endif; ?>
 		<p><textarea name="zad[packages]" rows="5" style="width:100%" placeholder="باقة أساسية | 250 ريال | معاينة؛ مبيدات آمنة؛ ضمان شهر"><?php echo esc_textarea( $g( 'packages' ) ); ?></textarea></p>
 
 		<h4>الضمان <small>(بطاقات)</small></h4>
@@ -307,6 +324,7 @@ add_action( 'save_post', function ( $post_id ) {
 		update_post_meta( $post_id, '_zad_' . $tk, isset( $in[ $tk ] ) ? sanitize_textarea_field( $in[ $tk ] ) : '' );
 	}
 	update_post_meta( $post_id, '_zad_prices', isset( $in['prices'] ) ? sanitize_textarea_field( $in['prices'] ) : '' );
+	update_post_meta( $post_id, '_zad_price_mode', in_array( $in['price_mode'] ?? '', array( 'table', 'packages' ), true ) ? $in['price_mode'] : '' );
 	update_post_meta( $post_id, '_zad_ba_text', isset( $in['ba_text'] ) ? sanitize_textarea_field( $in['ba_text'] ) : '' );
 	update_post_meta( $post_id, '_zad_ba', isset( $in['ba'] ) ? implode( ',', array_filter( array_map( 'absint', explode( ',', $in['ba'] ) ) ) ) : '' );
 	zad_related_save( $post_id, $in );

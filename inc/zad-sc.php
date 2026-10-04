@@ -335,12 +335,12 @@ add_filter( 'zsc_page_data', function ( $d, $post ) {
 	$tag = trim( (string) get_post_meta( $id, '_zad_tagline', true ) );
 	if ( '' === (string) zsc_meta( $id, 'description' ) && '' !== $tag ) { $d['description'] = $tag; }
 	if ( ! $d['offers'] && function_exists( 'zad_parse_prices' ) ) {
-		foreach ( zad_parse_prices( get_post_meta( $id, '_zad_prices', true ) ) as $r ) {
-			$n = zsc_num( preg_replace( '/[^\d٠-٩.,]/u', '', strtr( (string) $r['price'], '٠١٢٣٤٥٦٧٨٩', '0123456789' ) ) );
+		foreach ( zad_price_rows( $id ) as $r ) { // visible price block only
+			$n = zsc_num( preg_replace( '/[^\d٠-٩.,]/u', '', zad_digits_en( $r['price'] ) ) );
 			if ( $n > 0 ) { $d['offers'][] = array( 'name' => $r['name'], 'price' => $n, 'unit' => '' ); }
 		}
 	}
-	if ( ! $d['price_from'] ) {
+	if ( ! $d['price_from'] && ( ! function_exists( 'zad_price_view' ) || '' === zad_price_view( $id ) ) ) { // with a visible price block the offers above are the page's prices
 		$p = (int) get_post_meta( $id, '_zad_price', true );
 		if ( $p ) { $d['price_from'] = (float) $p; }
 	}

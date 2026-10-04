@@ -18,7 +18,7 @@ $all   = new WP_Query( array( 'post_type' => zad_service_types(), 'posts_per_pag
 // price teaser: cheapest services
 $teaser = array();
 foreach ( $all->posts as $sv ) {
-	$min = zad_min_price( zad_parse_prices( get_post_meta( $sv->ID, '_zad_prices', true ) ) ) ?: (int) get_post_meta( $sv->ID, '_zad_price', true );
+	$min = zad_min_price( zad_price_rows( $sv->ID ) ) ?: (int) get_post_meta( $sv->ID, '_zad_price', true );
 	if ( $min ) { $teaser[] = array( $sv, $min ); }
 }
 usort( $teaser, function ( $a, $b ) { return $a[1] <=> $b[1]; } );
