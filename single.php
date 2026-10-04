@@ -21,7 +21,7 @@ while ( have_posts() ) :
 			<?php echo zad_author_box(); // phpcs:ignore ?>
 			<div class="footer-meta"><?php memo_tags_in(); ?></div>
 			<?php echo memo_sharing_buttons(); // phpcs:ignore ?>
-			<?php if ( comments_open() || get_comments_number() ) { comments_template(); } ?>
+			<?php if ( zad_comments_enabled() && ( comments_open() || get_comments_number() ) ) { comments_template(); } ?>
 		</article>
 		<aside class="slayout__side">
 			<div class="sticky" id="quote">

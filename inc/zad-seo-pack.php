@@ -31,10 +31,14 @@ function zad_term_city( $term ) {
 	return (string) zad_opt( 'zad_city_name', 'الرياض' );
 }
 
-/** Only an explicit noindex (checkbox on the term) keeps a term out of the index and the sitemap. No automatic rules. */
+/** Explicit noindex (checkbox on the term). Optional automatic rule behind the theme option zad_thin_noindex (off by default). */
 function zad_term_noindexed( $term ) {
 	if ( ! $term || is_wp_error( $term ) ) { return false; }
-	return '1' === (string) get_term_meta( $term->term_id, '_zad_noindex', true );
+	if ( '1' === (string) get_term_meta( $term->term_id, '_zad_noindex', true ) ) { return true; }
+	if ( 'service_area' === $term->taxonomy && zad_opt( 'zad_thin_noindex', false ) ) { // no intro text and fewer than two services
+		return '' === zad_term_intro( $term ) && (int) $term->count < 2;
+	}
+	return false;
 }
 
 /** IDs of noindexed terms in a taxonomy (cached; flushed when terms or posts change). */
@@ -55,6 +59,7 @@ add_action( 'created_term', 'zad_flush_nx' );
 add_action( 'edited_term', 'zad_flush_nx' );
 add_action( 'delete_term', 'zad_flush_nx' );
 add_action( 'set_object_terms', 'zad_flush_nx' );
+add_action( 'update_option__memo_theme_options', 'zad_flush_nx' ); // the thin-area switch lives in the theme options
 
 /** Default title/description for a term (used by the theme and, in yoast mode, fed to Yoast when its fields are empty). */
 function zad_term_default( $term, $field ) {
@@ -263,7 +268,20 @@ function zad_yoast_default( $field ) {
 		$y = zad_yoast_term_meta( $t[1], 'title' === $field ? 'wpseo_title' : 'wpseo_desc' );
 		return ( '' === $y ) ? zad_term_default( $t[1], $field ) : '';
 	}
+	if ( $t && in_array( $t[0], array( 'archive', 'type' ), true ) ) { // /services/, /faq/ and adopted-type archives
+		$pt = function_exists( 'zad_query_pt' ) ? zad_query_pt() : '';
+		$v  = zad_seo_archive_value( $field );
+		return ( '' !== $v && zad_yoast_ptarchive_is_default( $pt, $field ) ) ? $v : '';
+	}
 	return '';
+}
+
+/** True when Yoast's archive title/description for this post type is empty or still its stock template ("%%pt_plural%% Archive …"). */
+function zad_yoast_ptarchive_is_default( $pt, $field ) {
+	if ( ! class_exists( 'WPSEO_Options' ) || ! method_exists( 'WPSEO_Options', 'get' ) ) { return true; }
+	$v = trim( (string) WPSEO_Options::get( ( 'title' === $field ? 'title-ptarchive-' : 'metadesc-ptarchive-' ) . $pt, '' ) );
+	if ( '' === $v ) { return true; }
+	return 'title' === $field && (bool) preg_match( '/^%%pt_plural%%\s+(?:archive|الأرشيف|أرشيف)\b.*%%sitename%%$/iu', $v );
 }
 foreach ( array( 'wpseo_title' => 'title', 'wpseo_opengraph_title' => 'title', 'wpseo_twitter_title' => 'title', 'wpseo_metadesc' => 'desc', 'wpseo_opengraph_desc' => 'desc', 'wpseo_twitter_description' => 'desc' ) as $zad_h => $zad_f ) {
 	add_filter( $zad_h, function ( $v ) use ( $zad_f ) {

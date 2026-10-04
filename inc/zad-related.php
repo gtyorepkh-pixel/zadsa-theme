@@ -241,3 +241,44 @@ function zad_coverage_save( $post_id, $in ) {
 		'stats'   => sanitize_textarea_field( $in['cov_stats'] ?? '' ),
 	) );
 }
+
+
+/* ---------- "Guides" on a service page: same category or the service's own keywords only ---------- */
+function zad_service_keywords( $title ) {
+	$t     = preg_replace( '/[\x{064B}-\x{065F}]/u', '', wp_strip_all_tags( (string) $title ) );
+	$words = preg_split( '/[\s\-–—|،,:]+/u', $t, -1, PREG_SPLIT_NO_EMPTY );
+	$city  = (string) zad_opt( 'zad_city_name', 'الرياض' );
+	$stop  = array( 'شركة', 'شركات', 'خدمة', 'خدمات', 'أفضل', 'افضل', 'رخيص', 'في', 'و', 'من', 'الى', 'إلى', 'على', 'عن', 'مع', 'السعودية', 'مؤسسة', 'الرياض', 'جدة', 'الدمام', $city );
+	$out   = array();
+	foreach ( $words as $w ) {
+		$bare = preg_replace( '/^ب(?=ال)/u', '', $w ); // بالرياض → الرياض
+		if ( in_array( $w, $stop, true ) || in_array( $bare, $stop, true ) || mb_strlen( $w ) < 3 ) { continue; }
+		$out[] = $w;
+	}
+	return array_slice( array_values( array_unique( $out ) ), 0, 2 );
+}
+function zad_is_placeholder_post( $p ) {
+	return 'hello-world' === $p->post_name || in_array( trim( (string) $p->post_title ), array( 'Hello world!', 'مرحبا بالعالم!', 'أهلاً بالعالم!', 'أهلا بالعالم!' ), true );
+}
+/** Up to $limit published posts that belong with this service; empty array = hide the section. */
+function zad_service_guides( $id, $limit = 4 ) {
+	$found = array();
+	$push  = function ( $posts ) use ( &$found ) {
+		foreach ( (array) $posts as $p ) { if ( $p instanceof WP_Post && ! zad_is_placeholder_post( $p ) ) { $found[ $p->ID ] = $p; } }
+	};
+	$cats = get_the_terms( $id, 'service_cat' );
+	$cids = array();
+	if ( $cats && ! is_wp_error( $cats ) ) {
+		foreach ( $cats as $c ) {
+			$t = get_term_by( 'slug', $c->slug, 'category' ) ?: get_term_by( 'name', $c->name, 'category' );
+			if ( $t ) { $cids[] = (int) $t->term_id; }
+		}
+	}
+	$base = array( 'post_type' => 'post', 'post_status' => 'publish', 'numberposts' => $limit * 3, 'ignore_sticky_posts' => true );
+	if ( $cids ) { $push( get_posts( $base + array( 'category__in' => $cids ) ) ); }
+	if ( count( $found ) < $limit ) {
+		$kw = zad_service_keywords( get_the_title( $id ) );
+		if ( $kw ) { $push( get_posts( $base + array( 's' => implode( ' ', $kw ) ) ) ); }
+	}
+	return array_slice( array_values( $found ), 0, $limit );
+}

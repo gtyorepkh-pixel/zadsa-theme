@@ -436,11 +436,11 @@ while ( have_posts() ) :
 	<?php endif; ?>
 
 	<!-- 15b. Guides -->
-	<?php $gp = new WP_Query( array( 'post_type' => 'post', 'posts_per_page' => 4, 'ignore_sticky_posts' => 1, 'no_found_rows' => true ) );
-	if ( $gp->have_posts() ) : ?>
+	<?php $gp = zad_service_guides( $id, 4 ); // same category / the service's own keywords; nothing suitable = no section
+	if ( $gp ) : ?>
 	<section class="sec"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">أدلة تهمّك</span><h2>مقالات ونصائح مفيدة</h2></header>
-		<div class="sgrid"><?php while ( $gp->have_posts() ) { $gp->the_post(); get_template_part( 'template-parts/post-card' ); } wp_reset_postdata(); ?></div>
+		<div class="sgrid"><?php foreach ( $gp as $gpost ) { $GLOBALS['post'] = $gpost; setup_postdata( $gpost ); get_template_part( 'template-parts/post-card' ); } wp_reset_postdata(); ?></div>
 		<p class="sec__more"><a class="btn btn--ghost-dark" href="<?php echo esc_url( get_permalink( get_option( 'page_for_posts' ) ) ?: home_url( '/blog/' ) ); ?>">كل المقالات</a></p>
 	</div></section>
 	<?php endif; ?>

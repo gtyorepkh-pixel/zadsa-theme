@@ -12,6 +12,13 @@ add_action( 'admin_menu', function () {
 	add_submenu_page( 'edit.php?post_type=zad_lead', 'تقرير مصادر الطلبات', 'تقرير المصادر', 'manage_options', 'zad-lead-report', 'zad_leadreport_page' );
 } );
 
+/** Re-encode the path segments of a decoded URL (Arabic slugs) so url_to_postid() can match it. */
+function zad_url_encode_path( $url ) {
+	$p = wp_parse_url( $url );
+	if ( empty( $p['host'] ) || ! isset( $p['path'] ) ) { return $url; }
+	return ( $p['scheme'] ?? 'https' ) . '://' . $p['host'] . ( isset( $p['port'] ) ? ':' . $p['port'] : '' ) . implode( '/', array_map( 'rawurlencode', explode( '/', $p['path'] ) ) );
+}
+
 function zad_leadreport_bar( $n, $max ) {
 	return '<span style="display:inline-block;height:10px;border-radius:5px;background:#0c687e;width:' . ( $max ? max( 4, (int) round( 160 * $n / $max ) ) : 4 ) . 'px"></span>';
 }
@@ -27,7 +34,7 @@ function zad_leadreport_page() {
 	foreach ( $leads as $l ) {
 		$src = (string) get_post_meta( $l->ID, '_lead_source', true );
 		$u   = strtok( $src, '?#' );
-		if ( ! isset( $cache[ $u ] ) ) { $cache[ $u ] = $u ? (int) url_to_postid( $u ) : 0; }
+		if ( ! isset( $cache[ $u ] ) ) { $cache[ $u ] = $u ? (int) url_to_postid( zad_url_encode_path( $u ) ) : 0; } // stored decoded; WordPress matches the encoded form
 		$pid = $cache[ $u ];
 		$pg  = $pid ? get_the_title( $pid ) : ( $u ? ( zad_audit_path( $u ) ?: 'خارجي' ) : 'غير معروف' );
 		$by['page'][ $pg ] = ( $by['page'][ $pg ] ?? 0 ) + 1;

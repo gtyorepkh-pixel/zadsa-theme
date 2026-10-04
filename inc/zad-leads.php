@@ -130,7 +130,7 @@ function zad_handle_quote() {
 	$lat     = isset( $_POST['lat'] ) && is_numeric( $_POST['lat'] ) ? (float) $_POST['lat'] : 0;
 	$lng     = isset( $_POST['lng'] ) && is_numeric( $_POST['lng'] ) ? (float) $_POST['lng'] : 0;
 	$map     = ( $lat && $lng ) ? 'https://maps.google.com/?q=' . $lat . ',' . $lng : '';
-	$source  = isset( $_POST['source'] ) ? esc_url_raw( wp_unslash( $_POST['source'] ) ) : '';
+	$source  = isset( $_POST['source'] ) ? rawurldecode( esc_url_raw( wp_unslash( $_POST['source'] ) ) ) : ''; // decoded: readable in the admin (Arabic slugs)
 
 	if ( mb_strlen( $name ) < 2 ) {
 		$fail( 'يرجى كتابة الاسم.' );

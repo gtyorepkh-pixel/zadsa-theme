@@ -246,8 +246,16 @@ add_filter( 'the_content', function ( $content ) {
 }, 9 );
 
 
-/** Hero photo of a service page: a real <img> (srcset, sizes, high priority, eager) behind the overlay. Mobile loads the 768px size. */
-function zad_hero_sizes() { return '(max-width: 768px) 768px, 100vw'; }
+/** Hero photo of a service page: a real <img> (srcset, sizes, high priority, eager) behind the overlay. A 600w size (quality 70: it sits under a dark overlay) serves small screens. */
+add_action( 'after_setup_theme', function () { add_image_size( 'zad-hero-600', 600, 0, false ); } );
+add_filter( 'image_make_intermediate_size', function ( $file ) {
+	if ( is_string( $file ) && preg_match( '/-600x\d+\.(jpe?g|webp)$/i', $file ) && function_exists( 'wp_get_image_editor' ) ) {
+		$ed = wp_get_image_editor( $file );
+		if ( ! is_wp_error( $ed ) ) { $ed->set_quality( 70 ); $ed->save( $file ); }
+	}
+	return $file;
+} );
+function zad_hero_sizes() { return '100vw'; }
 function zad_hero_img( $tid ) {
 	return wp_get_attachment_image( $tid, 'full', false, array( 'class' => 'shero__bg', 'alt' => '', 'sizes' => zad_hero_sizes(), 'loading' => 'eager', 'decoding' => 'async', 'fetchpriority' => 'high' ) );
 }
@@ -307,4 +315,14 @@ function zad_children_html( $id ) {
 		$out .= '</ul>';
 	}
 	return $out . '</div></section>';
+}
+
+
+/* ---- Comments on articles: closed by default (theme option zad_comments_on turns them on) ---- */
+function zad_comments_enabled() { return (bool) zad_opt( 'zad_comments_on', false ); }
+function zad_comment_types() { return array_unique( array_merge( array( 'post' ), function_exists( 'zad_article_types' ) ? zad_article_types() : array() ) ); }
+foreach ( array( 'comments_open', 'pings_open' ) as $zad_h ) {
+	add_filter( $zad_h, function ( $open, $post_id ) {
+		return ( ! zad_comments_enabled() && in_array( get_post_type( $post_id ), zad_comment_types(), true ) ) ? false : $open;
+	}, 20, 2 );
 }

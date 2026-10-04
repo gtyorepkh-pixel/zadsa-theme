@@ -181,6 +181,8 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_tiktok', 'type' => 'text', 'title' => 'تيك توك' ),
 		array( 'id' => 'zad_snapchat', 'type' => 'text', 'title' => 'سناب شات' ),
 		array( 'id' => 'zad_og_default', 'type' => 'media', 'title' => 'صورة المشاركة الافتراضية (OG)', 'desc' => '1200×630 تقريباً.' ),
+		array( 'id' => 'zad_comments_on', 'type' => 'switcher', 'title' => 'تفعيل التعليقات على المقالات', 'default' => false, 'desc' => 'مغلقة افتراضياً: لا نموذج تعليقات ولا قائمة تعليقات على المقالات.' ),
+		array( 'id' => 'zad_thin_noindex', 'type' => 'switcher', 'title' => 'منع فهرسة الأحياء الفارغة تلقائياً', 'default' => false, 'desc' => 'عند التفعيل: الحي (service_area) بلا مقدمة نصية وبأقل من خدمتين يصبح noindex,follow ويُحذف من خريطة الموقع (وضعا theme وyoast). مطفأ افتراضياً.' ),
 		array( 'id' => 'zad_services_intro', 'type' => 'textarea', 'title' => 'مقدمة صفحة /services/', 'desc' => 'فقرة نصية تظهر أول صفحة كل الخدمات.' ),
 		array( 'id' => 'zad_faq_intro', 'type' => 'textarea', 'title' => 'مقدمة صفحة /faq/', 'desc' => 'فقرة نصية تظهر أول صفحة الأسئلة الشائعة.' ),
 		array( 'id' => 'zad_site_desc', 'type' => 'textarea', 'title' => 'وصف الموقع (للسكيما والصفحة الرئيسية)', 'default' => $zb['description'] ),
