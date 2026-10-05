@@ -9,8 +9,14 @@
 defined( 'ABSPATH' ) || exit;
 
 /** key => array( editor label, default eyebrow, default title, default lead ). {svc} / {brand} are replaced. */
+/** Short company name for «ضمان …»: the theme's «الاسم المختصر» (zad_alt_name), else the provider name, else ''. */
+function zad_brand_short() {
+	$b = trim( (string) zad_opt( 'zad_alt_name', '' ) );
+	return '' !== $b ? $b : trim( (string) zad_opt( 'zad_provider', '' ) );
+}
+
 function zad_sec_defaults() {
-	$brand = trim( (string) zad_opt( 'zad_provider', '' ) );
+	$brand = zad_brand_short();
 	return array(
 		'why'       => array( 'لماذا نحن',          'لماذا نحن',        'ما الذي يجعل خدمة {svc} تدوم؟', '' ),
 		'subs'      => array( 'أنواع الخدمة',       'خدماتنا',          'أساليب {svc} التي نستخدمها', '' ),
@@ -25,7 +31,7 @@ function zad_sec_defaults() {
 		'gallery'   => array( 'معرض الصور',         'من أعمالنا',       'صور من زيارات {svc}', '' ),
 		'faq'       => array( 'الأسئلة الشائعة',    'الأسئلة الشائعة',  'أسئلة يطرحها عملاؤنا عن {svc}', '' ),
 		'related'   => array( 'ذات صلة',            'قد يهمك أيضاً',    'خدمات أخرى قد تحتاجها', '' ),
-		'final_cta' => array( 'الطلب الأخير',       'اطلب الآن',        'احجز معاينة مجانية لـ {svc} اليوم', '' ),
+		'final_cta' => array( 'الطلب الأخير',       'اطلب الآن',        'احجز معاينة مجانية {l_svc} اليوم', '' ),
 	);
 }
 
@@ -50,7 +56,10 @@ function zad_svc_label( $id ) {
 }
 
 function zad_sec_fill( $text, $id ) {
-	$t = str_replace( array( '{svc}', '{brand}' ), array( zad_svc_label( $id ), trim( (string) zad_opt( 'zad_provider', '' ) ) ), (string) $text );
+	$svc  = zad_svc_label( $id );
+	$l    = 0 === mb_strpos( $svc, 'ال' ) ? 'لل' . mb_substr( $svc, 2 ) : 'ل' . $svc; // لـ + الصراصير = للصراصير ، لـ + مكافحة = لمكافحة
+	$text = preg_replace( '/(?<![\p{L}])لـ?\s*\{svc\}/u', '{l_svc}', (string) $text ); // «لـ {svc}» written by hand gets the same grammar
+	$t    = str_replace( array( '{l_svc}', '{svc}', '{brand}' ), array( $l, $svc, zad_brand_short() ), $text );
 	return preg_replace( '/(?<![\p{L}])خدمة\s+خدمة(?![\p{L}])/u', 'خدمة', $t ); // «خدمة خدمة تسليك» when the name already starts with «خدمة»
 }
 
