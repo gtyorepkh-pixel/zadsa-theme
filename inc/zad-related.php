@@ -143,10 +143,11 @@ function zad_cov_area_chips( $post_id ) {
 	return $out;
 }
 
+/** One district: a single <a> (or <span> without a link): no list item, no icon, no inner wrapper. */
 function zad_cov_chip_li( $c ) {
-	return '<li>' . ( $c[1]
-		? '<a class="cov__chip cov__chip--link" href="' . esc_url( $c[1] ) . '">' . zad_icon( 'pin', 16 ) . '<span>' . esc_html( $c[0] ) . '</span></a>'
-		: '<span class="cov__chip cov__chip--plain">' . zad_icon( 'pin', 16 ) . '<span>' . esc_html( $c[0] ) . '</span></span>' ) . '</li>';
+	return $c[1]
+		? '<a class="cov__chip cov__chip--link" href="' . esc_url( $c[1] ) . '">' . esc_html( $c[0] ) . '</a>'
+		: '<span class="cov__chip cov__chip--plain">' . esc_html( $c[0] ) . '</span>';
 }
 
 /**
@@ -200,13 +201,13 @@ function zad_coverage_html( $post_id = 0, $home = false ) {
 	if ( $d['text'] ) { $o .= '<p class="cov__text">' . nl2br( esc_html( $d['text'] ) ) . '</p>'; }
 	if ( $chips ) {
 		$n = count( $chips );
-		$o .= '<ul class="cov__chips">';
+		$o .= '<div class="cov__chips">';
 		foreach ( array_slice( $chips, 0, 12 ) as $c ) { $o .= zad_cov_chip_li( $c ); }
-		$o .= '</ul>';
-		if ( $n > 12 ) { // every district stays in the HTML (SEO); only the display is folded
-			$o .= '<details class="cov__more"><summary><span class="cov__open">عرض كل الأحياء (' . (int) $n . ')</span><span class="cov__close">إخفاء</span></summary><ul class="cov__chips">';
+		$o .= '</div>';
+		if ( $n > 12 ) { // first 12 shown; the rest stay in the HTML (crawlable) inside <details>
+			$o .= '<details class="cov__more"><summary>عرض كل الأحياء (' . (int) $n . ')</summary><div class="cov__chips">';
 			foreach ( array_slice( $chips, 12 ) as $c ) { $o .= zad_cov_chip_li( $c ); }
-			$o .= '</ul></details>';
+			$o .= '</div></details>';
 		}
 	}
 	if ( $d['note'] ) { $o .= '<p class="cov__note">' . zad_icon( 'check', 16 ) . ' ' . esc_html( $d['note'] ) . '</p>'; }

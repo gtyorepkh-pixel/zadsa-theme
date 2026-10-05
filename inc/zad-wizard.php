@@ -31,7 +31,7 @@ add_action( 'wp_footer', function () {
 	$cur   = zad_is_service() ? get_the_ID() : 0;
 	$icons = array( 'phone', 'shield', 'clock' );
 	?>
-<div class="wiz" id="zad-wizard" aria-hidden="true" data-current="<?php echo (int) $cur; ?>" data-area="" data-services="<?php echo esc_attr( wp_json_encode( array_values( $map ) ) ); ?>">
+<div class="wiz" id="zad-wizard" aria-hidden="true" data-current="<?php echo (int) $cur; ?>" data-area="" data-services="<?php echo esc_attr( wp_json_encode( array_values( $map ) ) ); ?>"><template id="zad-wizard-tpl">
 	<div class="wiz__overlay" data-wiz-close></div>
 	<div class="wiz__panel wz" role="dialog" aria-modal="true" aria-labelledby="wiz-title">
 		<header class="wz__top">
@@ -117,7 +117,7 @@ add_action( 'wp_footer', function () {
 			<p data-wiz-done-msg>سنتصل بك خلال دقائق لتأكيد الموعد.</p>
 			<a class="btn btn--wa" data-wiz-wa href="#" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> متابعة عبر واتساب</a>
 		</div>
-	</div>
+	</div></template>
 </div>
 	<?php
 }, 5 ); // before the footer scripts (priority 20), so #zad-wizard exists when they run

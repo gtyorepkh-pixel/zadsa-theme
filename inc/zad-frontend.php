@@ -71,7 +71,7 @@ function zad_services_sidebar_data( $current_id = 0 ) {
 			$items  = array();
 			if ( $parent && 'publish' === $parent->post_status ) { $items[] = zad_sbar_item( $parent ); }
 			foreach ( get_posts( array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $cur->post_parent, 'post__not_in' => array( (int) $current_id ), 'zad_all' => true, 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
-			if ( $items ) { $data[] = array( 'name' => $parent ? zad_card_title( $parent->ID ) : 'خدماتنا', 'open' => true, 'items' => $items ); }
+			if ( $items ) { $data[] = array( 'name' => 'في هذا القسم', 'open' => true, 'items' => $items ); }
 		} else {
 			$items = array();
 			foreach ( get_posts( array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $current_id, 'zad_all' => true, 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }

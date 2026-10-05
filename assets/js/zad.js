@@ -37,6 +37,13 @@
 	/* Booking wizard */
 	var wiz = $('#zad-wizard');
 	if (wiz) {
+		/* The sheet is printed as a <template> (no DOM cost): it is built on the first open. */
+		var wizTpl = $('#zad-wizard-tpl'), wizReal = null, wizBuilt = false;
+		window.zadOpenWizard = function (note) {
+			if (!wizBuilt) { wizBuilt = true; if (wizTpl) { wiz.appendChild(wizTpl.content.cloneNode(true)); } setupWizard(); }
+			if (wizReal) { wizReal(note); }
+		};
+		function setupWizard() {
 		var form = $('[data-wiz-form]', wiz), svcs = [], steps = $$('.wiz__step', wiz), cur = 1;
 		try { svcs = JSON.parse(wiz.getAttribute('data-services') || '[]'); } catch (e) {}
 		var sel = $('[data-wiz-service]', wiz), hidSvc = form.elements.service, cat = 0;
@@ -98,7 +105,7 @@
 			$('[data-wiz-sum]', wiz).innerHTML = rows.map(function (r) { return '<div><small>' + r[0] + '</small><b></b></div>'; }).join('');
 			$$('[data-wiz-sum] b', wiz).forEach(function (b, i) { b.textContent = rows[i][1]; });
 		}
-		window.zadOpenWizard = function (note) {
+		wizReal = function (note) {
 			if (typeof note === 'string' && note) { var ta = $('textarea[name="message"]', wiz); if (ta) ta.value = note; }
 			open();
 		};
@@ -169,6 +176,7 @@
 				})
 				.catch(function () { btn.disabled = false; err(3, 'تعذر الاتصال، حاول مرة أخرى أو اتصل بنا.'); });
 		});
+		} /* setupWizard */
 	}
 
 	/* Knowledge-base live filter */
