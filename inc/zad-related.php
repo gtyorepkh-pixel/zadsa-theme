@@ -118,7 +118,7 @@ function zad_related_clean_page() {
 
 
 /* ---------- Coverage section ("نصل إليك في أي حي"): shown only when filled ---------- */
-function zad_cov_keys() { return array( 'eyebrow', 'title', 'sub', 'box', 'text', 'chips', 'note', 'stats' ); }
+function zad_cov_keys() { return array( 'eyebrow', 'title', 'sub', 'box', 'text', 'chips', 'note', 'stats', 'other' ); }
 
 /** Split "name | url" lines into array( name, url ). */
 function zad_cov_chips( $text ) {
@@ -145,11 +145,15 @@ function zad_cov_area_chips( $post_id ) {
 }
 
 /**
- * «وكل الأحياء الأخرى»: a button (<details>, no link, no arrow) that opens up to 4 boxes holding the districts NOT already shown
- * (names de-duplicated). Boxes follow the 3rd column of the chip lines (or the parent city of an area term); without groups the rest is split into 4.
- * Links stay in the HTML (crawlable); text-only names add no elements.
+ * Other districts, as plain content under the chips (no button, no boxes).
+ *  - The owner's own text (field «أحياء أخرى» of the page) is printed as written.
+ *  - Otherwise: the districts NOT already shown (de-duplicated), a stable page-specific selection (seeded by the page id,
+ *    so different pages list different districts instead of repeating the same block), with one of a few lead-in phrases.
+ * Names with a link stay links (crawlable); plain names add no elements.
  */
-function zad_cov_more_html( $chips, $shown_n = 12 ) {
+function zad_cov_more_html( $chips, $shown_n = 12, $post_id = 0, $custom = '' ) {
+	$custom = trim( (string) $custom );
+	if ( '' !== $custom ) { return '<p class="cov__other">' . nl2br( esc_html( $custom ) ) . '</p>'; }
 	$seen = array();
 	foreach ( array_slice( $chips, 0, $shown_n ) as $c ) { $seen[ mb_strtolower( trim( $c[0] ) ) ] = 1; }
 	$rest = array();
@@ -159,17 +163,12 @@ function zad_cov_more_html( $chips, $shown_n = 12 ) {
 		$seen[ $k ] = 1; $rest[] = $c;
 	}
 	if ( ! $rest ) { return ''; }
-	$groups = array();
-	foreach ( $rest as $c ) { if ( ! empty( $c[2] ) ) { $groups[ $c[2] ][] = $c; } }
-	if ( ! $groups || array_sum( array_map( 'count', $groups ) ) !== count( $rest ) ) { // some have no group: plain split into 4
-		$groups = array_chunk( $rest, max( 1, (int) ceil( count( $rest ) / 4 ) ) );
-	}
-	$name = function ( $c ) { return $c[1] ? '<a href="' . esc_url( $c[1] ) . '">' . esc_html( $c[0] ) . '</a>' : esc_html( $c[0] ); };
-	$o = '<details class="cov__more"><summary>وكل الأحياء الأخرى</summary><div class="cov__grps">';
-	foreach ( $groups as $title => $list ) {
-		$o .= '<div class="cov__grp">' . ( is_string( $title ) ? '<b>' . esc_html( $title ) . '</b>' : '' ) . implode( ' · ', array_map( $name, $list ) ) . '</div>';
-	}
-	return $o . '</div></details>';
+	$seed = (string) (int) $post_id;
+	usort( $rest, function ( $a, $b ) use ( $seed ) { return crc32( $seed . '|' . $a[0] ) <=> crc32( $seed . '|' . $b[0] ); } );
+	$rest  = array_slice( $rest, 0, (int) apply_filters( 'zad_cov_other_max', 18 ) );
+	$leads = array( 'ونصل كذلك إلى:', 'وتشمل تغطيتنا أيضاً:', 'ونخدم كذلك أحياء مثل:' );
+	$name  = function ( $c ) { return $c[1] ? '<a href="' . esc_url( $c[1] ) . '">' . esc_html( $c[0] ) . '</a>' : esc_html( $c[0] ); };
+	return '<p class="cov__other"><b>' . esc_html( $leads[ (int) $post_id % count( $leads ) ] ) . '</b> ' . implode( '، ', array_map( $name, $rest ) ) . '.</p>';
 }
 
 /** One district: a single <a> (or <span> without a link): no list item, no icon, no inner wrapper. */
@@ -233,8 +232,8 @@ function zad_coverage_html( $post_id = 0, $home = false ) {
 		$o .= '<div class="cov__chips">';
 		foreach ( array_slice( $chips, 0, 12 ) as $c ) { $o .= zad_cov_chip_li( $c ); }
 		$o .= '</div>';
-		if ( $n > 12 ) { $o .= zad_cov_more_html( $chips, 12 ); }
 	}
+	$o .= zad_cov_more_html( $chips ?: array(), 12, $post_id, $own['other'] ?? '' );
 	if ( $d['note'] ) { $o .= '<p class="cov__note">' . zad_icon( 'check', 16 ) . ' ' . esc_html( $d['note'] ) . '</p>'; }
 	return $o . '</div></div></div></section>';
 }
@@ -249,6 +248,7 @@ function zad_coverage_box( $post_id ) {
 	echo '<p><label>عنوان البطاقة<input type="text" name="zad[cov_box]" value="' . esc_attr( $v['box'] ?? '' ) . '"></label></p>';
 	echo '<p><label>الملاحظة الأخيرة<input type="text" name="zad[cov_note]" value="' . esc_attr( $v['note'] ?? '' ) . '"></label></p></div>';
 	echo '<p><label>الوصف<textarea name="zad[cov_text]" rows="2" style="width:100%">' . esc_textarea( $v['text'] ?? '' ) . '</textarea></label></p>';
+	echo '<p><label>أحياء أخرى — نص عادي يظهر تحت الأحياء (اكتب أحياء مختلفة لكل صفحة لتجنّب تكرار المحتوى). فارغ = يُختار تلقائياً اختيار مختلف لكل صفحة من بقية الأحياء.<textarea name="zad[cov_other]" rows="3" style="width:100%" placeholder="ونصل كذلك إلى: الملقا، حطين، العقيق، الغدير…">' . esc_textarea( $v['other'] ?? '' ) . '</textarea></label></p>';
 	echo '<p><label>الأحياء (سطر لكل حي: الاسم | الرابط اختياري)<textarea name="zad[cov_chips]" rows="4" style="width:100%">' . esc_textarea( $v['chips'] ?? '' ) . '</textarea></label></p>';
 	echo '<p><label>بطاقات الأرقام (سطر لكل رقم: الرقم | الوصف — حتى 3 أسطر)<textarea name="zad[cov_stats]" rows="3" style="width:100%" placeholder="24/7 | استقبال الطلبات">' . esc_textarea( $v['stats'] ?? '' ) . '</textarea></label></p>';
 }
@@ -264,6 +264,7 @@ function zad_coverage_save( $post_id, $in ) {
 		'text'    => sanitize_textarea_field( $in['cov_text'] ?? '' ),
 		'chips'   => sanitize_textarea_field( $in['cov_chips'] ?? '' ),
 		'stats'   => sanitize_textarea_field( $in['cov_stats'] ?? '' ),
+		'other'   => sanitize_textarea_field( $in['cov_other'] ?? '' ),
 	) );
 }
 
