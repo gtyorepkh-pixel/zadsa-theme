@@ -24,6 +24,9 @@ function zad_ticket_icons() {
 		'house'    => '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
 		'truck'    => '<path d="M2 6h11v10H2zM13 9h4l4 4v3h-8"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
 		'box'      => '<path d="M3 8l9-5 9 5v8l-9 5-9-5V8zM3 8l9 5 9-5M12 13v8"/>',
+		'acsplit'  => '<rect x="3" y="4" width="18" height="7" rx="2"/><path d="M6 8h12M7 14c0 1.6-1 2-1 3.5M12 14c0 1.6-1 2-1 3.5M17 14c0 1.6-1 2-1 3.5"/>',
+		'acwindow' => '<rect x="4" y="5" width="16" height="12" rx="2"/><path d="M8 9h8M8 12h8M10 20h4"/>',
+		'accentral'=> '<rect x="3" y="9" width="18" height="8" rx="1.5"/><path d="M6 13h4M14 13h4M7 5v4M12 5v4M17 5v4M7 20v-3M17 20v-3"/>',
 		'other'    => '<circle cx="12" cy="12" r="8.5"/><path d="M8 12h.01M12 12h.01M16 12h.01"/>',
 	);
 }

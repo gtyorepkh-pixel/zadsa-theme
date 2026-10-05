@@ -339,6 +339,7 @@ add_filter( 'zsc_page_data', function ( $d, $post ) {
 			$n = zsc_num( preg_replace( '/[^\d٠-٩.,]/u', '', zad_digits_en( $r['price'] ) ) );
 			if ( $n > 0 ) { $d['offers'][] = array( 'name' => $r['name'], 'price' => $n, 'unit' => '' ); }
 		}
+		if ( $d['offers'] && function_exists( 'zad_price_view' ) && 'packages' === zad_price_view( $id ) ) { $d['offers_from_packages'] = true; }
 	}
 	if ( ! $d['price_from'] && ( ! function_exists( 'zad_price_view' ) || '' === zad_price_view( $id ) ) ) { // with a visible price block the offers above are the page's prices
 		$p = (int) get_post_meta( $id, '_zad_price', true );
@@ -502,13 +503,17 @@ function zsc_service_nodes( $post ) {
 			$max = null === $max ? $o['price'] : max( $max, $o['price'] );
 		}
 		$service['hasOfferCatalog'] = array( '@type' => 'OfferCatalog', 'name' => 'أسعار ' . $d['name'], 'itemListElement' => $items );
+		$pkcat = function_exists( 'zad_pk_catalog' ) ? zad_pk_catalog( $post->ID ) : null; // the price table's own offers are the packages when no table exists: one catalog then (the richer one)
+		if ( $pkcat && ! empty( $d['offers_from_packages'] ) ) { $service['hasOfferCatalog'] = $pkcat; $pkcat = null; }
 		$service['offers'] = array( '@type' => 'AggregateOffer', 'priceCurrency' => 'SAR', 'lowPrice' => $d['price_from'] ? min( $d['price_from'], $min ) : $min, 'highPrice' => $max, 'offerCount' => count( $items ), 'url' => $url );
+		if ( ! empty( $pkcat ) ) { $service['hasOfferCatalog'] = array( $service['hasOfferCatalog'], $pkcat ); } // two named catalogs: the price list, and the packages
 	} elseif ( $d['price_from'] ) {
 		$offer = array( '@type' => 'AggregateOffer', 'priceCurrency' => 'SAR', 'lowPrice' => $d['price_from'], 'url' => $url );
 		if ( $d['price_unit'] ) { $offer['description'] = 'يبدأ من ' . $d['price_from'] . ' ريال ' . $d['price_unit']; }
 		$service['offers'] = $offer;
 	}
 
+	if ( ! $d['offers'] && function_exists( 'zad_pk_catalog' ) && ( $pkcat2 = zad_pk_catalog( $post->ID ) ) ) { $service['hasOfferCatalog'] = $pkcat2; } // packages but no priced rows (e.g. all «بعد المعاينة»)
 	$nodes = array();
 	$v = $d['video'];
 	if ( $v['name'] && $v['thumb'] && $v['date'] && ( $v['url'] || $v['embed'] ) ) {
@@ -521,6 +526,7 @@ function zsc_service_nodes( $post ) {
 	}
 	$webpage['about']      = array( '@id' => $url . '#service' );
 	$webpage['mainEntity'] = array( '@id' => $url . '#service' );
+	if ( function_exists( 'zad_qnet_links' ) ) { $rl = zad_qnet_links( $post->ID ); if ( $rl ) { $webpage['relatedLink'] = $rl; } } // links only: the question pages keep their own FAQPage
 	$webpage['lastReviewed'] = get_post_modified_time( 'c', true, $post );
 	$reviewer = function_exists( 'zad_reviewer_id' ) ? zsc_person_node( zad_reviewer_id( $post ) ) : null;
 	if ( $reviewer ) { $webpage['reviewedBy'] = array( '@id' => $reviewer['@id'] ); $nodes[] = $reviewer; }

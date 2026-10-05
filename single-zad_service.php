@@ -283,6 +283,9 @@ while ( have_posts() ) :
 	</div></section>
 	<?php endif; ?>
 
+	<!-- 10b. Package cards (in addition to the table; in its place when there is no table) -->
+	<?php echo zad_pk_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+
 	<!-- 11. Technical card (spec) -->
 	<section class="sec sec--mint"><div class="wrap wrap--narrow">
 		<?php echo zad_sec_head( $id, 'spec', 'check' ); // phpcs:ignore ?>
@@ -338,23 +341,6 @@ while ( have_posts() ) :
 	<?php endif; ?>
 
 	<?php $ctx( 0 ); ?>
-	<!-- 11d. Packages -->
-	<?php if ( $pkgs ) : ?>
-	<section class="sec sec--mint"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow">باقات الحماية</span><h2>اختر الباقة المناسبة</h2></header>
-		<div class="pkgs">
-			<?php foreach ( $pkgs as $i => $pk ) : ?>
-				<div class="pkg<?php echo 1 === $i ? ' pkg--hot' : ''; ?>">
-					<?php if ( 1 === $i ) : ?><span class="pkg__flag">الأكثر طلباً</span><?php endif; ?>
-					<h3><?php echo esc_html( $pk['name'] ); ?></h3>
-					<div class="pkg__price"><?php echo esc_html( $pk['price'] ); ?></div>
-					<ul><?php foreach ( $pk['feat'] as $f ) { echo '<li>' . zad_icon( 'check', 18 ) . '<span>' . esc_html( $f ) . '</span></li>'; } // phpcs:ignore ?></ul>
-					<a class="btn <?php echo 1 === $i ? 'btn--accent' : 'btn--ghost-dark'; ?> btn--block" href="<?php echo esc_url( zad_wa_link( 'مرحباً، أرغب بباقة: ' . $pk['name'] . ' - ' . $title, $id ) ); ?>" target="_blank" rel="noopener">اختر هذه الباقة</a>
-				</div>
-			<?php endforeach; ?>
-		</div>
-	</div></section>
-	<?php endif; ?>
 
 	<!-- 11e. Warranty -->
 	<?php if ( $wrows ) : ?>
@@ -436,15 +422,8 @@ while ( have_posts() ) :
 	</div></section>
 	<?php endif; ?>
 
-	<!-- 15a. Related detailed questions -->
-	<?php $rf = zad_service_faqs( $id, 6 );
-	if ( $rf->have_posts() ) : ?>
-	<section class="sec sec--tint"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow">شبكة الأسئلة</span><h2>أسئلة تفصيلية ذات صلة</h2></header>
-		<div class="faqlinks faqlinks--grid"><?php while ( $rf->have_posts() ) { $rf->the_post(); echo '<a href="' . esc_url( get_permalink() ) . '"><span>' . esc_html( get_the_title() ) . '</span>' . zad_icon( 'arrow', 18 ) . '</a>'; } wp_reset_postdata(); // phpcs:ignore ?></div>
-		<p class="sec__more"><a class="btn btn--ghost-dark" href="<?php echo esc_url( zad_faq_url() ); ?>">كل الأسئلة</a></p>
-	</div></section>
-	<?php endif; ?>
+	<!-- 15a. Related detailed questions (right after the page's own FAQ; before «related services» when there is none) -->
+	<?php $qn = zad_qnet_html( $id ); if ( $faq ) { echo $qn; } // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
 	<!-- 15b. Guides -->
 	<?php $gp = zad_opt( 'zad_svc_guides_show', false ) ? zad_service_guides( $id, 4 ) : array(); // global switch (off by default) + articles picked by hand on the page; nothing picked = no section
@@ -457,6 +436,7 @@ while ( have_posts() ) :
 	<?php endif; ?>
 
 	<?php echo function_exists( 'zad_bridges_html' ) ? zad_bridges_html( $id ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
+	<?php if ( ! $faq ) { echo $qn; } // phpcs:ignore WordPress.Security.EscapeOutput ?>
 	<!-- 16. Related + final quote -->
 	<?php
 	$rel = zad_related_services( $id, 3 ); // 3 cards at most

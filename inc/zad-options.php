@@ -171,6 +171,8 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_street', 'type' => 'text', 'title' => 'الشارع ورقم المبنى', 'default' => '2851 شارع عبدالملك بن مروان' ),
 		array( 'id' => 'zad_district', 'type' => 'text', 'title' => 'الحي', 'default' => 'حي العليا' ),
 		array( 'id' => 'zad_city_name', 'type' => 'text', 'title' => 'المدينة', 'default' => $zb['locality'] ),
+		array( 'id' => 'zad_packages_flag', 'type' => 'text', 'title' => 'علامة الباقة المميزة', 'default' => 'الأكثر طلباً', 'desc' => 'تظهر فوق الباقة المميزة في قسم باقات الأسعار.' ),
+		array( 'id' => 'zad_packages_note', 'type' => 'text', 'title' => 'سطر الملاحظة تحت الباقات', 'default' => 'الأسعار تقديرية وتتحدد بعد المعاينة' ),
 		array( 'id' => 'zad_region', 'type' => 'text', 'title' => 'المنطقة', 'default' => $zb['region'] ),
 		array( 'id' => 'zad_postal', 'type' => 'text', 'title' => 'الرمز البريدي', 'default' => $zb['postal_code'] ),
 		array( 'id' => 'zad_lat', 'type' => 'text', 'title' => 'خط العرض (Latitude)', 'default' => (string) $zb['lat'], 'desc' => 'انسخه من خرائط Google.' ),

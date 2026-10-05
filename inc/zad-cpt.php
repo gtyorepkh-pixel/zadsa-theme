@@ -200,7 +200,7 @@ function zad_service_metabox( $post ) {
 		$both     = $has_t && $has_p;
 		?>
 		<h4>الأسعار — ماذا يظهر في الصفحة؟</h4>
-		<p><label>قسم الأسعار المعروض <small>(يظهر قسم واحد فقط: جدول الأسعار أو الباقات، ولا يظهران معاً)</small>
+		<p><label>قسم الأسعار المعروض <small>(يحدد جدول الأسعار والمقدّر في الهيرو والسكيما؛ قسم «باقات الأسعار» يظهر دائماً إن ملأته)</small>
 			<select name="zad[price_mode]">
 				<option value=""<?php selected( $pm, '' ); ?>>تلقائي (الجدول إن وُجد، وإلا الباقات)</option>
 				<option value="table"<?php selected( $pm, 'table' ); ?>>جدول الأسعار</option>
@@ -224,9 +224,8 @@ function zad_service_metabox( $post ) {
 		<?php zad_repeater_ui( $post->ID, 'safety', 't', 'd', 'العنوان', 'الوصف', 'إضافة نقطة أمان' ); ?>
 		<p><label>إرشادات ما بعد الخدمة (سطر لكل إرشاد)<textarea name="zad[aftercare]" rows="3" style="width:100%"><?php echo esc_textarea( $g( 'aftercare' ) ); ?></textarea></label></p>
 
-		<h4>الباقات <small>(سطر لكل باقة: الاسم | السعر | ميزة؛ ميزة؛ ميزة)</small></h4>
-		<?php if ( $both && 'packages' !== $pview ) : ?><p class="description" style="color:#b45309">⚠ مخفي — المعروض حالياً: جدول الأسعار</p><?php endif; ?>
-		<p><textarea name="zad[packages]" rows="5" style="width:100%" placeholder="باقة أساسية | 250 ريال | معاينة؛ مبيدات آمنة؛ ضمان شهر"><?php echo esc_textarea( $g( 'packages' ) ); ?></textarea></p>
+		<?php zad_pk_box( $post->ID ); ?>
+		<?php zad_qnet_box( $post->ID ); ?>
 
 		<h4>الضمان <small>(بطاقات)</small></h4>
 		<?php zad_repeater_ui( $post->ID, 'warrantyrows', 't', 'd', 'العنوان', 'الوصف', 'إضافة بند ضمان' ); ?>
@@ -342,6 +341,8 @@ add_action( 'save_post', function ( $post_id ) {
 		}
 		update_post_meta( $post_id, '_zad_' . $key, $rows );
 	}
+	zad_pk_save( $post_id, $in );
+	zad_qnet_save( $post_id, $in );
 	foreach ( array( 'aftercare', 'packages', 'spec', 'price_note' ) as $tk ) {
 		update_post_meta( $post_id, '_zad_' . $tk, isset( $in[ $tk ] ) ? sanitize_textarea_field( $in[ $tk ] ) : '' );
 	}

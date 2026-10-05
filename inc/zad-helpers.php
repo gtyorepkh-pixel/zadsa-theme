@@ -318,16 +318,37 @@ function zad_parse_prices( $text ) {
 
 
 /** Packages textarea: "name | price | feature; feature; feature". */
+/**
+ * Package lines: الاسم | السعر | الوحدة | الوصف القصير | الضمان | ميزة؛ميزة؛ميزة | مميزة(1/0) | نص الزر
+ * Old lines (≤3 columns whose 3rd column is the feature list: الاسم | السعر | ميزة؛ميزة) still work.
+ * Price: «349» fixed · «250-450» range · «من 600» from · any text without a number (e.g. «بعد المعاينة») = on request (no number).
+ * Digits are kept exactly as typed for display.
+ */
 function zad_parse_packages( $text ) {
-	$out = array();
+	$out = array(); $legacy_all = true; $num = '[\d٠-٩][\d٠-٩,٬.]*';
 	foreach ( zad_lines( $text ) as $l ) {
 		$c = array_map( 'trim', explode( '|', $l ) );
 		if ( '' === $c[0] ) { continue; }
-		$price = $c[1] ?? '';
-		$num   = 0;
-		if ( preg_match( '/\d[\d,٬]*/u', zad_digits_en( $price ), $m ) ) { $num = (int) str_replace( array( ',', '٬' ), '', $m[0] ); }
-		$out[] = array( 'name' => $c[0], 'price' => $price, 'num' => $num, 'feat' => isset( $c[2] ) ? array_filter( array_map( 'trim', preg_split( '/[;؛]/u', $c[2] ) ) ) : array() );
+		$price  = $c[1] ?? '';
+		$legacy = count( $c ) <= 3 && isset( $c[2] ) && ( preg_match( '/[;؛]/u', $c[2] ) || mb_strlen( $c[2] ) > 24 );
+		if ( ! $legacy ) { $legacy_all = false; }
+		$feat_src = $legacy ? ( $c[2] ?? '' ) : ( $c[5] ?? '' );
+		$p   = array( 'name' => $c[0], 'price' => $price, 'num' => 0, 'kind' => 'quote', 'min' => 0, 'max' => 0, 'raw_a' => '', 'raw_b' => '',
+			'unit' => $legacy ? '' : ( $c[2] ?? '' ), 'desc' => $legacy ? '' : ( $c[3] ?? '' ), 'warranty' => $legacy ? '' : ( $c[4] ?? '' ),
+			'feat' => array_values( array_filter( array_map( 'trim', preg_split( '/[;؛]/u', $feat_src ) ) ) ),
+			'featured' => ! $legacy && in_array( strtolower( $c[6] ?? '' ), array( '1', 'true', 'yes', 'نعم' ), true ), 'cta' => $legacy ? '' : ( $c[7] ?? '' ) );
+		$val = function ( $t ) { return (float) str_replace( ',', '', zad_digits_en( $t ) ); };
+		if ( preg_match( '/(' . $num . ')\s*[-–—]\s*(' . $num . ')/u', $price, $m ) ) {
+			$p['kind'] = 'range'; $p['raw_a'] = $m[1]; $p['raw_b'] = $m[2]; $p['min'] = $val( $m[1] ); $p['max'] = $val( $m[2] ); $p['num'] = (int) $p['min'];
+		} elseif ( preg_match( '/^\s*من\s+(' . $num . ')/u', $price, $m ) ) {
+			$p['kind'] = 'from'; $p['raw_a'] = $m[1]; $p['min'] = $val( $m[1] ); $p['num'] = (int) $p['min'];
+		} elseif ( preg_match( '/(' . $num . ')/u', $price, $m ) ) {
+			$p['kind'] = 'fixed'; $p['raw_a'] = $m[1]; $p['min'] = $val( $m[1] ); $p['num'] = (int) $p['min'];
+		}
+		if ( $p['kind'] !== 'quote' && $p['min'] <= 0 ) { $p['kind'] = 'quote'; $p['min'] = $p['max'] = 0; $p['num'] = 0; } // never a zero price
+		$out[] = $p;
 	}
+	if ( $out && $legacy_all && count( $out ) > 1 && ! array_filter( wp_list_pluck( $out, 'featured' ) ) ) { $out[1]['featured'] = true; } // old data: the 2nd package was the highlighted one
 	return $out;
 }
 
