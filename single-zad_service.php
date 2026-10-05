@@ -235,7 +235,7 @@ while ( have_posts() ) :
 	<?php echo zad_steps_html( $id, $steps ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
 	<!-- 9. Pricing factors + CTA box -->
-	<?php if ( $factors ) : ?>
+	<?php if ( $factors && ! zad_parse_packages( $m( 'packages' ) ) ) : // with packages the factors live inside the packages section (one price H2) ?>
 	<section class="sec sec--tint"><div class="wrap pf">
 		<div class="pf__main">
 			<?php $fs = zad_sec( $id, 'factors' ); ?>

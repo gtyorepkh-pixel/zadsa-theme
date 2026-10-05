@@ -443,10 +443,15 @@ function zsc_site_nodes() {
 		'geo' => array( '@type' => 'GeoCoordinates', 'latitude' => $b['lat'], 'longitude' => $b['lng'] ),
 		'openingHoursSpecification' => $hours, 'sameAs' => $b['same_as'], 'areaServed' => $areas,
 		'vatID' => $b['vat'], 'taxID' => $b['vat'],
-		'identifier' => array( '@type' => 'PropertyValue', 'propertyID' => 'CR', 'name' => 'السجل التجاري', 'value' => $b['cr'] ),
+		'identifier' => ( '' !== trim( (string) $b['cr'] ) ) ? array( '@type' => 'PropertyValue', 'propertyID' => 'CR', 'name' => 'السجل التجاري', 'value' => $b['cr'] ) : '',
 		'knowsAbout' => $b['knows_about'], 'parentOrganization' => array( '@id' => $home . '#organization' ),
 	);
 	if ( ! empty( $b['has_map'] ) ) { $lb['hasMap'] = $b['has_map']; }
+	elseif ( ! empty( $b['lat'] ) && ! empty( $b['lng'] ) ) { $lb['hasMap'] = 'https://www.google.com/maps?q=' . $b['lat'] . ',' . $b['lng']; } // no map link in the settings: the business's own coordinates
+	foreach ( array( 'telephone', 'email', 'priceRange', 'vatID', 'taxID', 'identifier', 'openingHoursSpecification' ) as $k ) { // empty settings are left out, never printed blank (tax / CR only when filled)
+		if ( empty( $lb[ $k ] ) ) { unset( $lb[ $k ] ); }
+	}
+	if ( empty( $b['lat'] ) || empty( $b['lng'] ) ) { unset( $lb['geo'] ); }
 	$site = array(
 		'@type' => 'WebSite', '@id' => $home . '#website', 'url' => $home, 'name' => $b['alternate'], 'alternateName' => $b['name'],
 		'description' => $b['description'], 'publisher' => array( '@id' => $home . '#organization' ), 'inLanguage' => 'ar',
@@ -477,13 +482,21 @@ function zsc_service_nodes( $post ) {
 	if ( ! $d['is_service'] ) { return array( $webpage ); }
 	if ( $image ) { $webpage['primaryImageOfPage'] = array( '@id' => $url . '#primaryimage' ); }
 
+	$hoods = array(); // neighbourhoods: the page's «تغطية» chips (name before «|»), then the other known places; at most 15
+	$cov   = (array) get_post_meta( $post->ID, '_zad_cov', true );
+	foreach ( zsc_lines( isset( $cov['chips'] ) ? $cov['chips'] : '' ) as $l ) {
+		$nm = trim( explode( '|', $l )[0] );
+		if ( '' !== $nm && ! in_array( $nm, $hoods, true ) ) { $hoods[] = $nm; }
+	}
+	foreach ( $d['places'] as $p ) { if ( ! in_array( $p, $hoods, true ) ) { $hoods[] = $p; } }
+	$hoods = array_slice( $hoods, 0, 15 );
 	$area = array();
 	if ( $d['city'] ) {
 		$area[] = array( '@type' => 'City', 'name' => $d['city'], 'containedInPlace' => array( '@type' => 'Country', 'name' => 'المملكة العربية السعودية' ) );
-		foreach ( $d['places'] as $p ) { $area[] = array( '@type' => 'Place', 'name' => $p, 'containedInPlace' => array( '@type' => 'City', 'name' => $d['city'] ) ); }
+		foreach ( $hoods as $p ) { $area[] = array( '@type' => 'Place', 'name' => $p, 'containedInPlace' => array( '@type' => 'City', 'name' => $d['city'] ) ); }
 	} else {
 		$area[] = array( '@type' => 'Country', 'name' => 'المملكة العربية السعودية' );
-		foreach ( $d['places'] as $p ) { $area[] = array( '@type' => 'Place', 'name' => $p ); }
+		foreach ( $hoods as $p ) { $area[] = array( '@type' => 'Place', 'name' => $p ); }
 	}
 	$service = array(
 		'@type' => 'Service', '@id' => $url . '#service', 'name' => $d['name'], 'serviceType' => $d['type'], 'url' => $url,

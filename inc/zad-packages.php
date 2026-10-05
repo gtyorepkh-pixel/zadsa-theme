@@ -64,6 +64,7 @@ function zad_pk_catalog( $id ) {
 	foreach ( $pks as $p ) {
 		$o = array( '@type' => 'Offer', 'name' => $p['name'], 'priceCurrency' => 'SAR', 'itemOffered' => array( '@type' => 'Service', 'name' => $p['name'] ) );
 		if ( '' !== $p['desc'] ) { $o['description'] = $p['desc']; }
+		if ( '' !== $p['cat'] ) { $o['category'] = $p['cat']; } // only when the 9th column is filled
 		$o += zad_price_offer( $p, zad_pk_is_monthly( $p['unit'] ) ); // number / range / «من X» / nothing for a quote
 		if ( ! empty( $city['name'] ) && 'default' !== $city['source'] ) { $o['areaServed'] = array( '@type' => 'City', 'name' => $city['name'] ); }
 		$w = zad_pk_warranty( $p['warranty'] );
@@ -111,6 +112,7 @@ function zad_pk_html( $id ) {
 		$o  .= '<article class="pkgx__c' . ( $hot ? ' pkgx__c--hot' : '' ) . '">';
 		if ( $hot ) { $o .= '<span class="pkgx__flag">' . esc_html( $flag ) . '</span>'; }
 		if ( 'ac' === $style ) { $o .= '<span class="pkgx__ic">' . zad_ticket_icon( zad_pk_icon_for( $p['name'] ), 30 ) . '</span>'; }
+		if ( '' !== $p['cat'] ) { $o .= '<small class="pkgx__cat">' . esc_html( $p['cat'] ) . '</small>'; }
 		$o  .= '<h3>' . esc_html( $p['name'] ) . '</h3>';
 		if ( '' !== $p['desc'] ) { $o .= '<p class="pkgx__d">' . esc_html( $p['desc'] ) . '</p>'; }
 		$o  .= zad_pk_price_html( $p );
@@ -120,14 +122,30 @@ function zad_pk_html( $id ) {
 		$at  = zad_wa_attrs( $msg, $id );
 		$o  .= '<button type="button" class="pkgx__btn"' . ( $at ?: ' data-open-wizard' ) . '>' . zad_icon( 'whatsapp', 18 ) . ' ' . esc_html( '' !== $p['cta'] ? $p['cta'] : 'اطلب هذه الباقة' ) . '</button></article>';
 	}
-	return $o . '</div><p class="pkgx__note">' . esc_html( $note ) . '</p></div></section>';
+	$o .= '</div><p class="pkgx__note">' . esc_html( $note ) . '</p>';
+	$o .= zad_pk_factors_html( $id );
+	return $o . '</div></section>';
+}
+
+/** «العوامل التي تحدد السعر» (_zad_factors) as a short numbered list inside the packages section — one price H2 per page (the title here is an H3). */
+function zad_pk_factors_html( $id ) {
+	$f = array_values( array_filter( (array) get_post_meta( $id, '_zad_factors', true ), function ( $r ) { return is_array( $r ) && ! empty( $r['t'] ); } ) );
+	if ( ! $f ) { return ''; }
+	$s = function_exists( 'zad_sec' ) ? zad_sec( $id, 'factors' ) : array( 'title' => 'العوامل التي تحدد السعر' );
+	$o = '<div class="pkgx__fac"><h3>' . esc_html( '' !== $s['title'] ? $s['title'] : 'العوامل التي تحدد السعر' ) . '</h3><ol>';
+	foreach ( array_slice( $f, 0, 6 ) as $r ) {
+		$d = trim( (string) ( $r['d'] ?? '' ) );
+		if ( mb_strlen( $d, 'UTF-8' ) > 110 ) { $d = rtrim( mb_substr( $d, 0, 108, 'UTF-8' ), " \t.,،" ) . '…'; }
+		$o .= '<li><b>' . esc_html( $r['t'] ) . '</b>' . ( '' !== $d ? '<span> — ' . esc_html( $d ) . '</span>' : '' ) . '</li>';
+	}
+	return $o . '</ol></div>';
 }
 
 /* ---------------- editor ---------------- */
 function zad_pk_box( $post_id ) {
 	$g = function ( $k ) use ( $post_id ) { return (string) get_post_meta( $post_id, '_zad_' . $k, true ); };
-	echo '<h4>باقات الأسعار <small>(قسم إضافي للجدول — لا يحلّ محلّه)</small></h4>';
-	echo '<p class="description">سطر لكل باقة: <code>الاسم | السعر | الوحدة | الوصف القصير | الضمان | ميزة؛ميزة؛ميزة | مميزة (1/0) | نص الزر</code><br>السعر: <code>349</code> ثابت · <code>250-450</code> من/إلى · <code>من 600</code> يبدأ من · <code>بعد المعاينة</code> بلا رقم. الوحدة اختيارية: ريال، ريال/شهرياً، ريال/زيارة.</p>';
+	echo '<h4>باقات الأسعار <small>(مصدر الأسعار الوحيد: القسم والهيرو والسكيما)</small></h4>';
+	echo '<p class="description">سطر لكل باقة: <code>الاسم | السعر | الوحدة | الوصف القصير | الضمان | ميزة؛ميزة؛ميزة | مميزة (1/0) | نص الزر | الفئة</code> — الفئة اختيارية (منازل / فلل / منشآت…)<br>السعر: <code>349</code> ثابت · <code>250-450</code> من/إلى · <code>من 600</code> يبدأ من · <code>بعد المعاينة</code> بلا رقم. الوحدة اختيارية: ريال، ريال/شهرياً، ريال/زيارة.</p>';
 	echo '<p><textarea name="zad[packages]" rows="6" style="width:100%" placeholder="الباقة الأساسية | بعد المعاينة | | رش مركّز لغرفة واحدة | | فحص المراتب؛رش متبقٍّ | 0 | اطلب معاينة&#10;الباقة المتكاملة | 450-650 | ريال | رش + بخار للشقة | حتى سنة | بخار حار؛جلسة متابعة | 1 | اختر هذه الباقة">' . esc_textarea( $g( 'packages' ) ) . '</textarea></p>';
 	echo '<div class="zad-grid"><p><label>شكل القسم<select name="zad[packages_style]">';
 	foreach ( zad_pk_styles() as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $g( 'packages_style' ) ?: 'auto', $k, false ) . '>' . esc_html( $l ) . '</option>'; }

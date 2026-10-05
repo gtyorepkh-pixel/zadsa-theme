@@ -1311,3 +1311,12 @@ p.has-background{padding:1.25em 2em}
 .qnet__all a:hover{border-color:var(--pk-acc)}
 @media (max-width:700px){.qnet{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.pkgx__c,.pkgx__btn,.qnet__c{transition:none}.pkgx__c:hover,.qnet__c:hover,.pkgx__btn:hover{transform:none}}
+
+/* packages: optional category line + pricing factors (numbered, inside the same section) */
+.pkgx__cat{display:block;color:var(--pk-acc);font-weight:700;font-size:.8rem;letter-spacing:.2px}
+.pkgx__fac{max-width:760px;margin:34px auto 0;background:#fff;border:1.5px solid var(--pk-line);border-radius:var(--r-lg);padding:22px 24px}
+.pkgx__fac h3{margin:0 0 12px;font-size:1.1rem;color:var(--pk-ink)}
+.pkgx__fac ol{margin:0;padding:0;list-style:none;counter-reset:pf;display:grid;gap:10px}
+.pkgx__fac li{counter-increment:pf;display:flex;gap:10px;align-items:baseline;line-height:1.7;color:var(--ink)}
+.pkgx__fac li::before{content:counter(pf);flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--pk-soft);color:var(--pk-ink);font-weight:800;font-size:.85rem}
+.pkgx__fac b{color:var(--pk-ink)}.pkgx__fac span{color:var(--muted)}
