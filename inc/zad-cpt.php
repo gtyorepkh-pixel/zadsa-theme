@@ -192,26 +192,15 @@ function zad_service_metabox( $post ) {
 		<?php zad_repeater_ui( $post->ID, 'steps', 't', 'd', 'عنوان الخطوة', 'وصف الخطوة', 'إضافة خطوة' ); ?>
 		<?php zad_steps_box( $post->ID ); ?>
 
-		<?php
-		$pm       = (string) $g( 'price_mode' );
-		$has_t    = (bool) zad_parse_prices( $g( 'prices' ) );
-		$has_p    = (bool) zad_parse_packages( $g( 'packages' ) );
-		$pview    = zad_price_view( $post->ID );
-		$both     = $has_t && $has_p;
-		?>
+		<?php $pview = zad_price_view( $post->ID ); $both = (bool) zad_parse_prices( $g( 'prices' ) ) && (bool) zad_parse_packages( $g( 'packages' ) ); ?>
 		<h4>الأسعار — ماذا يظهر في الصفحة؟</h4>
-		<p><label>قسم الأسعار المعروض <small>(يحدد جدول الأسعار والمقدّر في الهيرو والسكيما؛ قسم «باقات الأسعار» يظهر دائماً إن ملأته)</small>
-			<select name="zad[price_mode]">
-				<option value=""<?php selected( $pm, '' ); ?>>تلقائي (الجدول إن وُجد، وإلا الباقات)</option>
-				<option value="table"<?php selected( $pm, 'table' ); ?>>جدول الأسعار</option>
-				<option value="packages"<?php selected( $pm, 'packages' ); ?>>الباقات</option>
-			</select></label>
-			<?php if ( $pview ) : ?><span class="description"> المعروض حالياً: <b><?php echo 'table' === $pview ? 'جدول الأسعار' : 'الباقات'; ?></b></span><?php endif; ?></p>
+		<p class="description">إن كتبت سطراً واحداً على الأقل في «باقات الأسعار» يظهر قسم الباقات <b>بدل</b> جدول الأسعار؛ وإن لم تكتب باقات يظهر الجدول. جدول الأسعار يبقى مقروءاً دائماً لمقدّر السعر في الهيرو.
+			<?php if ( $pview ) : ?> المعروض حالياً: <b><?php echo 'table' === $pview ? 'جدول الأسعار' : 'الباقات'; ?></b><?php endif; ?></p>
 		<h4>كيف نحدد السعر (عوامل التسعير)</h4>
 		<?php zad_repeater_ui( $post->ID, 'factors', 't', 'd', 'العنوان', 'الوصف', 'إضافة عامل' ); ?>
 
 		<h4>قائمة الأسعار <small>(سطر لكل بند: الفئة | الخدمة | السعر | التفاصيل | الضمان — الفئة والتفاصيل والضمان اختيارية. يُستخدم أيضاً في مقدّر السعر الفوري)</small></h4>
-		<?php if ( $both && 'table' !== $pview ) : ?><p class="description" style="color:#b45309">⚠ مخفي — المعروض حالياً: الباقات</p><?php endif; ?>
+		<?php if ( $both && 'table' !== $pview ) : ?><p class="description" style="color:#b45309">⚠ هذا الجدول غير ظاهر في الصفحة لأن فيها باقات — لكنه ما زال يغذّي مقدّر السعر في الهيرو</p><?php endif; ?>
 		<p><textarea name="zad[prices]" rows="8" style="width:100%" placeholder="غرف خاصة | غرفة صغيرة | 400 ريال / شهرياً | مناسبة لشقة صغيرة | &#10;خدمات إضافية | النقل والتغليف | 300 - 650 ريال | تُدفع مرة واحدة"><?php echo esc_textarea( $g( 'prices' ) ); ?></textarea></p>
 
 		<h4>علامات الإصابة / المشكلة <small>(كيف تعرف أنك تحتاج الخدمة)</small></h4>

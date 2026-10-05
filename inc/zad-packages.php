@@ -116,7 +116,7 @@ function zad_pk_html( $id ) {
 	$city  = function_exists( 'zad_current_city' ) ? zad_current_city( $id )['name'] : '';
 	$svc   = function_exists( 'zad_svc_label' ) ? zad_svc_label( $id ) : get_the_title( $id );
 	$n     = count( $pks );
-	$o  = '<section class="sec pkgsec pkgsec--' . esc_attr( $style ) . '"><div class="wrap"><header class="sec__head"><span class="eyebrow">' . ( 'pest' === $style ? zad_icon( 'shield', 14 ) . ' ' : '' ) . esc_html( $eyebrows[ $style ] ) . '</span><h2>' . esc_html( zad_pk_title( $id ) ) . '</h2>' . ( '' !== $sub ? '<p>' . esc_html( $sub ) . '</p>' : '' ) . '</header>';
+	$o  = '<section class="sec pkgsec pkgsec--' . esc_attr( $style ) . '" id="prices"><div class="wrap"><header class="sec__head"><span class="eyebrow">' . ( 'pest' === $style ? zad_icon( 'shield', 14 ) . ' ' : '' ) . esc_html( $eyebrows[ $style ] ) . '</span><h2>' . esc_html( zad_pk_title( $id ) ) . '</h2>' . ( '' !== $sub ? '<p>' . esc_html( $sub ) . '</p>' : '' ) . '</header>';
 	$o .= '<div class="pkgx pkgx--n' . min( $n, 4 ) . '">';
 	foreach ( $pks as $p ) {
 		$hot = $p['featured'];

@@ -26,8 +26,8 @@ while ( have_posts() ) :
 	$safety   = $arr( 'safety' );
 	$wrows    = $arr( 'warrantyrows' );
 	$after    = zad_lines( $m( 'aftercare' ) );
-	$view     = zad_price_view( $id );                       // 'table' | 'packages' | '' — only ONE price block is ever rendered
-	$prices   = zad_price_rows( $id );                       // rows of the visible block (hero estimator, "من" price)
+	$view     = zad_price_view( $id );                       // 'packages' | 'table' | '' — only ONE price section is printed: packages replace the table
+	$prices   = zad_price_rows( $id );                       // _zad_prices rows (hero estimator, "من" price) — read even when the packages are what the page shows
 	$pkgs     = ( 'packages' === $view ) ? zad_parse_packages( $m( 'packages' ) ) : array();
 	$has_det  = (bool) array_filter( wp_list_pluck( $prices, 'details' ) );
 	$has_war  = (bool) array_filter( wp_list_pluck( $prices, 'warranty' ) );
@@ -283,7 +283,7 @@ while ( have_posts() ) :
 	</div></section>
 	<?php endif; ?>
 
-	<!-- 10b. Package cards (in addition to the table; in its place when there is no table) -->
+	<!-- 10b. Package cards: replace the price table (the table prints only when there are no packages) -->
 	<?php echo zad_pk_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
 	<!-- 11. Technical card (spec) -->

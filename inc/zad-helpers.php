@@ -353,47 +353,24 @@ function zad_parse_packages( $text ) {
 }
 
 /**
- * Which price block a service page shows: 'table' | 'packages' | '' (none). Never both.
- * _zad_price_mode: '' auto (table if filled, else packages) · 'table' · 'packages' (each falls back to the other when empty).
+ * Which price section a service page SHOWS: 'packages' | 'table' | '' (none). Never both.
+ * Packages (at least one line) replace the «قائمة الأسعار» table; with no packages the table stays as it was.
+ * This only decides what is printed: _zad_prices is still read (zad_price_rows) for the hero pricing widget and the schema.
  */
 function zad_price_view( $id ) {
-	$has_t = (bool) zad_parse_prices( get_post_meta( $id, '_zad_prices', true ) );
-	$has_p = (bool) zad_parse_packages( get_post_meta( $id, '_zad_packages', true ) );
-	$mode  = (string) get_post_meta( $id, '_zad_price_mode', true );
-	if ( 'packages' === $mode ) { return $has_p ? 'packages' : ( $has_t ? 'table' : '' ); }
-	return $has_t ? 'table' : ( $has_p ? 'packages' : '' );
+	if ( zad_parse_packages( get_post_meta( $id, '_zad_packages', true ) ) ) { return 'packages'; }
+	return zad_parse_prices( get_post_meta( $id, '_zad_prices', true ) ) ? 'table' : '';
 }
 
-/** Price rows of the VISIBLE block (hero estimator, schema, cards): same shape as zad_parse_prices(). */
+/** Price rows for the hero estimator / "من" price / schema: the _zad_prices table when it has rows (even if the page shows packages), else the packages. Same shape as zad_parse_prices(). */
 function zad_price_rows( $id ) {
-	$view = zad_price_view( $id );
-	if ( 'table' === $view ) { return zad_parse_prices( get_post_meta( $id, '_zad_prices', true ) ); }
-	if ( 'packages' !== $view ) { return array(); }
+	$t = zad_parse_prices( get_post_meta( $id, '_zad_prices', true ) );
+	if ( $t ) { return $t; }
 	$rows = array();
 	foreach ( zad_parse_packages( get_post_meta( $id, '_zad_packages', true ) ) as $pk ) {
 		$rows[] = array( 'group' => '', 'name' => $pk['name'], 'price' => $pk['price'], 'details' => implode( '؛ ', $pk['feat'] ), 'warranty' => '', 'num' => $pk['num'] );
 	}
 	return $rows;
-}
-
-/**
- * Price text → kind: 'fixed' «349» · 'range' «199 - 300» / «199–300» · 'from' «من 600» · 'quote' (no number: «بعد المعاينة», «حسب الفحص»…).
- * Same rules as zad_parse_packages(); Arabic-Indic digits accepted; never a zero price.
- */
-function zad_price_kind( $text ) {
-	$num = '[\d٠-٩][\d٠-٩,٬.]*';
-	$out = array( 'kind' => 'quote', 'min' => 0, 'max' => 0 );
-	$val = function ( $t ) { return (float) str_replace( ',', '', zad_digits_en( $t ) ); };
-	if ( preg_match( '/(' . $num . ')\s*[-–—]\s*(' . $num . ')/u', (string) $text, $m ) ) {
-		$a = $val( $m[1] ); $b = $val( $m[2] );
-		$out = array( 'kind' => 'range', 'min' => min( $a, $b ), 'max' => max( $a, $b ) );
-	} elseif ( preg_match( '/^\s*من\s+(' . $num . ')/u', (string) $text, $m ) ) {
-		$out = array( 'kind' => 'from', 'min' => $val( $m[1] ), 'max' => 0 );
-	} elseif ( preg_match( '/(' . $num . ')/u', (string) $text, $m ) ) {
-		$out = array( 'kind' => 'fixed', 'min' => $val( $m[1] ), 'max' => 0 );
-	}
-	if ( 'quote' !== $out['kind'] && $out['min'] <= 0 ) { $out = array( 'kind' => 'quote', 'min' => 0, 'max' => 0 ); }
-	return $out;
 }
 
 /** Lowest numeric price across rows (0 if none). */
