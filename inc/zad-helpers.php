@@ -120,17 +120,43 @@ function zad_icon_keys() {
 	return array_keys( zad_icons() );
 }
 
+/**
+ * Icons are printed as <use href="#zi-name"> and the used symbols are added ONCE before </body> by an output-buffer callback
+ * (so icons inside cached fragments, e.g. the mega menu, are covered too). Inline SVG everywhere else (admin, ajax, feeds, REST).
+ */
+function zad_sprite_on() { return ! empty( $GLOBALS['zad_sprite_buf'] ); }
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || wp_doing_ajax() || is_feed() || is_embed() || is_robots() || is_trackback() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ! zad_opt( 'zad_icon_sprite', true ) ) { return; }
+	$GLOBALS['zad_sprite_buf'] = true;
+	ob_start( 'zad_sprite_buffer' );
+}, 0 );
+
+function zad_sprite_buffer( $html ) {
+	if ( false === strpos( $html, 'href="#zi-' ) ) { return $html; }
+	$icons = zad_icons();
+	$pos   = strripos( $html, '</body>' );
+	if ( false === $pos ) { // not a full page: put the icons back inline
+		return preg_replace_callback( '#<use href="\#zi-([a-z0-9_-]+)"/>#i', function ( $m ) use ( $icons ) { return $icons[ $m[1] ] ?? ''; }, $html );
+	}
+	preg_match_all( '/href="#zi-([a-z0-9_-]+)"/i', $html, $m );
+	$sprite = '<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">';
+	foreach ( array_unique( $m[1] ) as $n ) { if ( isset( $icons[ $n ] ) ) { $sprite .= '<symbol id="zi-' . $n . '" viewBox="0 0 24 24">' . $icons[ $n ] . '</symbol>'; } }
+	return substr_replace( $html, $sprite . '</svg>' . "\n", $pos, 0 );
+}
+
 function zad_icon( $name, $size = 24, $class = '' ) {
 	$icons = zad_icons();
 	if ( ! isset( $icons[ $name ] ) ) {
 		$name = 'check';
 	}
+	$inner = zad_sprite_on() ? '<use href="#zi-' . $name . '"/>' : $icons[ $name ]; // static, trusted markup.
 	return sprintf(
 		'<svg class="zi %s" width="%d" height="%d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">%s</svg>',
 		esc_attr( $class ),
 		(int) $size,
 		(int) $size,
-		$icons[ $name ] // static, trusted markup.
+		$inner
 	);
 }
 

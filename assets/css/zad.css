@@ -1222,3 +1222,26 @@ button,input,select,textarea,optgroup{font-family:inherit}
 button.iconbtn{border:0;padding:0;cursor:pointer;font:inherit}button.more{background:none;border:0;padding:0;font:inherit;font-weight:800;cursor:pointer;color:var(--primary);text-align:start}
 picture{display:contents}
 .eeat{margin:0 0 10px;font-size:.92rem;font-weight:700;opacity:.9}.eeat a{color:inherit}
+
+/* ---- Core block rules (WordPress block CSS is not loaded on the front end; see inc/zad-corecss.php) ---- */
+.wp-block-image,.wp-block-embed,.wp-block-video,.wp-block-gallery,.wp-block-table,.wp-block-quote,.wp-block-pullquote,.wp-block-separator,.wp-block-buttons,.wp-block-columns{margin:1.4em 0}
+.wp-block-image img,.wp-block-video video{max-width:100%;height:auto}
+.wp-block-image figure,.wp-block-image{max-width:100%}
+.wp-block-image .aligncenter,.wp-block-image.aligncenter,.aligncenter{display:block;margin-inline:auto;text-align:center}
+.alignleft,.wp-block-image .alignleft{float:left;margin:.3em 1.2em 1em 0}.alignright,.wp-block-image .alignright{float:right;margin:.3em 0 1em 1.2em}
+.wp-block-image.is-style-rounded img,.wp-block-image .is-style-rounded img{border-radius:9999px}
+.wp-block-image :where(figcaption),.wp-element-caption{font-size:.88rem;color:var(--muted);text-align:center;margin-top:.5em}
+.has-text-align-center{text-align:center}.has-text-align-left{text-align:left}.has-text-align-right{text-align:right}
+.wp-block-gallery{display:flex;flex-wrap:wrap;gap:12px;list-style:none;padding:0}.wp-block-gallery>*{flex:1 1 calc(33.3% - 12px);margin:0}.wp-block-gallery.columns-2>*{flex-basis:calc(50% - 12px)}.wp-block-gallery.columns-4>*{flex-basis:calc(25% - 12px)}.wp-block-gallery img{width:100%;height:100%;object-fit:cover}
+.wp-block-table{overflow-x:auto}.wp-block-table table{border-collapse:collapse;width:100%}.wp-block-table td,.wp-block-table th{border:1px solid var(--line);padding:.55em .8em}.wp-block-table thead th{background:var(--tint)}.wp-block-table.is-style-stripes tbody tr:nth-child(odd){background:var(--tint)}
+.wp-block-quote{border-inline-start:4px solid var(--accent);padding-inline-start:1em}.wp-block-pullquote{text-align:center;border-block:3px solid var(--line);padding:1em 0}
+.wp-block-separator{border:0;border-top:2px solid var(--line)}
+.wp-block-columns{display:flex;flex-wrap:wrap;gap:24px}.wp-block-column{flex:1 1 0;min-width:min(100%,220px)}
+.wp-block-buttons{display:flex;flex-wrap:wrap;gap:10px}.wp-block-button__link{display:inline-block;padding:.7em 1.3em;border-radius:var(--r);background:var(--primary);color:#fff;text-decoration:none;font-weight:800}
+.wp-block-spacer{clear:both}.wp-block-code,.wp-block-preformatted{white-space:pre-wrap;overflow-x:auto}
+.wp-block-embed iframe,.wp-has-aspect-ratio iframe{max-width:100%}.wp-embed-responsive .wp-has-aspect-ratio{position:relative}
+.screen-reader-text{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.has-small-font-size{font-size:13px}.has-medium-font-size{font-size:20px}.has-large-font-size{font-size:36px}.has-x-large-font-size{font-size:42px}
+.has-black-color{color:#000}.has-white-color{color:#fff}.has-cyan-bluish-gray-color{color:#abb8c3}.has-pale-pink-color{color:#f78da7}.has-vivid-red-color{color:#cf2e2e}.has-luminous-vivid-orange-color{color:#ff6900}.has-luminous-vivid-amber-color{color:#fcb900}.has-light-green-cyan-color{color:#7bdcb5}.has-vivid-green-cyan-color{color:#00d084}.has-pale-cyan-blue-color{color:#8ed1fc}.has-vivid-cyan-blue-color{color:#0693e3}.has-vivid-purple-color{color:#9b51e0}
+.has-black-background-color{background-color:#000}.has-white-background-color{background-color:#fff}.has-cyan-bluish-gray-background-color{background-color:#abb8c3}.has-pale-pink-background-color{background-color:#f78da7}.has-vivid-red-background-color{background-color:#cf2e2e}.has-luminous-vivid-orange-background-color{background-color:#ff6900}.has-luminous-vivid-amber-background-color{background-color:#fcb900}.has-light-green-cyan-background-color{background-color:#7bdcb5}.has-vivid-green-cyan-background-color{background-color:#00d084}.has-pale-cyan-blue-background-color{background-color:#8ed1fc}.has-vivid-cyan-blue-background-color{background-color:#0693e3}.has-vivid-purple-background-color{background-color:#9b51e0}
+p.has-background{padding:1.25em 2em}
