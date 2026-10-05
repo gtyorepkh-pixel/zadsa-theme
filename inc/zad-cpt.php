@@ -263,6 +263,7 @@ function zad_service_metabox( $post ) {
 		<h4>خدمات ومقالات ذات صلة <small>(فارغ = لا يظهر القسم؛ اختر 3–6 صفحات وثيقة الصلة)</small></h4>
 		<?php zad_related_picker( $post->ID, $related ); ?>
 		<?php zad_guides_box( $post->ID ); ?>
+		<?php zad_sbar_box( $post->ID ); ?>
 		<?php zad_coverage_box( $post->ID ); ?>
 		<?php zad_quick_box( $post->ID ); ?>
 	</div>
@@ -349,6 +350,7 @@ add_action( 'save_post', function ( $post_id ) {
 	update_post_meta( $post_id, '_zad_ba', isset( $in['ba'] ) ? implode( ',', array_filter( array_map( 'absint', explode( ',', $in['ba'] ) ) ) ) : '' );
 	zad_related_save( $post_id, $in );
 	zad_guides_save( $post_id, $in );
+	zad_sbar_save( $post_id, $in );
 	zad_coverage_save( $post_id, $in );
 	zad_steps_save( $post_id, $in );
 	zad_quick_save( $post_id, $in );

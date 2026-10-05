@@ -45,6 +45,48 @@ add_filter( 'excerpt_more', function () { return '…'; } );
 
 function zad_sbar_enabled() { return (bool) zad_opt( 'zad_sbar_on', true ); }
 
+/**
+ * Manual sidebar links (service editor): one per line  «العنوان | الرابط»  — the title is optional for pages of this site
+ * (رقم الصفحة أو رابطها). A line starting with «-» is a child of the previous line (one level).
+ * Returns the item list: array( id, url, title, 'ch' => children ).
+ */
+function zad_sbar_parse( $text ) {
+	$out = array(); $last = -1; $n = 0;
+	foreach ( preg_split( '/\r\n|\r|\n/', (string) $text ) as $line ) {
+		$line = trim( $line );
+		if ( '' === $line || ++$n > 40 ) { continue; }
+		$child = (bool) preg_match( '/^-+\s*/', $line );
+		$line  = trim( preg_replace( '/^-+\s*/', '', $line ) );
+		$parts = array_map( 'trim', explode( '|', $line, 2 ) );
+		$title = count( $parts ) > 1 ? $parts[0] : '';
+		$link  = count( $parts ) > 1 ? $parts[1] : $parts[0];
+		$id    = 0; $url = '';
+		if ( ctype_digit( $link ) ) { $p = get_post( (int) $link ); if ( $p && 'publish' === $p->post_status ) { $id = (int) $p->ID; $url = get_permalink( $p ); } }
+		else {
+			$url = ( '/' === ( $link[0] ?? '' ) && 0 !== strpos( $link, '//' ) ) ? home_url( $link ) : ( preg_match( '#^https?://#i', $link ) ? $link : '' );
+			if ( $url ) { $id = (int) url_to_postid( $url ); }
+		}
+		if ( '' === $url ) { continue; }
+		if ( '' === $title ) { if ( ! $id ) { continue; } $title = zad_card_title( $id ); }
+		$item = array( $id, $url, $title, 'ch' => array() );
+		if ( $child && $last >= 0 ) { $out[ $last ]['ch'][] = $item; } else { $out[] = $item; $last = count( $out ) - 1; }
+	}
+	return $out;
+}
+
+/** Editor box: the sidebar list of this page. */
+function zad_sbar_box( $post_id ) {
+	echo '<h4>روابط القائمة الجانبية <small>(اختياري؛ إن ملأتها تُعرض هي فقط بدل الاختيار التلقائي)</small></h4><input type="hidden" name="zad[sbar_present]" value="1">';
+	echo '<p><label>عنوان القائمة<input type="text" name="zad[sbar_title]" value="' . esc_attr( (string) get_post_meta( $post_id, '_zad_sbar_title', true ) ) . '" placeholder="في هذا القسم"></label></p>';
+	echo '<p><label>الروابط — سطر لكل رابط: العنوان | الرابط (أو رقم الصفحة). ابدأ السطر بـ - ليكون رابطاً فرعياً (ابن) تحت السطر الذي قبله.<textarea name="zad[sbar_links]" rows="7" style="width:100%" placeholder="مكافحة حشرات بالرياض | /pest-control/riyadh/&#10;- مكافحة الصراصير | /pest-control/riyadh/cockroach-control/&#10;- مكافحة النمل | 25797&#10;تنظيف الخزانات | /cleaning/tanks/">' . esc_textarea( (string) get_post_meta( $post_id, '_zad_sbar_links', true ) ) . '</textarea></label></p>';
+	echo '<p class="description">العنوان اختياري للصفحات الداخلية (يؤخذ عنوان مسار التنقل في Yoast أو عنوان الصفحة بلا أرقام الجوال). فارغ = القائمة تلقائية.</p>';
+}
+function zad_sbar_save( $post_id, $in ) {
+	if ( empty( $in['sbar_present'] ) ) { return; }
+	update_post_meta( $post_id, '_zad_sbar_title', sanitize_text_field( $in['sbar_title'] ?? '' ) );
+	update_post_meta( $post_id, '_zad_sbar_links', sanitize_textarea_field( $in['sbar_links'] ?? '' ) );
+}
+
 /** [ id, url, display title ] for the sidebar. */
 function zad_sbar_item( $p ) { return array( (int) $p->ID, get_permalink( $p ), zad_card_title( $p->ID ) ); }
 
@@ -62,6 +104,12 @@ function zad_services_sidebar_data( $current_id = 0 ) {
 	$data = get_transient( $key );
 	if ( is_array( $data ) ) { return $data; }
 	$data = array();
+	$man  = zad_sbar_parse( get_post_meta( $current_id, '_zad_sbar_links', true ) ); // 0. hand-picked links win
+	if ( $man ) {
+		$data[] = array( 'name' => trim( (string) get_post_meta( $current_id, '_zad_sbar_title', true ) ) ?: 'في هذا القسم', 'open' => true, 'items' => $man );
+		set_transient( $key, $data, 12 * HOUR_IN_SECONDS );
+		return $data;
+	}
 	$cur  = get_post( $current_id );
 	$pt   = $cur ? $cur->post_type : '';
 	$ord  = array( 'menu_order' => 'ASC', 'title' => 'ASC' );
@@ -118,7 +166,10 @@ function zad_services_sidebar( $current_id = 0 ) {
 		$open = ! empty( $g['open'] );
 		echo '<details class="sbar__grp"' . ( $open ? ' open' : '' ) . '><summary><span>' . esc_html( $g['name'] ) . '</span></summary><ul>'; // phpcs:ignore
 		foreach ( $g['items'] as $it ) {
-			echo '<li><a href="' . esc_url( $it[1] ) . '"' . ( (int) $it[0] === (int) $current_id ? ' class="is-on" aria-current="page"' : '' ) . '>' . esc_html( $it[2] ) . '</a></li>';
+			$li = function ( $x ) use ( $current_id ) { return '<a href="' . esc_url( $x[1] ) . '"' . ( $x[0] && (int) $x[0] === (int) $current_id ? ' class="is-on" aria-current="page"' : '' ) . '>' . esc_html( $x[2] ) . '</a>'; };
+			echo '<li>' . $li( $it ); // phpcs:ignore
+			if ( ! empty( $it['ch'] ) ) { echo '<ul>'; foreach ( $it['ch'] as $ch ) { echo '<li>' . $li( $ch ) . '</li>'; } echo '</ul>'; } // phpcs:ignore
+			echo '</li>';
 		}
 		echo '</ul></details>';
 	}
