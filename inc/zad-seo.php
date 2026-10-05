@@ -184,7 +184,7 @@ add_action( 'wp_head', function () {
 	$lat = zad_opt( 'zad_lat' );
 	$lng = zad_opt( 'zad_lng' );
 	if ( $lat && $lng ) {
-		echo '<meta name="geo.region" content="SA"><meta name="geo.placename" content="' . esc_attr( zad_opt( 'zad_city_name', 'الرياض' ) ) . '">' . "\n";
+		echo '<meta name="geo.region" content="SA"><meta name="geo.placename" content="' . esc_attr( ( is_singular() && function_exists( 'zad_is_service' ) && zad_is_service() ) ? zad_current_city( get_queried_object_id() )['name'] : zad_opt( 'zad_city_name', 'الرياض' ) ) . '">' . "\n";
 		echo '<meta name="geo.position" content="' . esc_attr( $lat . ';' . $lng ) . '"><meta name="ICBM" content="' . esc_attr( $lat . ', ' . $lng ) . '">' . "\n";
 	}
 }, 4 );

@@ -442,8 +442,8 @@ function zad_query_pt() {
 }
 
 /** Floating info cards around the service hero card: "title | sub | icon" lines (option zad_float_cards). */
-function zad_float_cards() {
-	$city  = zad_opt( 'zad_city_name', 'الرياض' );
+function zad_float_cards( $post_id = 0 ) {
+	$city  = ( $post_id && function_exists( 'zad_current_city' ) ) ? zad_current_city( $post_id )['name'] : zad_opt( 'zad_city_name', 'الرياض' );
 	$since = (int) zad_opt( 'zad_since', 0 );
 	$years = ( $since > 1980 && $since <= (int) gmdate( 'Y' ) ) ? (int) gmdate( 'Y' ) - $since : 0;
 	$def   = "معاينة مجانية | قبل أي عمل | bolt\nتغطية | أحياء {city} | pin\n{years}+ سنة | خبرة موثوقة | star";

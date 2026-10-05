@@ -117,7 +117,7 @@ function zad_ticket_html( $id, $src = 'hero_ticket' ) {
 	$title = get_the_title( $id );
 	$days  = zad_ticket_days();
 	$first = $real[0];
-	$city  = trim( (string) zad_opt( 'zad_city_name', '' ) );
+	$city  = zad_current_city( $id )['name']; // the page's own city (meta → parent city page → URL → site default)
 	$q     = trim( (string) zad_opt( 'zad_ticket_title', '' ) ) ?: 'وش المشكلة عندك؟';
 	$msg   = zad_ticket_message( $first['svc'], $title, $days[0] );
 	$href  = $wa ? 'https://wa.me/' . $wa . '?text=' . rawurlencode( $msg ) : '#';

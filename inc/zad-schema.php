@@ -315,6 +315,10 @@ function zad_service_schema( $id ) {
 			$areas[] = array( '@type' => 0 === (int) $t->parent ? 'City' : 'Place', 'name' => $t->name );
 		}
 	}
+	if ( ! $areas && function_exists( 'zad_current_city' ) ) { // page without service_area terms: its own city (never the default)
+		$cc = zad_current_city( $id );
+		if ( 'default' !== $cc['source'] ) { $areas[] = array( '@type' => 'City', 'name' => $cc['name'] ); }
+	}
 	$desc = get_post_meta( $id, '_zad_tagline', true );
 	$ex   = get_the_excerpt( $id );
 	$desc = trim( wp_strip_all_tags( $ex ?: $desc ) );

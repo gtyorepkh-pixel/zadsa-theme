@@ -131,7 +131,7 @@ while ( have_posts() ) :
 					<?php else : ?>
 						<?php echo zad_quote_form( array( 'service_id' => $id, 'id' => 'hq', 'title' => 'اطلب ' . $title, 'compact' => true ) ); // phpcs:ignore ?>
 					<?php endif; ?>
-					<?php $fc = ( 'ticket' === $hc ) ? array() : zad_float_cards(); if ( $fc ) : ?>
+					<?php $fc = ( 'ticket' === $hc ) ? array() : zad_float_cards( $id ); if ( $fc ) : ?>
 					<ul class="fcards" aria-label="مزايا الخدمة"><?php foreach ( $fc as $n => $c ) : ?>
 						<li class="fcard fcard--<?php echo (int) ( $n + 1 ); ?>"><span class="fcard__ic"><?php echo zad_icon( $c[2], 24 ); // phpcs:ignore ?></span><span class="fcard__tx"><b><?php echo esc_html( $c[0] ); ?></b><small><?php echo esc_html( $c[1] ); ?></small></span></li>
 					<?php endforeach; ?></ul>

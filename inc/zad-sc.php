@@ -344,6 +344,10 @@ add_filter( 'zsc_page_data', function ( $d, $post ) {
 		$p = (int) get_post_meta( $id, '_zad_price', true );
 		if ( $p ) { $d['price_from'] = (float) $p; }
 	}
+	if ( ! $d['city'] && function_exists( 'zad_current_city' ) && in_array( $post->post_type, zad_service_types(), true ) ) {
+		$cc = zad_current_city( $id );
+		if ( 'default' !== $cc['source'] ) { $d['city'] = $cc['name']; } // never stamp the site default on a page
+	}
 	if ( ! $d['places'] || ! $d['city'] ) {
 		$terms = get_the_terms( $id, 'service_area' );
 		if ( $terms && ! is_wp_error( $terms ) ) {
