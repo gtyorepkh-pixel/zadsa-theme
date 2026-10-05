@@ -461,7 +461,7 @@ while ( have_posts() ) :
 	if ( $rel->have_posts() ) : ?>
 	<section class="sec sec--mint"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">قد يهمك أيضاً</span><h2>خدمات ومقالات ذات صلة</h2></header>
-		<div class="sgrid"><?php while ( $rel->have_posts() ) { $rel->the_post(); get_template_part( 'template-parts/' . ( in_array( get_post_type(), zad_service_types(), true ) ? 'service-card' : 'post-card' ) ); } wp_reset_postdata(); ?></div>
+		<div class="sgrid"><?php while ( $rel->have_posts() ) { $rel->the_post(); get_template_part( 'template-parts/' . ( in_array( get_post_type(), zad_service_types(), true ) ? 'service-card' : 'post-card' ), null, array( 'lite' => true ) ); } wp_reset_postdata(); ?></div>
 	</div></section>
 	<?php endif; ?>
 

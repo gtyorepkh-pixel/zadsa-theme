@@ -81,7 +81,7 @@
 
 	/* ---------- self-check wizard ---------- */
 	$$('[data-ixw]').forEach(function (box) {
-		var qs = $$('.ixw__q', box), res = $('[data-ixw-res]', box), form = $('.ixw__form', box),
+		var qs = $$('.ixw__q', box), res = null, form = $('.ixw__form', box),
 			prev = $('[data-ixw-prev]', box), next = $('[data-ixw-next]', box), step = 0, tiers = [];
 		/* Tiers come from the server-rendered HTML (title / text / plan), not from JSON. */
 		$$('[data-ixw-tiers] .ixw__tier', box).forEach(function (el) {
@@ -105,7 +105,22 @@
 			tiers.forEach(function (t) { if (score >= t.min) { tier = t; } });
 			return { score: score, tier: tier, rows: rows };
 		}
+		function buildRes() { /* the result block + buttons are printed inside a <template>: created on the first result */
+			if (res) { return; }
+			var tpl = $('[data-ixw-res-tpl]', box); if (!tpl) { return; }
+			box.appendChild(tpl.content.cloneNode(true)); res = $('[data-ixw-res]', box);
+			$('[data-ixw-reset]', box).addEventListener('click', function () {
+				$$('input', form).forEach(function (i) { i.checked = false; });
+				step = 0; res.hidden = true; form.hidden = false; render();
+			});
+			$('[data-ixw-book]', box).addEventListener('click', function () {
+				var open = $('[data-open-wizard]');
+				if (window.zadOpenWizard) { window.zadOpenWizard(box._note || ''); } else { var ta = $('#zad-wizard textarea[name="message"]'); if (ta && box._note) { ta.value = box._note; } if (open) { open.click(); } }
+				track('ix_wizard_book');
+			});
+		}
 		function finish() {
+			buildRes(); if (!res) { return; }
 			var s = summary();
 			$('[data-res-title]', box).textContent = s.tier.title;
 			$('[data-res-text]', box).textContent = s.tier.text;
@@ -127,16 +142,6 @@
 			if (step < qs.length - 1) { step++; render(); track('ix_wizard_step', { step: step }); } else { finish(); }
 		});
 		prev.addEventListener('click', function () { if (step > 0) { step--; render(); } });
-		$('[data-ixw-reset]', box).addEventListener('click', function () {
-			$$('input', form).forEach(function (i) { i.checked = false; });
-			step = 0; res.hidden = true; form.hidden = false; render();
-		});
-		var book = $('[data-ixw-book]', box);
-		book.addEventListener('click', function () {
-			var open = $('[data-open-wizard]');
-			if (window.zadOpenWizard) { window.zadOpenWizard(box._note || ''); } else { var ta = $('#zad-wizard textarea[name="message"]'); if (ta && box._note) { ta.value = box._note; } if (open) { open.click(); } }
-			track('ix_wizard_book');
-		});
 		$$('.ixw__opt input', box).forEach(function (i) { i.addEventListener('change', function () { var q = i.closest('.ixw__q'); q.classList.remove('is-err'); if (q.getAttribute('data-type') === 'single' && step < qs.length - 1) { setTimeout(function () { if (answered(q) && qs[step] === q) { next.click(); } }, 250); } }); });
 		render();
 	});

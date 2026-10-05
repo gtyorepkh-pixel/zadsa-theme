@@ -28,6 +28,19 @@
 	$$('.submenu-toggle').forEach(function (b) {
 		b.addEventListener('click', function () {
 			var sub = b.parentNode.querySelector('.sub-menu');
+			var mega = !sub && b.parentNode.querySelector('.mega');
+			if (mega) { /* mobile list of the mega item: built from the desktop mega menu on the first tap */
+				sub = document.createElement('ul'); sub.className = 'sub-menu';
+				$$('.mega__col', mega).forEach(function (col) {
+					var li = document.createElement('li'), cat = $('.mega__cat', col), ul = document.createElement('ul');
+					if (cat) { var ca = document.createElement('a'); ca.href = cat.href; ca.textContent = cat.textContent.trim(); li.appendChild(ca); }
+					$$('.mega__list a', col).forEach(function (x) { var l = document.createElement('li'), a = document.createElement('a'); a.href = x.href; a.textContent = x.textContent; l.appendChild(a); ul.appendChild(l); });
+					li.appendChild(ul); sub.appendChild(li);
+				});
+				var all = $('.mega__all', mega);
+				if (all) { var al = document.createElement('li'), aa = document.createElement('a'); aa.href = all.href; aa.textContent = all.textContent.trim(); al.appendChild(aa); sub.appendChild(al); }
+				b.parentNode.appendChild(sub);
+			}
 			if (!sub) return;
 			var on = sub.classList.toggle('active');
 			b.setAttribute('aria-expanded', on ? 'true' : 'false');

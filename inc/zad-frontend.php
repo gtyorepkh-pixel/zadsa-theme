@@ -184,7 +184,7 @@ function zad_services_sidebar( $current_id = 0 ) {
 /** Mega menu: categories with their services. */
 /** Drop cached menus/lists when content or terms change. */
 function zad_flush_nav_cache() {
-	delete_transient( 'zad_mega_html' );
+	delete_transient( 'zad_mega_html2' );
 	update_option( 'zad_nav_ver', time(), false ); // invalidates the per-page sidebar caches
 	delete_transient( 'zad_wiz_map' );
 }
@@ -195,12 +195,12 @@ add_action( 'edited_term', 'zad_flush_nav_cache' );
 add_action( 'delete_term', 'zad_flush_nav_cache' );
 
 function zad_mega_html() {
-	$cached = get_transient( 'zad_mega_html' );
+	$cached = get_transient( 'zad_mega_html2' );
 	if ( is_string( $cached ) ) {
 		return $cached;
 	}
 	$html = zad_mega_html_build();
-	set_transient( 'zad_mega_html', $html, 12 * HOUR_IN_SECONDS );
+	set_transient( 'zad_mega_html2', $html, 12 * HOUR_IN_SECONDS );
 	return $html;
 }
 
@@ -214,12 +214,12 @@ function zad_mega_html_build() {
 		$q = new WP_Query( array( 'post_type' => zad_service_types(), 'posts_per_page' => 8, 'no_found_rows' => true, 'tax_query' => array( array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) ), 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
 		if ( ! $q->have_posts() ) { continue; }
 		$ic   = get_term_meta( $c->term_id, 'zad_icon', true ) ?: 'sparkle';
-		$out .= '<div class="mega__col"><a class="mega__cat" href="' . esc_url( get_term_link( $c ) ) . '">' . zad_icon( $ic, 20 ) . esc_html( $c->name ) . '</a><ul>';
+		$out .= '<div class="mega__col"><a class="mega__cat" href="' . esc_url( get_term_link( $c ) ) . '">' . zad_icon( $ic, 20 ) . esc_html( $c->name ) . '</a><div class="mega__list">';
 		while ( $q->have_posts() ) {
 			$q->the_post();
-			$out .= '<li><a href="' . esc_url( get_permalink() ) . '">' . esc_html( get_the_title() ) . '</a></li>';
+			$out .= '<a href="' . esc_url( get_permalink() ) . '">' . esc_html( zad_card_title( get_the_ID() ) ) . '</a>';
 		}
-		$out .= '</ul></div>';
+		$out .= '</div></div>';
 		wp_reset_postdata();
 	}
 	$out .= '</div><a class="mega__all" href="' . esc_url( zad_services_url() ) . '">كل الخدمات ' . zad_icon( 'arrow', 16 ) . '</a></div>';
@@ -474,3 +474,24 @@ foreach ( array( 'comments_open', 'pings_open' ) as $zad_h ) {
 		return ( ! zad_comments_enabled() && in_array( get_post_type( $post_id ), zad_comment_types(), true ) ) ? false : $open;
 	}, 20, 2 );
 }
+
+
+/** The "services" item of the main menu (the one that carries the mega menu). */
+function zad_is_mega_item( $item ) {
+	return 0 === (int) $item->menu_item_parent && ! empty( $item->url ) && function_exists( 'zad_mega_html' ) && ( untrailingslashit( $item->url ) === untrailingslashit( (string) zad_services_url() ) || in_array( 'zad-mega', (array) $item->classes, true ) );
+}
+
+/** The mega item's own sub-menu would be a second copy of the same links (hidden on desktop): drop it; JS builds the mobile list from the mega menu on first tap. */
+add_filter( 'wp_nav_menu_objects', function ( $items, $args ) {
+	if ( empty( $args->theme_location ) || 'mainmenu' !== $args->theme_location ) { return $items; }
+	$drop = array();
+	foreach ( $items as $it ) { if ( zad_is_mega_item( $it ) ) { $drop[ (int) $it->ID ] = true; } }
+	if ( ! $drop ) { return $items; }
+	do {
+		$n = count( $drop );
+		foreach ( $items as $it ) { if ( isset( $drop[ (int) $it->menu_item_parent ] ) ) { $drop[ (int) $it->ID ] = true; } }
+	} while ( count( $drop ) > $n );
+	$keep_roots = array();
+	foreach ( $items as $it ) { if ( zad_is_mega_item( $it ) ) { $keep_roots[ (int) $it->ID ] = true; } }
+	return array_values( array_filter( $items, function ( $it ) use ( $drop, $keep_roots ) { return ! isset( $drop[ (int) $it->ID ] ) || isset( $keep_roots[ (int) $it->ID ] ); } ) );
+}, 10, 2 );

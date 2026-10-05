@@ -264,10 +264,10 @@ function zad_ix_module_html( $k, $ix, $post_id ) {
 				}
 				$o .= '</div>';
 			}
-			$o .= '<div class="ixw__res ix-printable" data-ixw-res hidden aria-live="polite"><span class="ixw__badge" data-res-title></span><p data-res-text></p><h3>الخطة المبدئية</h3><ol data-res-plan></ol><h3>إجاباتك</h3><ul class="ixw__ans" data-res-ans></ul><p class="ixw__disc">خطة مبدئية حسب إجاباتك وليست عرض سعر. يحدد الفني الخطة النهائية والسعر بعد المعاينة.</p>';
+			$o .= '<template data-ixw-res-tpl><div class="ixw__res ix-printable" data-ixw-res hidden aria-live="polite"><span class="ixw__badge" data-res-title></span><p data-res-text></p><h3>الخطة المبدئية</h3><ol data-res-plan></ol><h3>إجاباتك</h3><ul class="ixw__ans" data-res-ans></ul><p class="ixw__disc">خطة مبدئية حسب إجاباتك وليست عرض سعر. يحدد الفني الخطة النهائية والسعر بعد المعاينة.</p>';
 			$o .= '<div class="ixw__cta"><button type="button" class="btn btn--accent" data-ixw-book>' . zad_icon( 'bolt', 20 ) . ' احجز معاينة بهذه الخطة</button>';
 			if ( $wa ) { $o .= '<a class="btn btn--wa" data-ixw-wa target="_blank" rel="noopener" href="' . esc_url( 'https://wa.me/' . $wa ) . '">' . zad_icon( 'whatsapp', 20 ) . ' أرسلها واتساب</a>'; }
-			$o .= '<button type="button" class="btn btn--ghost" data-ix-print>اطبع أو احفظ PDF</button><button type="button" class="btn btn--ghost" data-ixw-reset>إعادة الفحص</button></div></div></div>';
+			$o .= '<button type="button" class="btn btn--ghost" data-ix-print>اطبع أو احفظ PDF</button><button type="button" class="btn btn--ghost" data-ixw-reset>إعادة الفحص</button></div></div></template></div>'; // the result block lives in a <template>: built by the JS on the first result
 			break;
 
 		case 'report':

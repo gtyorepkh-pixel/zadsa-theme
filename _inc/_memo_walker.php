@@ -8,7 +8,8 @@ class memo_walker extends Walker_Nav_Menu {
 
 
 		$class_names = ( ! empty( $item->current ) || ! empty( $item->current_item_ancestor ) ) ? 'current ' : '';
-		$class_names .= @$args->walker->has_children  ? 'has-children ' : '' ;
+		$mega_item = ! empty( $args->theme_location ) && 'mainmenu' === $args->theme_location && function_exists( 'zad_is_mega_item' ) && zad_is_mega_item( $item );
+		$class_names .= ( @$args->walker->has_children || $mega_item ) ? 'has-children ' : '' ;
 		$is_mega = ( 0 === $depth && ! empty( $args->theme_location ) && 'mainmenu' === $args->theme_location && function_exists( 'zad_mega_html' ) && ! empty( $item->url ) && ( untrailingslashit( $item->url ) === untrailingslashit( (string) zad_services_url() ) || in_array( 'zad-mega', (array) $item->classes, true ) ) );
 		if ( $is_mega ) { $class_names .= 'has-mega '; }
 		$class_names  = trim( $class_names );
@@ -21,7 +22,7 @@ class memo_walker extends Walker_Nav_Menu {
 		$attributes .=  ! empty( $item->attr_title ) ?  ' title="'.esc_attr( $item->attr_title ).'"' : '';
 		$attributes  = trim( $attributes );
 		$title = apply_filters( 'the_title', $item->title, $item->ID );
-		$arrow = ( @$args->walker->has_children && $args->theme_location == 'mainmenu' ? '<button type="button" class="submenu-toggle" aria-expanded="false">' . zad_icon( 'chevron', 18 ) . '<span class="sr">توسيع القائمة الفرعية</span></button>' : '' ) ;
+		$arrow = ( ( @$args->walker->has_children || $mega_item ) && $args->theme_location == 'mainmenu' ? '<button type="button" class="submenu-toggle" aria-expanded="false">' . zad_icon( 'chevron', 18 ) . '<span class="sr">توسيع القائمة الفرعية</span></button>' : '' ) ;
 		@$item_output = "$args->before<a $attributes>$args->link_before$title</a>"."$arrow$args->link_after$args->after";
 
 		$output .= apply_filters(
