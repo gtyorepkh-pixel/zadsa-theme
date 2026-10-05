@@ -124,10 +124,10 @@ function zad_cov_keys() { return array( 'eyebrow', 'title', 'sub', 'box', 'text'
 function zad_cov_chips( $text ) {
 	$chips = array();
 	foreach ( preg_split( '/\r\n|\r|\n/', (string) $text ) as $l ) {
-		$c = array_pad( array_map( 'trim', explode( '|', $l ) ), 2, '' );
+		$c = array_pad( array_map( 'trim', explode( '|', $l ) ), 3, '' );
 		if ( '' === $c[0] ) { continue; }
 		$u = $c[1]; if ( '' !== $u && '/' === $u[0] && 0 !== strpos( $u, '//' ) ) { $u = home_url( $u ); }
-		$chips[] = array( $c[0], preg_match( '#^https?://#', $u ) ? $u : '' );
+		$chips[] = array( $c[0], preg_match( '#^https?://#', $u ) ? $u : '', $c[2] ); // [name, url, group (optional 3rd column)]
 	}
 	return $chips;
 }
@@ -138,9 +138,38 @@ function zad_cov_area_chips( $post_id ) {
 	$areas = $post_id ? get_the_terms( $post_id, 'service_area' ) : false;
 	if ( ! $areas || is_wp_error( $areas ) ) { return $out; }
 	foreach ( $areas as $t ) {
-		$out[] = array( $t->name, zad_area_link( $post_id, $t ) );
+		$par   = $t->parent ? get_term( (int) $t->parent, $t->taxonomy ) : null;
+		$out[] = array( $t->name, zad_area_link( $post_id, $t ), ( $par && ! is_wp_error( $par ) ) ? $par->name : '' ); // group = the city of a district
 	}
 	return $out;
+}
+
+/**
+ * «وكل الأحياء الأخرى»: a button (<details>, no link, no arrow) that opens up to 4 boxes holding the districts NOT already shown
+ * (names de-duplicated). Boxes follow the 3rd column of the chip lines (or the parent city of an area term); without groups the rest is split into 4.
+ * Links stay in the HTML (crawlable); text-only names add no elements.
+ */
+function zad_cov_more_html( $chips, $shown_n = 12 ) {
+	$seen = array();
+	foreach ( array_slice( $chips, 0, $shown_n ) as $c ) { $seen[ mb_strtolower( trim( $c[0] ) ) ] = 1; }
+	$rest = array();
+	foreach ( array_slice( $chips, $shown_n ) as $c ) {
+		$k = mb_strtolower( trim( $c[0] ) );
+		if ( '' === $k || isset( $seen[ $k ] ) ) { continue; }
+		$seen[ $k ] = 1; $rest[] = $c;
+	}
+	if ( ! $rest ) { return ''; }
+	$groups = array();
+	foreach ( $rest as $c ) { if ( ! empty( $c[2] ) ) { $groups[ $c[2] ][] = $c; } }
+	if ( ! $groups || array_sum( array_map( 'count', $groups ) ) !== count( $rest ) ) { // some have no group: plain split into 4
+		$groups = array_chunk( $rest, max( 1, (int) ceil( count( $rest ) / 4 ) ) );
+	}
+	$name = function ( $c ) { return $c[1] ? '<a href="' . esc_url( $c[1] ) . '">' . esc_html( $c[0] ) . '</a>' : esc_html( $c[0] ); };
+	$o = '<details class="cov__more"><summary>وكل الأحياء الأخرى</summary><div class="cov__grps">';
+	foreach ( $groups as $title => $list ) {
+		$o .= '<div class="cov__grp">' . ( is_string( $title ) ? '<b>' . esc_html( $title ) . '</b>' : '' ) . implode( ' · ', array_map( $name, $list ) ) . '</div>';
+	}
+	return $o . '</div></details>';
 }
 
 /** One district: a single <a> (or <span> without a link): no list item, no icon, no inner wrapper. */
@@ -204,11 +233,7 @@ function zad_coverage_html( $post_id = 0, $home = false ) {
 		$o .= '<div class="cov__chips">';
 		foreach ( array_slice( $chips, 0, 12 ) as $c ) { $o .= zad_cov_chip_li( $c ); }
 		$o .= '</div>';
-		if ( $n > 12 ) { // first 12 shown; the rest stay in the HTML (crawlable) inside <details>
-			$o .= '<details class="cov__more"><summary>عرض كل الأحياء (' . (int) $n . ')</summary><div class="cov__chips">';
-			foreach ( array_slice( $chips, 12 ) as $c ) { $o .= zad_cov_chip_li( $c ); }
-			$o .= '</div></details>';
-		}
+		if ( $n > 12 ) { $o .= zad_cov_more_html( $chips, 12 ); }
 	}
 	if ( $d['note'] ) { $o .= '<p class="cov__note">' . zad_icon( 'check', 16 ) . ' ' . esc_html( $d['note'] ) . '</p>'; }
 	return $o . '</div></div></div></section>';
