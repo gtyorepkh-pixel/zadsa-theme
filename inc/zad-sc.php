@@ -336,9 +336,10 @@ add_filter( 'zsc_page_data', function ( $d, $post ) {
 	if ( '' === (string) zsc_meta( $id, 'description' ) && '' !== $tag ) { $d['description'] = $tag; }
 	if ( ! $d['offers'] && function_exists( 'zad_parse_prices' ) ) {
 		foreach ( zad_price_rows( $id ) as $r ) { // visible price block only
-			$n = zsc_num( preg_replace( '/[^\d٠-٩.,]/u', '', zad_digits_en( $r['price'] ) ) );
-			if ( $n > 0 ) { $d['offers'][] = array( 'name' => $r['name'], 'price' => $n, 'unit' => '' ); }
+			$k = zad_price_kind( $r['price'] ); // «199 - 300» is a range, never 199300
+			$d['offers'][] = array( 'name' => $r['name'], 'price' => 'fixed' === $k['kind'] ? $k['min'] : 0, 'unit' => '', 'kind' => $k['kind'], 'min' => $k['min'], 'max' => $k['max'] );
 		}
+		if ( ! array_filter( wp_list_pluck( $d['offers'], 'kind' ), function ( $x ) { return 'quote' !== $x; } ) ) { $d['offers'] = array(); } // nothing priced at all: no catalog
 		if ( $d['offers'] && function_exists( 'zad_price_view' ) && 'packages' === zad_price_view( $id ) ) { $d['offers_from_packages'] = true; }
 	}
 	if ( ! $d['price_from'] && ( ! function_exists( 'zad_price_view' ) || '' === zad_price_view( $id ) ) ) { // with a visible price block the offers above are the page's prices
@@ -493,27 +494,48 @@ function zsc_service_nodes( $post ) {
 	if ( $d['description'] ) { $service['description'] = $d['description']; }
 	if ( $image ) { $service['image'] = $image; }
 
+	$pkcat = function_exists( 'zad_pk_catalog' ) ? zad_pk_catalog( $post->ID ) : null;
 	if ( $d['offers'] ) {
 		$items = array(); $min = null; $max = null;
+		$cc    = function_exists( 'zad_current_city' ) ? zad_current_city( $post->ID ) : array( 'name' => '', 'source' => 'default' );
+		$cityn = ( ! empty( $cc['name'] ) && 'default' !== $cc['source'] ) ? $cc['name'] : ''; // never stamp the site default city on an offer
+		$num   = function ( $v ) { return ( floor( $v ) == $v ) ? (int) $v : (float) $v; };
 		foreach ( $d['offers'] as $o ) {
-			$spec = array( '@type' => 'UnitPriceSpecification', 'price' => $o['price'], 'priceCurrency' => 'SAR' );
-			if ( '' !== $o['unit'] ) { $spec['unitText'] = $o['unit']; }
-			$items[] = array( '@type' => 'Offer', 'itemOffered' => array( '@type' => 'Service', 'name' => $o['name'] ), 'price' => $o['price'], 'priceCurrency' => 'SAR', 'priceSpecification' => $spec, 'availability' => 'https://schema.org/InStock' );
-			$min = null === $min ? $o['price'] : min( $min, $o['price'] );
-			$max = null === $max ? $o['price'] : max( $max, $o['price'] );
+			$kind = isset( $o['kind'] ) ? $o['kind'] : 'fixed';
+			$it   = array( '@type' => 'Offer', 'itemOffered' => array( '@type' => 'Service', 'name' => $o['name'] ) );
+			if ( 'fixed' === $kind ) {
+				$spec = array( '@type' => 'UnitPriceSpecification', 'price' => $o['price'], 'priceCurrency' => 'SAR' );
+				if ( '' !== $o['unit'] ) { $spec['unitText'] = $o['unit']; }
+				$it['price'] = $o['price']; $it['priceCurrency'] = 'SAR'; $it['priceSpecification'] = $spec;
+				$lo = $o['price']; $hi = $o['price'];
+			} elseif ( 'range' === $kind ) {
+				$it['priceCurrency'] = 'SAR'; $it['priceSpecification'] = array( '@type' => 'PriceSpecification', 'minPrice' => $num( $o['min'] ), 'maxPrice' => $num( $o['max'] ), 'priceCurrency' => 'SAR' );
+				$lo = $o['min']; $hi = $o['max'];
+			} elseif ( 'from' === $kind ) {
+				$it['priceCurrency'] = 'SAR'; $it['priceSpecification'] = array( '@type' => 'PriceSpecification', 'minPrice' => $num( $o['min'] ), 'priceCurrency' => 'SAR' );
+				$lo = $o['min']; $hi = null;
+			} else {
+				$lo = null; $hi = null; // «بعد المعاينة» / «حسب الفحص»: no price at all
+			}
+			if ( null !== $lo ) { $min = null === $min ? $lo : min( $min, $lo ); }
+			if ( null !== $hi ) { $max = null === $max ? $hi : max( $max, $hi ); }
+			if ( 'quote' !== $kind ) { $it['availability'] = 'https://schema.org/InStock'; }
+			if ( '' !== $cityn ) { $it['areaServed'] = array( '@type' => 'City', 'name' => $cityn ); }
+			$items[] = $it;
 		}
 		$service['hasOfferCatalog'] = array( '@type' => 'OfferCatalog', 'name' => 'أسعار ' . $d['name'], 'itemListElement' => $items );
-		$pkcat = function_exists( 'zad_pk_catalog' ) ? zad_pk_catalog( $post->ID ) : null; // the price table's own offers are the packages when no table exists: one catalog then (the richer one)
-		if ( $pkcat && ! empty( $d['offers_from_packages'] ) ) { $service['hasOfferCatalog'] = $pkcat; $pkcat = null; }
-		$service['offers'] = array( '@type' => 'AggregateOffer', 'priceCurrency' => 'SAR', 'lowPrice' => $d['price_from'] ? min( $d['price_from'], $min ) : $min, 'highPrice' => $max, 'offerCount' => count( $items ), 'url' => $url );
-		if ( ! empty( $pkcat ) ) { $service['hasOfferCatalog'] = array( $service['hasOfferCatalog'], $pkcat ); } // two named catalogs: the price list, and the packages
+		if ( null !== $min ) {
+			$agg = array( '@type' => 'AggregateOffer', 'priceCurrency' => 'SAR', 'lowPrice' => $d['price_from'] ? min( $d['price_from'], $min ) : $min, 'offerCount' => count( $items ), 'url' => $url );
+			if ( null !== $max ) { $agg['highPrice'] = $max; }
+			$service['offers'] = $agg;
+		}
 	} elseif ( $d['price_from'] ) {
 		$offer = array( '@type' => 'AggregateOffer', 'priceCurrency' => 'SAR', 'lowPrice' => $d['price_from'], 'url' => $url );
 		if ( $d['price_unit'] ) { $offer['description'] = 'يبدأ من ' . $d['price_from'] . ' ريال ' . $d['price_unit']; }
 		$service['offers'] = $offer;
 	}
+	if ( $pkcat ) { $service['hasOfferCatalog'] = $pkcat; } // packages on the page: only the packages catalog goes into the schema (the price table stays visible on the page)
 
-	if ( ! $d['offers'] && function_exists( 'zad_pk_catalog' ) && ( $pkcat2 = zad_pk_catalog( $post->ID ) ) ) { $service['hasOfferCatalog'] = $pkcat2; } // packages but no priced rows (e.g. all «بعد المعاينة»)
 	$nodes = array();
 	$v = $d['video'];
 	if ( $v['name'] && $v['thumb'] && $v['date'] && ( $v['url'] || $v['embed'] ) ) {

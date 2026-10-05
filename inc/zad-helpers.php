@@ -376,6 +376,26 @@ function zad_price_rows( $id ) {
 	return $rows;
 }
 
+/**
+ * Price text → kind: 'fixed' «349» · 'range' «199 - 300» / «199–300» · 'from' «من 600» · 'quote' (no number: «بعد المعاينة», «حسب الفحص»…).
+ * Same rules as zad_parse_packages(); Arabic-Indic digits accepted; never a zero price.
+ */
+function zad_price_kind( $text ) {
+	$num = '[\d٠-٩][\d٠-٩,٬.]*';
+	$out = array( 'kind' => 'quote', 'min' => 0, 'max' => 0 );
+	$val = function ( $t ) { return (float) str_replace( ',', '', zad_digits_en( $t ) ); };
+	if ( preg_match( '/(' . $num . ')\s*[-–—]\s*(' . $num . ')/u', (string) $text, $m ) ) {
+		$a = $val( $m[1] ); $b = $val( $m[2] );
+		$out = array( 'kind' => 'range', 'min' => min( $a, $b ), 'max' => max( $a, $b ) );
+	} elseif ( preg_match( '/^\s*من\s+(' . $num . ')/u', (string) $text, $m ) ) {
+		$out = array( 'kind' => 'from', 'min' => $val( $m[1] ), 'max' => 0 );
+	} elseif ( preg_match( '/(' . $num . ')/u', (string) $text, $m ) ) {
+		$out = array( 'kind' => 'fixed', 'min' => $val( $m[1] ), 'max' => 0 );
+	}
+	if ( 'quote' !== $out['kind'] && $out['min'] <= 0 ) { $out = array( 'kind' => 'quote', 'min' => 0, 'max' => 0 ); }
+	return $out;
+}
+
 /** Lowest numeric price across rows (0 if none). */
 function zad_min_price( $rows ) {
 	$min = 0;

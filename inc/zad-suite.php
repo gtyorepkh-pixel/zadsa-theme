@@ -449,18 +449,37 @@ function zad_bc_node( $path ) {
 	return $memo[ $path ] = $out;
 }
 
+/**
+ * Site path of a post as it will be once published. Drafts/pending have an ugly permalink (?p=ID), which used to leave the trail
+ * with only two levels; here the post is cloned as published (slug from the title when none yet) so WordPress builds the
+ * pretty URL from post_parent and the type's rewrite base, exactly like the live page.
+ */
+function zad_bc_own_path( $post_id ) {
+	$post = get_post( $post_id );
+	if ( ! $post ) { return ''; }
+	$url = get_permalink( $post );
+	if ( 'publish' === $post->post_status && false === strpos( (string) $url, '?' ) ) { return zad_bc_path( $url ); }
+	$c = clone $post;
+	$c->post_status = 'publish';
+	if ( '' === (string) $c->post_name ) { $c->post_name = sanitize_title( $c->post_title ); }
+	if ( '' === (string) $c->post_name ) { $c->post_name = (string) $c->ID; }
+	$pretty = get_permalink( $c );
+	return ( $pretty && false === strpos( (string) $pretty, '?' ) ) ? zad_bc_path( $pretty ) : zad_bc_path( $url );
+}
+
 /** Path based trail for pages/posts of any type: Home > … ancestors … > current. */
 function zad_path_crumbs( $post_id ) {
 	$home  = array( 'الرئيسية', home_url( '/' ) );
 	$label = trim( (string) get_post_meta( $post_id, ZAD_BC_LABEL, true ) );
 	$cur   = array( '' !== $label ? $label : zad_bc_clean_label( get_the_title( $post_id ) ), '' );
 	$trail = array();
-	$seen  = array( zad_bc_path( get_permalink( $post_id ) ) => 1 );
+	$own   = zad_bc_own_path( $post_id );
+	$seen  = array( $own => 1 );
 	$path  = zad_bc_path( (string) get_post_meta( $post_id, ZAD_BC_PARENT, true ) );
 	$guard = 0;
 
 	if ( '' === $path ) {
-		$pp   = zad_bc_path( get_permalink( $post_id ) );
+		$pp   = $own;
 		$segs = array_values( array_filter( explode( '/', $pp ) ) );
 		array_pop( $segs );
 		$path = $segs ? '/' . implode( '/', $segs ) . '/' : '';
