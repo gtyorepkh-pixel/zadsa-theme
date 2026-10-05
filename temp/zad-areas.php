@@ -15,7 +15,7 @@ $svcs   = get_posts( array( 'post_type' => zad_service_types(), 'numberposts' =>
 				</header>
 				<?php if ( $dist && ! is_wp_error( $dist ) ) : ?>
 					<h3 class="areabox__t">أحياء مغطاة</h3>
-					<ul class="chips chips--start"><?php foreach ( $dist as $d ) : ?><li><a href="<?php echo esc_url( get_term_link( $d ) ); ?>"><?php echo esc_html( $d->name ); ?></a></li><?php endforeach; ?></ul>
+					<ul class="chips chips--start"><?php foreach ( $dist as $d ) : ?><li><span><?php echo esc_html( $d->name ); ?></span></li><?php endforeach; ?></ul>
 				<?php endif; ?>
 				<h3 class="areabox__t">الخدمات في <?php echo esc_html( $c->name ); ?></h3>
 				<ul class="areabox__svcs">

@@ -55,7 +55,7 @@ $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'n
 		<?php if ( $f_areas ) : ?>
 		<div>
 			<h3>مناطق نخدمها</h3>
-			<ul class="ftr__list"><?php foreach ( $f_areas as $a ) { echo '<li>' . ( $a['url'] ? '<a href="' . esc_url( $a['url'] ) . '">' . esc_html( $a['name'] ) . '</a>' : esc_html( $a['name'] ) ) . '</li>'; } ?></ul>
+			<ul class="ftr__list"><?php foreach ( $f_areas as $a ) { echo '<li>' . esc_html( $a['name'] ) . '</li>'; } ?></ul>
 		</div>
 		<?php endif; ?>
 	</div>

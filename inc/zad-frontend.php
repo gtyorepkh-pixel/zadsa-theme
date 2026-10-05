@@ -458,7 +458,7 @@ function zad_children_html( $id ) {
 	} else {
 		$out .= '<ul class="kids__chips">';
 		foreach ( $kids as $k ) {
-			$out .= '<li><a href="' . esc_url( get_permalink( $k ) ) . '">' . esc_html( $label( $k ) ) . '</a></li>';
+			$out .= '<li><span>' . esc_html( $label( $k ) ) . '</span></li>'; // neighbourhoods are shown as text
 		}
 		$out .= '</ul>';
 	}

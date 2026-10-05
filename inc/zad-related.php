@@ -124,22 +124,20 @@ function zad_cov_keys() { return array( 'eyebrow', 'title', 'sub', 'box', 'text'
 function zad_cov_chips( $text ) {
 	$chips = array();
 	foreach ( preg_split( '/\r\n|\r|\n/', (string) $text ) as $l ) {
-		$c = array_pad( array_map( 'trim', explode( '|', $l ) ), 3, '' );
-		if ( '' === $c[0] ) { continue; }
-		$u = $c[1]; if ( '' !== $u && '/' === $u[0] && 0 !== strpos( $u, '//' ) ) { $u = home_url( $u ); }
-		$chips[] = array( $c[0], preg_match( '#^https?://#', $u ) ? $u : '', $c[2] ); // [name, url, group (optional 3rd column)]
+		$name = trim( explode( '|', $l )[0] ); // anything after «|» (an old link) is ignored, never deleted
+		if ( '' !== $name ) { $chips[] = array( $name, '', '' ); }
 	}
 	return $chips;
 }
 
-/** Chips from the page's service_area terms (links: real hierarchical page, else an open area archive, else plain text). */
+/** Chips from the page's service_area terms (shown as text). */
 function zad_cov_area_chips( $post_id ) {
 	$out   = array();
 	$areas = $post_id ? get_the_terms( $post_id, 'service_area' ) : false;
 	if ( ! $areas || is_wp_error( $areas ) ) { return $out; }
 	foreach ( $areas as $t ) {
 		$par   = $t->parent ? get_term( (int) $t->parent, $t->taxonomy ) : null;
-		$out[] = array( $t->name, zad_area_link( $post_id, $t ), ( $par && ! is_wp_error( $par ) ) ? $par->name : '' ); // group = the city of a district
+		$out[] = array( $t->name, '', ( $par && ! is_wp_error( $par ) ) ? $par->name : '' ); // districts are shown as text, never as links
 	}
 	return $out;
 }
@@ -149,7 +147,7 @@ function zad_cov_area_chips( $post_id ) {
  *  - The owner's own text (field «أحياء أخرى» of the page) is printed as written.
  *  - Otherwise: the districts NOT already shown (de-duplicated), a stable page-specific selection (seeded by the page id,
  *    so different pages list different districts instead of repeating the same block), with one of a few lead-in phrases.
- * Names with a link stay links (crawlable); plain names add no elements.
+ * Names are plain text.
  */
 function zad_cov_more_html( $chips, $shown_n = 12, $post_id = 0, $custom = '' ) {
 	$custom = trim( (string) $custom );
@@ -167,15 +165,13 @@ function zad_cov_more_html( $chips, $shown_n = 12, $post_id = 0, $custom = '' ) 
 	usort( $rest, function ( $a, $b ) use ( $seed ) { return crc32( $seed . '|' . $a[0] ) <=> crc32( $seed . '|' . $b[0] ); } );
 	$rest  = array_slice( $rest, 0, (int) apply_filters( 'zad_cov_other_max', 18 ) );
 	$leads = array( 'ونصل كذلك إلى:', 'وتشمل تغطيتنا أيضاً:', 'ونخدم كذلك أحياء مثل:' );
-	$name  = function ( $c ) { return $c[1] ? '<a href="' . esc_url( $c[1] ) . '">' . esc_html( $c[0] ) . '</a>' : esc_html( $c[0] ); };
+	$name  = function ( $c ) { return esc_html( $c[0] ); };
 	return '<p class="cov__other"><b>' . esc_html( $leads[ (int) $post_id % count( $leads ) ] ) . '</b> ' . implode( '، ', array_map( $name, $rest ) ) . '.</p>';
 }
 
-/** One district: a single <a> (or <span> without a link): no list item, no icon, no inner wrapper. */
+/** One district: always a plain <span> (no link), one look for all. */
 function zad_cov_chip_li( $c ) {
-	return $c[1]
-		? '<a class="cov__chip cov__chip--link" href="' . esc_url( $c[1] ) . '">' . esc_html( $c[0] ) . '</a>'
-		: '<span class="cov__chip cov__chip--plain">' . esc_html( $c[0] ) . '</span>';
+	return '<span class="cov__chip cov__chip--plain">' . esc_html( $c[0] ) . '</span>';
 }
 
 /**
@@ -205,11 +201,6 @@ function zad_coverage_html( $post_id = 0, $home = false ) {
 		if ( '' === $d['eyebrow'] ) { $d['eyebrow'] = 'تغطيتنا'; }
 	} else { return ''; }
 	$chips = zad_cov_chips( $d['chips'] );
-	if ( $chips && $area_chips ) { // own chips without a link borrow the link of the same-named area
-		$byname = array();
-		foreach ( $area_chips as $a ) { $byname[ mb_strtolower( trim( $a[0] ) ) ] = $a[1]; }
-		foreach ( $chips as $i => $c ) { if ( '' === $c[1] ) { $chips[ $i ][1] = $byname[ mb_strtolower( trim( $c[0] ) ) ] ?? ''; } }
-	}
 	if ( ! $chips ) { $chips = $area_chips; }
 	if ( '' === trim( $d['title'] ) && ! $chips ) { return ''; }
 	$stats = array();
@@ -249,7 +240,7 @@ function zad_coverage_box( $post_id ) {
 	echo '<p><label>الملاحظة الأخيرة<input type="text" name="zad[cov_note]" value="' . esc_attr( $v['note'] ?? '' ) . '"></label></p></div>';
 	echo '<p><label>الوصف<textarea name="zad[cov_text]" rows="2" style="width:100%">' . esc_textarea( $v['text'] ?? '' ) . '</textarea></label></p>';
 	echo '<p><label>أحياء أخرى — نص عادي يظهر تحت الأحياء (اكتب أحياء مختلفة لكل صفحة لتجنّب تكرار المحتوى). فارغ = يُختار تلقائياً اختيار مختلف لكل صفحة من بقية الأحياء.<textarea name="zad[cov_other]" rows="3" style="width:100%" placeholder="ونصل كذلك إلى: الملقا، حطين، العقيق، الغدير…">' . esc_textarea( $v['other'] ?? '' ) . '</textarea></label></p>';
-	echo '<p><label>الأحياء (سطر لكل حي: الاسم | الرابط اختياري)<textarea name="zad[cov_chips]" rows="4" style="width:100%">' . esc_textarea( $v['chips'] ?? '' ) . '</textarea></label></p>';
+	echo '<p><label>الأحياء (سطر لكل حي — يُعرض كنص)<textarea name="zad[cov_chips]" rows="4" style="width:100%">' . esc_textarea( $v['chips'] ?? '' ) . '</textarea></label></p>';
 	echo '<p><label>بطاقات الأرقام (سطر لكل رقم: الرقم | الوصف — حتى 3 أسطر)<textarea name="zad[cov_stats]" rows="3" style="width:100%" placeholder="24/7 | استقبال الطلبات">' . esc_textarea( $v['stats'] ?? '' ) . '</textarea></label></p>';
 }
 

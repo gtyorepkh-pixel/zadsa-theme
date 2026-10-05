@@ -749,7 +749,7 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .kids__tx{flex:1;display:grid;line-height:1.4}.kids__tx b{font-size:1.08rem}.kids__tx small{color:var(--muted)}
 .kids__card>.zi{flex:none;color:var(--accent-text)}
 .kids__chips{list-style:none;display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-.kids__chips a{display:inline-block;padding:10px 18px;border:1.5px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);text-decoration:none;font-weight:700}
+.kids__chips a,.kids__chips span{display:inline-block;padding:10px 18px;border:1.5px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);text-decoration:none;font-weight:700}
 .kids__chips a:hover{border-color:var(--primary);color:var(--primary)}
 
 /* ===== Palette v2: cool light-blue neutrals + brand orange (distinct from warm cream/gold sites) ===== */
@@ -1249,3 +1249,4 @@ p.has-background{padding:1.25em 2em}
 .cov__other{margin:14px 0 0;line-height:2;color:var(--ink)}.cov__other b{color:var(--primary)}.cov__other a{color:var(--primary);font-weight:700;text-decoration:none}.cov__other a:hover{text-decoration:underline}
 .sub-menu li>ul{list-style:none;margin:0;padding:0 14px 0 0}
 .scard--lite{display:block}.scard__lite{display:block;color:inherit;text-decoration:none}.scard__lite img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover}.scard--lite .scard__title{padding:14px 16px 0;font-size:1.08rem;color:var(--ink)}.scard__lite:hover .scard__title{color:var(--primary)}.scard--lite .scard__desc{padding:6px 16px 16px}
+.cov__chip--plain:hover{border-color:var(--line);background:#fff}.chips--start li span{display:inline-block;padding:9px 16px;border:1.5px solid var(--line);border-radius:99px;background:#fff;color:var(--primary);font-weight:700;font-size:.93rem}
