@@ -201,7 +201,7 @@ while ( have_posts() ) :
 	<!-- 5. Why us -->
 	<?php if ( $why ) : ?>
 	<section class="sec"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow">لماذا نحن</span><h2>خدمة حقيقية تقوم على أسس واضحة</h2></header>
+		<?php echo zad_sec_head( $id, 'why' ); // phpcs:ignore ?>
 		<div class="cardgrid">
 			<?php foreach ( $why as $i => $w ) : ?>
 				<div class="icard"><span class="icard__ic"><?php echo zad_icon( array( 'shield', 'tool', 'badge', 'clock', 'users', 'star' )[ $i % 6 ], 26 ); // phpcs:ignore ?></span><h3><?php echo esc_html( $w['t'] ); ?></h3><p><?php echo esc_html( $w['d'] ); ?></p></div>
@@ -213,7 +213,7 @@ while ( have_posts() ) :
 	<!-- 6. Sub-services -->
 	<?php if ( $subs ) : ?>
 	<section class="sec sec--mint"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow">خدماتنا</span><h2>أنواع <?php echo esc_html( $title ); ?></h2></header>
+		<?php echo zad_sec_head( $id, 'subs' ); // phpcs:ignore ?>
 		<div class="cardgrid cardgrid--4">
 			<?php foreach ( $subs as $w ) : ?>
 				<div class="icard icard--line"><h3><?php echo esc_html( $w['t'] ); ?></h3><p><?php echo esc_html( $w['d'] ); ?></p>
@@ -242,8 +242,10 @@ while ( have_posts() ) :
 	<?php if ( $factors ) : ?>
 	<section class="sec sec--tint"><div class="wrap pf">
 		<div class="pf__main">
-			<span class="eyebrow">تسعير شفاف</span>
-			<h2>كيف نحدد سعر <?php echo esc_html( $title ); ?>؟</h2>
+			<?php $fs = zad_sec( $id, 'factors' ); ?>
+			<span class="eyebrow"><?php echo esc_html( $fs['eyebrow'] ); ?></span>
+			<h2><?php echo esc_html( $fs['title'] ); ?></h2>
+			<?php if ( '' !== $fs['lead'] ) : ?><p><?php echo esc_html( $fs['lead'] ); ?></p><?php endif; ?>
 			<ol class="pf__list">
 				<?php foreach ( $factors as $i => $s ) : ?>
 					<li><span class="timeline__n"><?php echo esc_html( $i + 1 ); ?></span><div><h3><?php echo esc_html( $s['t'] ); ?></h3><p><?php echo esc_html( $s['d'] ); ?></p></div></li>
@@ -261,7 +263,7 @@ while ( have_posts() ) :
 	<!-- 10. Price list -->
 	<?php if ( 'table' === $view ) : ?>
 	<section class="sec"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow">قائمة الأسعار</span><h2>أسعار <?php echo esc_html( $title ); ?></h2></header>
+		<?php echo zad_sec_head( $id, 'prices' ); // phpcs:ignore ?>
 		<div class="tbl"><table>
 			<thead><tr><th>الخدمة</th><?php if ( $has_det ) : ?><th>التفاصيل</th><?php endif; ?><th>السعر</th><?php if ( $has_war ) : ?><th>الضمان</th><?php endif; ?><th></th></tr></thead>
 			<tbody>
@@ -283,7 +285,7 @@ while ( have_posts() ) :
 
 	<!-- 11. Technical card (spec) -->
 	<section class="sec sec--mint"><div class="wrap wrap--narrow">
-		<header class="sec__head"><span class="eyebrow"><?php echo zad_icon( 'check', 14 ); // phpcs:ignore ?> نظرة سريعة</span><h2>البطاقة الفنية</h2></header>
+		<?php echo zad_sec_head( $id, 'spec', 'check' ); // phpcs:ignore ?>
 		<dl class="info">
 			<?php
 			$info = array(
@@ -310,7 +312,7 @@ while ( have_posts() ) :
 	<!-- 11b. Signs + harms -->
 	<?php if ( $signs ) : ?>
 	<section class="sec"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow">علامات الإصابة</span><h2>كيف تعرف أنك تحتاج هذه الخدمة؟</h2><p>إذا لاحظت أياً منها، تواصل معنا لفحص مجاني.</p></header>
+		<?php echo zad_sec_head( $id, 'signs' ); // phpcs:ignore ?>
 		<div class="cardgrid cardgrid--2">
 			<?php foreach ( $signs as $w ) : ?><div class="icard icard--row"><span class="icard__ic"><?php echo zad_icon( 'search', 24 ); // phpcs:ignore ?></span><div><h3><?php echo esc_html( $w['t'] ); ?></h3><p><?php echo esc_html( $w['d'] ); ?></p></div></div><?php endforeach; ?>
 		</div>
@@ -318,7 +320,7 @@ while ( have_posts() ) :
 	<?php endif; ?>
 	<?php if ( $harms ) : ?>
 	<section class="sec sec--cream"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow">الأضرار المحتملة</span><h2>لماذا لا تؤجّل المعالجة؟</h2></header>
+		<?php echo zad_sec_head( $id, 'harms' ); // phpcs:ignore ?>
 		<div class="cardgrid">
 			<?php foreach ( $harms as $w ) : ?><div class="icard icard--warn"><span class="icard__ic"><?php echo zad_icon( 'bolt', 24 ); // phpcs:ignore ?></span><h3><?php echo esc_html( $w['t'] ); ?></h3><p><?php echo esc_html( $w['d'] ); ?></p></div><?php endforeach; ?>
 		</div>
@@ -329,7 +331,7 @@ while ( have_posts() ) :
 	<!-- 11c. Safety -->
 	<?php if ( $safety || $after ) : ?>
 	<section class="sec sec--tint"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow"><?php echo zad_icon( 'shield', 14 ); // phpcs:ignore ?> الأمان أولاً</span><h2>آمن لمن تحب</h2></header>
+		<?php echo zad_sec_head( $id, 'safety', 'shield' ); // phpcs:ignore ?>
 		<?php if ( $safety ) : ?><div class="cardgrid"><?php foreach ( $safety as $w ) : ?><div class="icard"><span class="icard__ic"><?php echo zad_icon( 'shield', 26 ); // phpcs:ignore ?></span><h3><?php echo esc_html( $w['t'] ); ?></h3><p><?php echo esc_html( $w['d'] ); ?></p></div><?php endforeach; ?></div><?php endif; ?>
 		<?php if ( $after ) : ?><div class="after"><h3>إرشادات ما بعد الخدمة</h3><ul><?php foreach ( $after as $l ) { echo '<li>' . zad_icon( 'check', 18 ) . '<span>' . esc_html( $l ) . '</span></li>'; } // phpcs:ignore ?></ul></div><?php endif; ?>
 	</div></section>
@@ -357,7 +359,7 @@ while ( have_posts() ) :
 	<!-- 11e. Warranty -->
 	<?php if ( $wrows ) : ?>
 	<section class="sec sec--cream"><div class="wrap wrap--narrow">
-		<header class="sec__head"><span class="eyebrow"><?php echo zad_icon( 'badge', 14 ); // phpcs:ignore ?> الضمان</span><h2>ضمان مكتوب وموثّق</h2></header>
+		<?php echo zad_sec_head( $id, 'warranty', 'badge' ); // phpcs:ignore ?>
 		<div class="wrows"><?php foreach ( $wrows as $w ) : ?><div class="wrow"><span class="icard__ic"><?php echo zad_icon( 'shield', 24 ); // phpcs:ignore ?></span><div><h3><?php echo esc_html( $w['t'] ); ?></h3><p><?php echo esc_html( $w['d'] ); ?></p></div></div><?php endforeach; ?></div>
 	</div></section>
 	<?php endif; ?>
@@ -395,7 +397,7 @@ while ( have_posts() ) :
 
 	<?php if ( $gallery ) : ?>
 	<section class="sec sec--tint"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow">من أعمالنا</span><h2>صور من التنفيذ</h2></header>
+		<?php echo zad_sec_head( $id, 'gallery' ); // phpcs:ignore ?>
 		<?php if ( $gallery ) : ?><div class="gal"><?php foreach ( array_slice( array_values( $gallery ), 2 ) ?: $gallery as $gid ) : ?><a href="<?php echo esc_url( wp_get_attachment_image_url( $gid, 'full' ) ); ?>" target="_blank" rel="noopener"><?php echo wp_get_attachment_image( $gid, 'medium_large', false, array( 'loading' => 'lazy' ) ); ?></a><?php endforeach; ?></div><?php endif; ?>
 	</div></section>
 	<?php endif; ?>
@@ -429,7 +431,7 @@ while ( have_posts() ) :
 	<!-- 15. FAQ -->
 	<?php if ( $faq ) : ?>
 	<section class="sec"><div class="wrap wrap--narrow">
-		<header class="sec__head"><span class="eyebrow">الأسئلة الشائعة</span><h2>كل ما تريد معرفته</h2></header>
+		<?php echo zad_sec_head( $id, 'faq' ); // phpcs:ignore ?>
 		<?php zad_render_faq( $faq ); ?>
 	</div></section>
 	<?php endif; ?>
@@ -460,15 +462,17 @@ while ( have_posts() ) :
 	$rel = zad_related_services( $id, 3 ); // 3 cards at most
 	if ( $rel->have_posts() ) : ?>
 	<section class="sec sec--mint"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow">قد يهمك أيضاً</span><h2>خدمات ومقالات ذات صلة</h2></header>
+		<?php echo zad_sec_head( $id, 'related' ); // phpcs:ignore ?>
 		<div class="sgrid"><?php while ( $rel->have_posts() ) { $rel->the_post(); get_template_part( 'template-parts/' . ( in_array( get_post_type(), zad_service_types(), true ) ? 'service-card' : 'post-card' ), null, array( 'lite' => true ) ); } wp_reset_postdata(); ?></div>
 	</div></section>
 	<?php endif; ?>
 
 	<section class="sec sec--dark" id="quote"><div class="wrap qfinal">
 		<div>
-			<span class="eyebrow">اطلب الآن</span>
-			<h2>احصل على عرض سعر لـ <?php echo esc_html( $title ); ?> اليوم</h2>
+			<?php $cs = zad_sec( $id, 'final_cta' ); ?>
+			<span class="eyebrow"><?php echo esc_html( $cs['eyebrow'] ); ?></span>
+			<h2><?php echo esc_html( $cs['title'] ); ?></h2>
+			<?php if ( '' !== $cs['lead'] ) : ?><p><?php echo esc_html( $cs['lead'] ); ?></p><?php endif; ?>
 			<p><?php echo esc_html( $provider ); ?> — جاهزون لخدمتك<?php echo $area_names ? ' في ' . esc_html( implode( '، ', array_slice( $area_names, 0, 3 ) ) ) : ''; ?>.</p>
 			<div class="hero__btns">
 				<?php if ( $phone ) : ?><a class="btn btn--accent" href="<?php echo esc_url( zad_tel_href( $phone ) ); ?>" dir="ltr"><?php echo zad_icon( 'phone', 20 ); // phpcs:ignore ?> <?php echo esc_html( $phone ); ?></a><?php endif; ?>

@@ -79,8 +79,8 @@ function zad_steps_save( $post_id, $in ) {
 }
 
 /* ---------- front end ---------- */
-function zad_steps_cards1( $steps ) {
-	$o = '<section class="sec sec--cream"><div class="wrap"><header class="sec__head"><span class="eyebrow">خطوة بخطوة</span><h2>كيف تسير عملية التنفيذ</h2></header><ol class="hsteps">';
+function zad_steps_cards1( $steps, $id = 0 ) {
+	$o = '<section class="sec sec--cream"><div class="wrap">' . zad_sec_head( $id, 'steps' ) . '<ol class="hsteps">';
 	foreach ( $steps as $i => $s ) {
 		$sp = array_map( 'trim', explode( '||', (string) $s['d'] ) ); $tags = isset( $sp[1] ) ? array_filter( array_map( 'trim', preg_split( '/[,،]/u', $sp[1] ) ) ) : array();
 		$o .= '<li><span class="hsteps__n">' . esc_html( $i + 1 ) . '</span><h3>' . esc_html( $s['t'] ) . '</h3><p>' . esc_html( $sp[0] ) . '</p>';
@@ -93,8 +93,11 @@ function zad_steps_cards1( $steps ) {
 function zad_steps_story( $id, $rows ) {
 	$pos = get_post_meta( $id, '_zad_story_pos', true ) === 'behind' ? 'behind' : 'side';
 	$sh  = (array) get_post_meta( $id, '_zad_story_head', true );
-	$o   = '<section class="sec story story--' . $pos . '"><div class="wrap"><header class="sec__head"><span class="eyebrow">خطوة بخطوة</span><h2>' . esc_html( $sh['title'] ?? '' ?: 'كيف تسير عملية التنفيذ' ) . '</h2>';
-	if ( ! empty( $sh['intro'] ) ) { $o .= '<p>' . esc_html( $sh['intro'] ) . '</p>'; }
+	$hs  = zad_sec( $id, 'steps' ); // a title/intro written in the story fields still wins over the default
+	$ttl = ( ! $hs['custom_title'] && ! empty( $sh['title'] ) ) ? $sh['title'] : $hs['title'];
+	$lead = ( ! $hs['custom_lead'] && ! empty( $sh['intro'] ) ) ? $sh['intro'] : $hs['lead'];
+	$o   = '<section class="sec story story--' . $pos . '"><div class="wrap"><header class="sec__head"><span class="eyebrow">' . esc_html( $hs['eyebrow'] ) . '</span><h2>' . esc_html( $ttl ) . '</h2>';
+	if ( '' !== $lead ) { $o .= '<p>' . esc_html( $lead ) . '</p>'; }
 	$o  .= '</header>';
 	foreach ( $rows as $i => $r ) {
 		$num   = sprintf( '%02d', $i + 1 );
@@ -124,5 +127,5 @@ function zad_steps_html( $id, $steps ) {
 		if ( $rows ) { return zad_steps_story( $id, $rows ); }
 	}
 	if ( ! $steps ) { return ''; }
-	return zad_steps_cards1( $steps );
+	return zad_steps_cards1( $steps, $id );
 }

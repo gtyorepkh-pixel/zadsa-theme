@@ -264,6 +264,7 @@ function zad_service_metabox( $post ) {
 		<?php zad_related_picker( $post->ID, $related ); ?>
 		<?php zad_guides_box( $post->ID ); ?>
 		<?php zad_sbar_box( $post->ID ); ?>
+		<?php zad_sec_box( $post->ID ); ?>
 		<?php zad_coverage_box( $post->ID ); ?>
 		<?php zad_quick_box( $post->ID ); ?>
 	</div>
@@ -351,6 +352,7 @@ add_action( 'save_post', function ( $post_id ) {
 	zad_related_save( $post_id, $in );
 	zad_guides_save( $post_id, $in );
 	zad_sbar_save( $post_id, $in );
+	zad_sec_save( $post_id, $in );
 	zad_coverage_save( $post_id, $in );
 	zad_steps_save( $post_id, $in );
 	zad_quick_save( $post_id, $in );
