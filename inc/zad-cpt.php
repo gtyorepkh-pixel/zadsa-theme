@@ -480,9 +480,9 @@ function zad_related_services( $post_id, $limit = 3 ) {
 	$all  = array_values( array_unique( array_merge( zad_service_types(), zad_article_types() ) ) );
 	$args = array( 'post_type' => $all, 'post_status' => 'publish', 'posts_per_page' => $limit, 'post__not_in' => array( $post_id ), 'no_found_rows' => true, 'ignore_sticky_posts' => true );
 	if ( $ids ) {
-		$args['post__in']       = $ids;
+		$args['post__in']       = array_slice( $ids, 0, $limit ); // the hand-picked list is capped too
 		$args['orderby']        = 'post__in';
-		$args['posts_per_page'] = max( $limit, min( 12, count( $ids ) ) );
+		$args['posts_per_page'] = $limit;
 		unset( $args['post__not_in'] );
 		return new WP_Query( $args );
 	}

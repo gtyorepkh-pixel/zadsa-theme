@@ -457,7 +457,7 @@ while ( have_posts() ) :
 	<?php echo function_exists( 'zad_bridges_html' ) ? zad_bridges_html( $id ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 	<!-- 16. Related + final quote -->
 	<?php
-	$rel = zad_related_services( $id, 6 );
+	$rel = zad_related_services( $id, 3 ); // 3 cards at most
 	if ( $rel->have_posts() ) : ?>
 	<section class="sec sec--mint"><div class="wrap">
 		<header class="sec__head"><span class="eyebrow">قد يهمك أيضاً</span><h2>خدمات ومقالات ذات صلة</h2></header>
