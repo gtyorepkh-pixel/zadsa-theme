@@ -19,7 +19,7 @@
 			function msg() { var t = cur(); return 'السلام عليكم، أبغى ' + (t.dataset.svc || t.dataset.name) + ' — ' + root.dataset.title + ' — الموعد: ' + day(); }
 			function paint() {
 				var t = cur(), p = t.dataset.price || '';
-				price.textContent = p || 'بعد المعاينة'; if (lab) { lab.textContent = p ? 'يبدأ من' : 'السعر'; }
+				price.textContent = p || root.dataset.q || 'بعد المعاينة'; if (lab) { lab.textContent = p ? 'يبدأ من' : 'السعر'; }
 				lbl.textContent = 'اطلب ' + (t.dataset.svc || t.dataset.name) + ' على واتساب';
 				if (link) { var u = t.dataset.url || ''; link.hidden = !u; if (u) { link.href = u; } }
 				go.href = root.dataset.wa ? 'https://wa.me/' + root.dataset.wa + '?text=' + encodeURIComponent(msg()) : '#';

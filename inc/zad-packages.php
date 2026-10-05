@@ -64,19 +64,7 @@ function zad_pk_catalog( $id ) {
 	foreach ( $pks as $p ) {
 		$o = array( '@type' => 'Offer', 'name' => $p['name'], 'priceCurrency' => 'SAR', 'itemOffered' => array( '@type' => 'Service', 'name' => $p['name'] ) );
 		if ( '' !== $p['desc'] ) { $o['description'] = $p['desc']; }
-		$mon = zad_pk_is_monthly( $p['unit'] );
-		$ref = array( '@type' => 'QuantitativeValue', 'value' => 1, 'unitCode' => 'MON' );
-		$n   = function ( $v ) { return ( floor( $v ) == $v ) ? (int) $v : (float) $v; };
-		if ( 'fixed' === $p['kind'] ) {
-			$o['price'] = $n( $p['min'] );
-			if ( $mon ) { $o['priceSpecification'] = array( '@type' => 'UnitPriceSpecification', 'price' => $n( $p['min'] ), 'priceCurrency' => 'SAR', 'referenceQuantity' => $ref ); }
-		} elseif ( 'range' === $p['kind'] ) {
-			$o['priceSpecification'] = array( '@type' => $mon ? 'UnitPriceSpecification' : 'PriceSpecification', 'minPrice' => $n( min( $p['min'], $p['max'] ) ), 'maxPrice' => $n( max( $p['min'], $p['max'] ) ), 'priceCurrency' => 'SAR' );
-			if ( $mon ) { $o['priceSpecification']['referenceQuantity'] = $ref; }
-		} elseif ( 'from' === $p['kind'] ) {
-			$o['priceSpecification'] = array( '@type' => $mon ? 'UnitPriceSpecification' : 'PriceSpecification', 'minPrice' => $n( $p['min'] ), 'priceCurrency' => 'SAR' );
-			if ( $mon ) { $o['priceSpecification']['referenceQuantity'] = $ref; }
-		}
+		$o += zad_price_offer( $p, zad_pk_is_monthly( $p['unit'] ) ); // number / range / «من X» / nothing for a quote
 		if ( ! empty( $city['name'] ) && 'default' !== $city['source'] ) { $o['areaServed'] = array( '@type' => 'City', 'name' => $city['name'] ); }
 		$w = zad_pk_warranty( $p['warranty'] );
 		if ( $w ) { $o['warranty'] = array( '@type' => 'WarrantyPromise', 'durationOfWarranty' => array( '@type' => 'QuantitativeValue', 'value' => $w[0], 'unitCode' => $w[1] ) ); }

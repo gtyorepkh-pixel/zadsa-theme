@@ -15,7 +15,7 @@ $cta    = ! empty( $hub['cta'] ) ? $hub['cta'] : 'اطلب معاينة مجان
 $rows = array();
 $cities = array();
 foreach ( $svcs as $sv ) {
-	$parsed = zad_parse_prices( get_post_meta( $sv->ID, '_zad_prices', true ) );
+	$parsed = zad_price_rows( $sv->ID );
 	$min    = zad_min_price( $parsed ) ?: (int) get_post_meta( $sv->ID, '_zad_price', true );
 	$rows[ $sv->ID ] = array(
 		'p'    => $sv,

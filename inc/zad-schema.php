@@ -175,31 +175,6 @@ function zad_nav_schema() {
 	return array( '@type' => 'SiteNavigationElement', '@id' => home_url( '/#sitenav' ), 'name' => $names, 'url' => $urls );
 }
 
-/** Price text → schema price specification (handles ranges, "from", per month). */
-function zad_price_spec( $text ) {
-	$t = zad_digits_en( $text );
-	preg_match_all( '/\d[\d,]*/', $t, $m );
-	$nums = array_map( function ( $x ) { return (int) str_replace( ',', '', $x ); }, $m[0] );
-	if ( ! $nums ) {
-		return null;
-	}
-	$monthly = (bool) preg_match( '/شهر/u', $t );
-	$base    = array( 'priceCurrency' => 'SAR' );
-	if ( count( $nums ) >= 2 && preg_match( '/[-–—]/u', $t ) ) {
-		$spec = array( '@type' => 'PriceSpecification', 'priceCurrency' => 'SAR', 'minPrice' => min( $nums ), 'maxPrice' => max( $nums ) );
-	} elseif ( preg_match( '/(يبدأ|تبدأ|^\s*من)/u', $t ) ) {
-		$spec = array( '@type' => 'UnitPriceSpecification', 'priceCurrency' => 'SAR', 'minPrice' => $nums[0] );
-	} else {
-		$spec = array( '@type' => 'UnitPriceSpecification', 'priceCurrency' => 'SAR', 'price' => $nums[0] );
-	}
-	if ( $monthly ) {
-		$spec['@type']    = 'UnitPriceSpecification';
-		$spec['unitText'] = 'شهر';
-		$spec['unitCode'] = 'MON';
-	}
-	return $spec;
-}
-
 /** URL of the first page using a template (e.g. contact), or of a page by slug. */
 function zad_page_url( $template, $slugs = array() ) {
 	$q = get_posts( array( 'post_type' => 'page', 'numberposts' => 1, 'meta_key' => '_wp_page_template', 'meta_value' => $template, 'fields' => 'ids' ) );
@@ -346,20 +321,22 @@ function zad_service_schema( $id ) {
 	}
 	if ( $desc ) { $s['description'] = $desc; }
 
-	$offers = array();
-	foreach ( zad_price_rows( $id ) as $r ) { // rows of the block that is actually shown on the page
-		$spec = zad_price_spec( $r['price'] );
-		if ( ! $spec ) { continue; }
-		$o = array( '@type' => 'Offer', 'name' => $r['name'], 'priceCurrency' => 'SAR', 'priceSpecification' => $spec );
+	$offers = array(); $nums = array();
+	foreach ( zad_price_rows( $id ) as $r ) { // packages, else the old price table; same reader as everywhere
+		$pp = zad_price_parse( $r['price'] );
+		if ( 'quote' === $pp['kind'] ) { continue; }
+		$o = array( '@type' => 'Offer', 'name' => $r['name'] ) + zad_price_offer( $pp, (bool) preg_match( '/شهر/u', $r['price'] ) );
 		if ( $r['group'] ) { $o['category'] = $r['group']; }
 		$offers[] = $o;
+		$nums[]   = $pp['min'];
+		if ( 'range' === $pp['kind'] ) { $nums[] = $pp['max']; }
 	}
 	if ( $offers ) {
 		$s['hasOfferCatalog'] = array( '@type' => 'OfferCatalog', 'name' => 'أسعار ' . $name, 'itemListElement' => $offers );
-		$nums = array();
-		foreach ( zad_price_rows( $id ) as $r ) { $sp = zad_price_spec( $r['price'] ); if ( $sp ) { foreach ( array( 'price', 'minPrice', 'maxPrice' ) as $k ) { if ( isset( $sp[ $k ] ) ) { $nums[] = (float) $sp[ $k ]; } } } }
-		if ( $nums ) { $s['offers'] = array( '@type' => 'AggregateOffer', 'priceCurrency' => 'SAR', 'lowPrice' => min( $nums ), 'highPrice' => max( $nums ), 'offerCount' => count( $offers ), 'url' => $url ); }
+		$s['offers'] = array( '@type' => 'AggregateOffer', 'priceCurrency' => 'SAR', 'lowPrice' => min( $nums ), 'highPrice' => max( $nums ), 'offerCount' => count( $offers ), 'url' => $url );
 	}
+	$pkc = function_exists( 'zad_pk_catalog' ) ? zad_pk_catalog( $id ) : null;
+	if ( $pkc ) { $s['hasOfferCatalog'] = $pkc; } // packages on the page: the catalog is built from them only
 	return $s;
 }
 

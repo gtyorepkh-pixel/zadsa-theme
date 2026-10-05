@@ -307,10 +307,7 @@ function zad_parse_prices( $text ) {
 		} elseif ( count( $c ) === 4 ) {
 			$c[] = '';
 		}
-		$num = 0;
-		if ( preg_match( '/\d[\d,٬]*/u', zad_digits_en( $c[2] ), $m ) ) {
-			$num = (int) str_replace( array( ',', '٬' ), '', $m[0] );
-		}
+		$num = (int) zad_price_parse( $c[2] )['min']; // lowest number of the price text (a range gives its first)
 		$rows[] = array( 'group' => $c[0], 'name' => $c[1], 'price' => $c[2], 'details' => $c[3], 'warranty' => $c[4], 'num' => $num );
 	}
 	return $rows;
@@ -325,7 +322,7 @@ function zad_parse_prices( $text ) {
  * Digits are kept exactly as typed for display.
  */
 function zad_parse_packages( $text ) {
-	$out = array(); $legacy_all = true; $num = '[\d٠-٩][\d٠-٩,٬.]*';
+	$out = array(); $legacy_all = true;
 	foreach ( zad_lines( $text ) as $l ) {
 		$c = array_map( 'trim', explode( '|', $l ) );
 		if ( '' === $c[0] ) { continue; }
@@ -337,15 +334,8 @@ function zad_parse_packages( $text ) {
 			'unit' => $legacy ? '' : ( $c[2] ?? '' ), 'desc' => $legacy ? '' : ( $c[3] ?? '' ), 'warranty' => $legacy ? '' : ( $c[4] ?? '' ),
 			'feat' => array_values( array_filter( array_map( 'trim', preg_split( '/[;؛]/u', $feat_src ) ) ) ),
 			'featured' => ! $legacy && in_array( strtolower( $c[6] ?? '' ), array( '1', 'true', 'yes', 'نعم' ), true ), 'cta' => $legacy ? '' : ( $c[7] ?? '' ) );
-		$val = function ( $t ) { return (float) str_replace( ',', '', zad_digits_en( $t ) ); };
-		if ( preg_match( '/(' . $num . ')\s*[-–—]\s*(' . $num . ')/u', $price, $m ) ) {
-			$p['kind'] = 'range'; $p['raw_a'] = $m[1]; $p['raw_b'] = $m[2]; $p['min'] = $val( $m[1] ); $p['max'] = $val( $m[2] ); $p['num'] = (int) $p['min'];
-		} elseif ( preg_match( '/^\s*من\s+(' . $num . ')/u', $price, $m ) ) {
-			$p['kind'] = 'from'; $p['raw_a'] = $m[1]; $p['min'] = $val( $m[1] ); $p['num'] = (int) $p['min'];
-		} elseif ( preg_match( '/(' . $num . ')/u', $price, $m ) ) {
-			$p['kind'] = 'fixed'; $p['raw_a'] = $m[1]; $p['min'] = $val( $m[1] ); $p['num'] = (int) $p['min'];
-		}
-		if ( $p['kind'] !== 'quote' && $p['min'] <= 0 ) { $p['kind'] = 'quote'; $p['min'] = $p['max'] = 0; $p['num'] = 0; } // never a zero price
+		$pp = zad_price_parse( $price );
+		$p['kind'] = $pp['kind']; $p['min'] = $pp['min']; $p['max'] = $pp['max']; $p['raw_a'] = $pp['raw_a']; $p['raw_b'] = $pp['raw_b']; $p['num'] = (int) $pp['min'];
 		$out[] = $p;
 	}
 	if ( $out && $legacy_all && count( $out ) > 1 && ! array_filter( wp_list_pluck( $out, 'featured' ) ) ) { $out[1]['featured'] = true; } // old data: the 2nd package was the highlighted one
@@ -353,24 +343,16 @@ function zad_parse_packages( $text ) {
 }
 
 /**
- * Which price section a service page SHOWS: 'packages' | 'table' | '' (none). Never both.
- * Packages (at least one line) replace the «قائمة الأسعار» table; with no packages the table stays as it was.
- * This only decides what is printed: _zad_prices is still read (zad_price_rows) for the hero pricing widget and the schema.
+ * Price rows of a service page — the single source for the hero widget, the quick cards and the schema:
+ * the _zad_packages lines when the page has any; otherwise the old _zad_prices table (old pages keep working).
+ * Same shape as zad_parse_prices(). _zad_prices is never shown on the page any more, only read here as the fallback.
  */
-function zad_price_view( $id ) {
-	if ( zad_parse_packages( get_post_meta( $id, '_zad_packages', true ) ) ) { return 'packages'; }
-	return zad_parse_prices( get_post_meta( $id, '_zad_prices', true ) ) ? 'table' : '';
-}
-
-/** Price rows for the hero estimator / "من" price / schema: the _zad_prices table when it has rows (even if the page shows packages), else the packages. Same shape as zad_parse_prices(). */
 function zad_price_rows( $id ) {
-	$t = zad_parse_prices( get_post_meta( $id, '_zad_prices', true ) );
-	if ( $t ) { return $t; }
 	$rows = array();
 	foreach ( zad_parse_packages( get_post_meta( $id, '_zad_packages', true ) ) as $pk ) {
 		$rows[] = array( 'group' => '', 'name' => $pk['name'], 'price' => $pk['price'], 'details' => implode( '؛ ', $pk['feat'] ), 'warranty' => '', 'num' => $pk['num'] );
 	}
-	return $rows;
+	return $rows ? $rows : zad_parse_prices( get_post_meta( $id, '_zad_prices', true ) );
 }
 
 /** Lowest numeric price across rows (0 if none). */

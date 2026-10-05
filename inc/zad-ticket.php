@@ -71,13 +71,17 @@ function zad_ticket_price_text( $raw, $unit ) {
 	return $raw;
 }
 
-/** Tiles for a service page: [ [name, svc, price, icon, url], … ] — hero_tiles, else dx, else the price rows. */
+/** Tiles for a service page: [ [name, svc, price, icon, url], … ] — one per package; pages without packages: hero_tiles, else dx, else the price rows. */
 function zad_ticket_tiles( $id ) {
 	static $cache = array();
 	if ( isset( $cache[ $id ] ) ) { return $cache[ $id ]; }
 	$unit = (string) get_post_meta( $id, '_zad_price_unit', true ) ?: 'ريال';
 	$raw  = array();
-	foreach ( zad_q_lines( (string) get_post_meta( $id, '_zad_hero_tiles', true ) ) as $l ) {
+	foreach ( zad_parse_packages( (string) get_post_meta( $id, '_zad_packages', true ) ) as $pk ) { // packages are the source: one tile per package
+		$t = zad_price_hero_text( $pk ); // «199-300» → 199 · «من 600» → 600 · «بعد المعاينة» → ''
+		$raw[] = array( $pk['name'], '', ( '' !== $t && '' !== $pk['unit'] ) ? $t . ' ' . $pk['unit'] : $t, '', '', (float) $pk['min'] );
+	}
+	foreach ( $raw ? array() : zad_q_lines( (string) get_post_meta( $id, '_zad_hero_tiles', true ) ) as $l ) {
 		$c = array_pad( array_map( 'trim', explode( '|', $l ) ), 4, '' );
 		if ( '' === $c[0] ) { continue; }
 		$url = ''; $svc = '';
@@ -97,7 +101,7 @@ function zad_ticket_tiles( $id ) {
 		$icon  = sanitize_key( $r[3] );
 		$icons = zad_ticket_icons();
 		if ( ! isset( $icons[ $icon ] ) && ! in_array( $icon, zad_icon_keys(), true ) ) { $icon = zad_ticket_guess_icon( $r[0] ); }
-		$out[] = array( 'name' => $r[0], 'svc' => '' !== $r[1] ? $r[1] : $r[0], 'price' => zad_ticket_price_text( $r[2], $unit ), 'icon' => $icon, 'url' => $r[4] );
+		$out[] = array( 'name' => $r[0], 'svc' => '' !== $r[1] ? $r[1] : $r[0], 'price' => zad_ticket_price_text( $r[2], $unit ), 'icon' => $icon, 'url' => $r[4], 'num' => isset( $r[5] ) ? $r[5] : 0, 'pk' => isset( $r[5] ) );
 	}
 	if ( count( $out ) > 6 ) { $out = array_slice( $out, 0, 5 ); $out[] = array( 'more' => true ); } // 6th box becomes «المزيد» (opens the booking sheet)
 	$cache[ $id ] = $out;
@@ -120,12 +124,14 @@ function zad_ticket_html( $id, $src = 'hero_ticket' ) {
 	$title = get_the_title( $id );
 	$days  = zad_ticket_days();
 	$first = $real[0];
+	foreach ( $real as $t ) { if ( ! empty( $t['pk'] ) && $t['num'] > 0 && ( empty( $first['pk'] ) || $first['num'] <= 0 || $t['num'] < $first['num'] ) ) { $first = $t; } } // packages: the cheapest priced one is pre-selected, so the card opens on «يبدأ من <أقل سعر>»
+	$q_txt = ! empty( $first['pk'] ) ? 'حسب المعاينة' : 'بعد المعاينة'; // packages all «بعد المعاينة» → «حسب المعاينة»; old pages keep their wording
 	$city  = zad_current_city( $id )['name']; // the page's own city (meta → parent city page → URL → site default)
 	$q     = trim( (string) zad_opt( 'zad_ticket_title', '' ) ) ?: 'وش المشكلة عندك؟';
 	$msg   = zad_ticket_message( $first['svc'], $title, $days[0] );
 	$href  = $wa ? 'https://wa.me/' . $wa . '?text=' . rawurlencode( $msg ) : '#';
 	$price = $first['price'];
-	$o  = '<div class="tk" data-tk data-wa="' . esc_attr( $wa ) . '" data-title="' . esc_attr( $title ) . '" data-src="' . esc_attr( $src ) . '" data-post="' . (int) $id . '">';
+	$o  = '<div class="tk" data-tk data-q="' . esc_attr( $q_txt ) . '" data-wa="' . esc_attr( $wa ) . '" data-title="' . esc_attr( $title ) . '" data-src="' . esc_attr( $src ) . '" data-post="' . (int) $id . '">';
 	$o .= '<div class="tk__top"><div class="tk__meta"><span class="tk__badge">تسعير فوري · معاينة مجانية</span>' . ( $city ? '<span class="tk__city">' . esc_html( $city ) . '</span>' : '' ) . '</div>';
 	$o .= '<p class="tk__q" id="tkq' . $n . '">' . esc_html( $q ) . '</p><div class="tk__grid" role="group" aria-labelledby="tkq' . $n . '">';
 	foreach ( $tiles as $t ) {
@@ -137,7 +143,7 @@ function zad_ticket_html( $id, $src = 'hero_ticket' ) {
 		$o .= '<button type="button" class="tk__tile" aria-pressed="' . ( $on ? 'true' : 'false' ) . '" data-name="' . esc_attr( $t['name'] ) . '" data-svc="' . esc_attr( $t['svc'] ) . '" data-price="' . esc_attr( $t['price'] ) . '" data-url="' . esc_url( $t['url'] ) . '"><span class="tk__ic">' . zad_ticket_icon( $t['icon'] ) . '</span><span class="tk__nm">' . esc_html( $t['name'] ) . '</span></button>';
 	}
 	$o .= '</div></div><div class="tk__perf" aria-hidden="true"></div>';
-	$o .= '<div class="tk__bot"><div class="tk__row"><div class="tk__price" aria-live="polite"><small data-tk-lab>' . ( '' === $price ? 'السعر' : 'يبدأ من' ) . '</small><b data-tk-price>' . esc_html( '' !== $price ? $price : 'بعد المعاينة' ) . '</b></div>';
+	$o .= '<div class="tk__bot"><div class="tk__row"><div class="tk__price" aria-live="polite"><small data-tk-lab>' . ( '' === $price ? 'السعر' : 'يبدأ من' ) . '</small><b data-tk-price>' . esc_html( '' !== $price ? $price : $q_txt ) . '</b></div>';
 	$o .= '<div class="tk__when"><span class="tk__wl" id="tkw' . $n . '">الموعد</span><div class="tk__seg" role="group" aria-labelledby="tkw' . $n . '">';
 	foreach ( $days as $i => $d ) { $o .= '<button type="button" aria-pressed="' . ( 0 === $i ? 'true' : 'false' ) . '" data-day="' . esc_attr( $d ) . '">' . esc_html( $d ) . '</button>'; }
 	$o .= '</div></div></div>';

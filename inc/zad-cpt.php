@@ -192,14 +192,12 @@ function zad_service_metabox( $post ) {
 		<?php zad_repeater_ui( $post->ID, 'steps', 't', 'd', 'عنوان الخطوة', 'وصف الخطوة', 'إضافة خطوة' ); ?>
 		<?php zad_steps_box( $post->ID ); ?>
 
-		<?php $pview = zad_price_view( $post->ID ); $both = (bool) zad_parse_prices( $g( 'prices' ) ) && (bool) zad_parse_packages( $g( 'packages' ) ); ?>
-		<h4>الأسعار — ماذا يظهر في الصفحة؟</h4>
-		<p class="description">إن كتبت سطراً واحداً على الأقل في «باقات الأسعار» يظهر قسم الباقات <b>بدل</b> جدول الأسعار؛ وإن لم تكتب باقات يظهر الجدول. جدول الأسعار يبقى مقروءاً دائماً لمقدّر السعر في الهيرو.
-			<?php if ( $pview ) : ?> المعروض حالياً: <b><?php echo 'table' === $pview ? 'جدول الأسعار' : 'الباقات'; ?></b><?php endif; ?></p>
+		<h4>الأسعار</h4>
+		<p class="description">الأسعار تُكتب في «باقات الأسعار» (مصدر واحد للقسم وللسعر في الهيرو وللسكيما). الجدول القديم أسفل هذا يُقرأ فقط إذا لم تكن هناك باقات.</p>
 		<h4>كيف نحدد السعر (عوامل التسعير)</h4>
 		<?php zad_repeater_ui( $post->ID, 'factors', 't', 'd', 'العنوان', 'الوصف', 'إضافة عامل' ); ?>
 
-		<h4>قائمة الأسعار <small>(سطر لكل بند: الفئة | الخدمة | السعر | التفاصيل | الضمان — الفئة والتفاصيل والضمان اختيارية. يُستخدم أيضاً في مقدّر السعر الفوري)</small></h4>
+		<h4>قائمة الأسعار (قديم) <small>(سطر لكل بند: الفئة | الخدمة | السعر | التفاصيل | الضمان — لم تعد تظهر في الصفحة)</small></h4>
 		<?php if ( $both && 'table' !== $pview ) : ?><p class="description" style="color:#b45309">⚠ هذا الجدول غير ظاهر في الصفحة لأن فيها باقات — لكنه ما زال يغذّي مقدّر السعر في الهيرو</p><?php endif; ?>
 		<p><textarea name="zad[prices]" rows="8" style="width:100%" placeholder="غرف خاصة | غرفة صغيرة | 400 ريال / شهرياً | مناسبة لشقة صغيرة | &#10;خدمات إضافية | النقل والتغليف | 300 - 650 ريال | تُدفع مرة واحدة"><?php echo esc_textarea( $g( 'prices' ) ); ?></textarea></p>
 
@@ -336,7 +334,6 @@ add_action( 'save_post', function ( $post_id ) {
 		update_post_meta( $post_id, '_zad_' . $tk, isset( $in[ $tk ] ) ? sanitize_textarea_field( $in[ $tk ] ) : '' );
 	}
 	update_post_meta( $post_id, '_zad_prices', isset( $in['prices'] ) ? sanitize_textarea_field( $in['prices'] ) : '' );
-	update_post_meta( $post_id, '_zad_price_mode', in_array( $in['price_mode'] ?? '', array( 'table', 'packages' ), true ) ? $in['price_mode'] : '' );
 	update_post_meta( $post_id, '_zad_ba_text', isset( $in['ba_text'] ) ? sanitize_textarea_field( $in['ba_text'] ) : '' );
 	update_post_meta( $post_id, '_zad_ba', isset( $in['ba'] ) ? implode( ',', array_filter( array_map( 'absint', explode( ',', $in['ba'] ) ) ) ) : '' );
 	zad_related_save( $post_id, $in );

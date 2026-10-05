@@ -8,7 +8,7 @@ get_template_part( 'template-parts/page-hero', null, array(
 $svcs = get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => -1, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
 $rows = array();
 foreach ( $svcs as $sv ) {
-	$p = zad_parse_prices( get_post_meta( $sv->ID, '_zad_prices', true ) );
+	$p = zad_price_rows( $sv->ID );
 	if ( ! $p ) { continue; }
 	$min  = zad_min_price( $p ) ?: (int) get_post_meta( $sv->ID, '_zad_price', true );
 	$unit = get_post_meta( $sv->ID, '_zad_price_unit', true ) ?: 'ريال';

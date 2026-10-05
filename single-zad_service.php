@@ -26,11 +26,7 @@ while ( have_posts() ) :
 	$safety   = $arr( 'safety' );
 	$wrows    = $arr( 'warrantyrows' );
 	$after    = zad_lines( $m( 'aftercare' ) );
-	$view     = zad_price_view( $id );                       // 'packages' | 'table' | '' — only ONE price section is printed: packages replace the table
-	$prices   = zad_price_rows( $id );                       // _zad_prices rows (hero estimator, "من" price) — read even when the packages are what the page shows
-	$pkgs     = ( 'packages' === $view ) ? zad_parse_packages( $m( 'packages' ) ) : array();
-	$has_det  = (bool) array_filter( wp_list_pluck( $prices, 'details' ) );
-	$has_war  = (bool) array_filter( wp_list_pluck( $prices, 'warranty' ) );
+	$prices   = zad_price_rows( $id );                       // _zad_packages rows (old pages: the _zad_prices rows) → hero widget, "من" price
 	$min      = zad_min_price( $prices ) ?: (int) $m( 'price' );
 	$unit     = $m( 'price_unit' ) ?: 'ريال';
 	$gallery  = array_filter( array_map( 'intval', explode( ',', (string) $m( 'gallery' ) ) ) );
@@ -260,30 +256,7 @@ while ( have_posts() ) :
 	</div></section>
 	<?php endif; ?>
 
-	<!-- 10. Price list -->
-	<?php if ( 'table' === $view ) : ?>
-	<section class="sec"><div class="wrap">
-		<?php echo zad_sec_head( $id, 'prices' ); // phpcs:ignore ?>
-		<div class="tbl"><table>
-			<thead><tr><th>الخدمة</th><?php if ( $has_det ) : ?><th>التفاصيل</th><?php endif; ?><th>السعر</th><?php if ( $has_war ) : ?><th>الضمان</th><?php endif; ?><th></th></tr></thead>
-			<tbody>
-			<?php $last = null; foreach ( $prices as $r ) :
-				if ( $r['group'] && $r['group'] !== $last ) { echo '<tr class="tbl__grp"><td colspan="5">' . esc_html( $r['group'] ) . '</td></tr>'; $last = $r['group']; } ?>
-				<tr>
-					<td data-l="الخدمة"><?php echo esc_html( $r['name'] ); ?></td>
-					<?php if ( $has_det ) : ?><td data-l="التفاصيل" class="tbl__det"><?php echo esc_html( $r['details'] ); ?></td><?php endif; ?>
-					<td data-l="السعر"><b><?php echo esc_html( $r['price'] ); ?></b></td>
-					<?php if ( $has_war ) : ?><td data-l="الضمان"><?php echo esc_html( $r['warranty'] ?: '—' ); ?></td><?php endif; ?>
-					<td><?php $wa_at = zad_wa_attrs( 'مرحباً، أرغب بـ: ' . $r['name'], $id ); if ( $wa_at ) : ?><button type="button" class="iconbtn iconbtn--wa"<?php echo $wa_at; // phpcs:ignore ?> aria-label="اطلب عبر واتساب"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?></button><?php endif; ?></td>
-				</tr>
-			<?php endforeach; ?>
-			</tbody>
-		</table></div>
-		<?php if ( $m( 'price_note' ) ) : ?><p class="tbl__note"><?php echo esc_html( $m( 'price_note' ) ); ?></p><?php endif; ?>
-	</div></section>
-	<?php endif; ?>
-
-	<!-- 10b. Package cards: replace the price table (the table prints only when there are no packages) -->
+	<!-- 10. Prices: the packages section is the only price section (_zad_prices is no longer printed) -->
 	<?php echo zad_pk_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
 	<!-- 11. Technical card (spec) -->

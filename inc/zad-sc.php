@@ -335,14 +335,13 @@ add_filter( 'zsc_page_data', function ( $d, $post ) {
 	$tag = trim( (string) get_post_meta( $id, '_zad_tagline', true ) );
 	if ( '' === (string) zsc_meta( $id, 'description' ) && '' !== $tag ) { $d['description'] = $tag; }
 	if ( ! $d['offers'] && function_exists( 'zad_parse_prices' ) ) {
-		foreach ( zad_price_rows( $id ) as $r ) { // visible price block only
-			$k = zad_price_kind( $r['price'] ); // «199 - 300» is a range, never 199300
-			$d['offers'][] = array( 'name' => $r['name'], 'price' => 'fixed' === $k['kind'] ? $k['min'] : 0, 'unit' => '', 'kind' => $k['kind'], 'min' => $k['min'], 'max' => $k['max'] );
+		foreach ( zad_price_rows( $id ) as $r ) { // packages, else the old price table
+			$k = zad_price_parse( $r['price'] ); // «199 - 300» is a range, never 199300
+			$d['offers'][] = array( 'name' => $r['name'], 'price' => 'fixed' === $k['kind'] ? $k['min'] : 0, 'unit' => '', 'kind' => $k['kind'], 'min' => $k['min'], 'max' => $k['max'], 'monthly' => (bool) preg_match( '/شهر/u', $r['price'] ) );
 		}
 		if ( ! array_filter( wp_list_pluck( $d['offers'], 'kind' ), function ( $x ) { return 'quote' !== $x; } ) ) { $d['offers'] = array(); } // nothing priced at all: no catalog
-		if ( $d['offers'] && function_exists( 'zad_price_view' ) && 'packages' === zad_price_view( $id ) ) { $d['offers_from_packages'] = true; }
 	}
-	if ( ! $d['price_from'] && ( ! function_exists( 'zad_price_view' ) || '' === zad_price_view( $id ) ) ) { // with a visible price block the offers above are the page's prices
+	if ( ! $d['price_from'] && ! zad_price_rows( $id ) ) { // with price rows the offers above are the page's prices
 		$p = (int) get_post_meta( $id, '_zad_price', true );
 		if ( $p ) { $d['price_from'] = (float) $p; }
 	}
@@ -499,24 +498,12 @@ function zsc_service_nodes( $post ) {
 		$items = array(); $min = null; $max = null;
 		$cc    = function_exists( 'zad_current_city' ) ? zad_current_city( $post->ID ) : array( 'name' => '', 'source' => 'default' );
 		$cityn = ( ! empty( $cc['name'] ) && 'default' !== $cc['source'] ) ? $cc['name'] : ''; // never stamp the site default city on an offer
-		$num   = function ( $v ) { return ( floor( $v ) == $v ) ? (int) $v : (float) $v; };
 		foreach ( $d['offers'] as $o ) {
 			$kind = isset( $o['kind'] ) ? $o['kind'] : 'fixed';
-			$it   = array( '@type' => 'Offer', 'itemOffered' => array( '@type' => 'Service', 'name' => $o['name'] ) );
-			if ( 'fixed' === $kind ) {
-				$spec = array( '@type' => 'UnitPriceSpecification', 'price' => $o['price'], 'priceCurrency' => 'SAR' );
-				if ( '' !== $o['unit'] ) { $spec['unitText'] = $o['unit']; }
-				$it['price'] = $o['price']; $it['priceCurrency'] = 'SAR'; $it['priceSpecification'] = $spec;
-				$lo = $o['price']; $hi = $o['price'];
-			} elseif ( 'range' === $kind ) {
-				$it['priceCurrency'] = 'SAR'; $it['priceSpecification'] = array( '@type' => 'PriceSpecification', 'minPrice' => $num( $o['min'] ), 'maxPrice' => $num( $o['max'] ), 'priceCurrency' => 'SAR' );
-				$lo = $o['min']; $hi = $o['max'];
-			} elseif ( 'from' === $kind ) {
-				$it['priceCurrency'] = 'SAR'; $it['priceSpecification'] = array( '@type' => 'PriceSpecification', 'minPrice' => $num( $o['min'] ), 'priceCurrency' => 'SAR' );
-				$lo = $o['min']; $hi = null;
-			} else {
-				$lo = null; $hi = null; // «بعد المعاينة» / «حسب الفحص»: no price at all
-			}
+			$pp   = array( 'kind' => $kind, 'min' => isset( $o['min'] ) ? $o['min'] : $o['price'], 'max' => isset( $o['max'] ) ? $o['max'] : 0 );
+			$it   = array( '@type' => 'Offer', 'itemOffered' => array( '@type' => 'Service', 'name' => $o['name'] ) ) + zad_price_offer( $pp, ! empty( $o['monthly'] ) );
+			$lo   = 'quote' === $kind ? null : $pp['min'];
+			$hi   = 'range' === $kind ? $pp['max'] : ( 'fixed' === $kind ? $pp['min'] : null );
 			if ( null !== $lo ) { $min = null === $min ? $lo : min( $min, $lo ); }
 			if ( null !== $hi ) { $max = null === $max ? $hi : max( $max, $hi ); }
 			if ( 'quote' !== $kind ) { $it['availability'] = 'https://schema.org/InStock'; }

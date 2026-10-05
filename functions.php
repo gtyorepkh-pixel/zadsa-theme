@@ -6,7 +6,7 @@
  */
 
 define('MEMO_VERSION_VERSION', '1.1');
-define( 'ZAD_VERSION', '3.13.2' );
+define( 'ZAD_VERSION', '3.14.0' );
 define( 'MEMO_THEME_DIR', trailingslashit( get_template_directory() ) );
 define( 'MEMO_THEME_URI', trailingslashit( esc_url( get_template_directory_uri() ) ) );
 
@@ -23,6 +23,7 @@ add_filter( 'robots_txt', function( $output, $public ) {
 // Theme setup
 require_once MEMO_THEME_DIR .'_inc/_memo.setup.php';
 require_once MEMO_THEME_DIR .'_inc/_memo_icons.php';
+require_once MEMO_THEME_DIR .'inc/zad-price.php';
 require_once MEMO_THEME_DIR .'inc/zad-helpers.php';
 require_once MEMO_THEME_DIR .'inc/zad-roles.php';
 require_once MEMO_THEME_DIR .'inc/zad-legacy.php';
