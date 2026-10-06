@@ -29,93 +29,110 @@ add_action( 'wp_footer', function () {
 	$cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true ) );
 	$areas = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
 	$cur   = zad_is_service() ? get_the_ID() : 0;
-	$icons = array( 'phone', 'shield', 'clock' );
 	?>
 <div class="wiz" id="zad-wizard" aria-hidden="true" data-current="<?php echo (int) $cur; ?>" data-area="" data-services="<?php echo esc_attr( wp_json_encode( array_values( $map ) ) ); ?>"><template id="zad-wizard-tpl">
 	<div class="wiz__overlay" data-wiz-close></div>
 	<div class="wiz__panel wz" role="dialog" aria-modal="true" aria-labelledby="wiz-title">
-		<header class="wz__top">
-			<div class="wz__row">
-				<div><span class="wz__kick">حجز سريع · معاينة مجانية</span><h2 id="wiz-title">احجز خدمتك</h2></div>
-				<button type="button" class="wiz__x" data-wiz-close aria-label="إغلاق"><?php echo zad_icon( 'close', 22 ); // phpcs:ignore ?></button>
-			</div>
-			<div class="wiz__progress wz__bar" aria-hidden="true"><i class="is-on" data-dot="1"></i><i data-dot="2"></i><i data-dot="3"></i></div>
-			<p class="wz__lbl" data-step-lbl>الخطوة 1 من 3 · اختر خدمتك</p>
-		</header>
 
-		<form class="wiz__form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" novalidate data-wiz-form>
-			<input type="hidden" name="action" value="zad_quote">
-			<input type="hidden" name="source" value="">
-			<input type="hidden" name="lat" value=""><input type="hidden" name="lng" value="">
-			<input type="hidden" name="service" value="">
-			<div class="qform__hp" aria-hidden="true"><label>لا تملأ هذا الحقل<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+		<!-- rail: brand · live steps · reasons to trust (becomes a slim header on phones) -->
+		<aside class="wz__rail">
+			<div class="wz__brand"><span class="wz__logo"><?php echo zad_icon( 'calendar', 24 ); // phpcs:ignore ?></span><div><small>حجز سريع</small><strong id="wiz-title">احجز زيارة معاينة</strong></div></div>
+			<ol class="wz__steps" aria-label="مراحل الحجز">
+				<li data-dot="1" class="is-cur"><i>1</i><span><b>الخدمة</b><em data-rail="svc">لم تُختر بعد</em></span></li>
+				<li data-dot="2"><i>2</i><span><b>الموعد</b><em data-rail="when">أي وقت يناسبك</em></span></li>
+				<li data-dot="3"><i>3</i><span><b>بياناتك</b><em data-rail="who">رقم الجوال فقط</em></span></li>
+			</ol>
+			<ul class="wz__perks">
+				<?php foreach ( array_slice( zad_lines( zad_opt( 'zad_card_badges', "فحص مجاني\nضمان مكتوب" ) ), 0, 3 ) as $pk ) : ?><li><?php echo zad_icon( 'check', 16 ); // phpcs:ignore ?><span><?php echo esc_html( $pk ); ?></span></li><?php endforeach; ?>
+				<li><?php echo zad_icon( 'clock', 16 ); // phpcs:ignore ?><span><?php echo esc_html( zad_hours_text() ); ?></span></li>
+			</ul>
+		</aside>
 
-			<!-- step 1 -->
-			<div class="wiz__step" data-step="1">
-				<h3>ما الذي تحتاجه؟</h3>
-				<?php if ( $cats && ! is_wp_error( $cats ) ) : ?>
-					<div class="wiz__cats" data-wiz-cats>
-						<?php foreach ( $cats as $c ) : $ic = get_term_meta( $c->term_id, 'zad_icon', true ) ?: 'sparkle'; ?>
-							<button type="button" class="wiz__cat" data-cat="<?php echo (int) $c->term_id; ?>"><?php echo zad_icon( $ic, 26 ); // phpcs:ignore ?><span><?php echo esc_html( zad_wiz_cat_label( $c->name ) ); ?></span></button>
-						<?php endforeach; ?>
+		<div class="wz__main">
+			<header class="wz__top">
+				<p class="wz__lbl" data-step-lbl>الخطوة 1 من 3 · اختر خدمتك</p>
+				<button type="button" class="wiz__x" data-wiz-close aria-label="إغلاق"><?php echo zad_icon( 'close', 20 ); // phpcs:ignore ?></button>
+			</header>
+			<div class="wz__bar" aria-hidden="true"><i data-bar></i></div>
+
+			<form class="wiz__form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" novalidate data-wiz-form>
+				<input type="hidden" name="action" value="zad_quote">
+				<input type="hidden" name="source" value="">
+				<input type="hidden" name="lat" value=""><input type="hidden" name="lng" value="">
+				<input type="hidden" name="service" value="">
+				<div class="qform__hp" aria-hidden="true"><label>لا تملأ هذا الحقل<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+
+				<!-- step 1: what + where -->
+				<div class="wiz__step" data-step="1">
+					<h3>ما الخدمة التي تحتاجها؟</h3>
+					<?php if ( $cats && ! is_wp_error( $cats ) ) : ?>
+						<div class="wiz__cats" data-wiz-cats role="group" aria-label="القسم">
+							<?php foreach ( $cats as $c ) : $ic = get_term_meta( $c->term_id, 'zad_icon', true ) ?: 'sparkle'; ?>
+								<button type="button" class="wiz__cat" data-cat="<?php echo (int) $c->term_id; ?>"><span class="wz__ic"><?php echo zad_icon( $ic, 22 ); // phpcs:ignore ?></span><span class="wz__tx"><?php echo esc_html( zad_wiz_cat_label( $c->name ) ); ?></span></button>
+							<?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+					<div class="wz__svcs" data-wiz-svcs aria-live="polite"></div>
+					<label class="fld wz__sel"><span>الخدمة</span><select data-wiz-service><option value="">اختر الخدمة</option></select></label>
+					<?php if ( $areas && ! is_wp_error( $areas ) ) : ?>
+						<div class="wiz__lbl">في أي مدينة؟</div>
+						<div class="wz__seg wz__seg--city" data-wiz-city role="group" aria-label="المدينة">
+							<?php foreach ( $areas as $a ) : ?><button type="button" class="chipbtn" data-city="<?php echo esc_attr( $a->name ); ?>"><?php echo zad_icon( 'pin', 16 ); // phpcs:ignore ?><span><?php echo esc_html( $a->name ); ?></span></button><?php endforeach; ?>
+						</div>
+						<input type="hidden" name="area" value="">
+					<?php endif; ?>
+					<p class="wiz__err" data-err="1" hidden></p>
+				</div>
+
+				<!-- step 2: when (optional) -->
+				<div class="wiz__step" data-step="2" hidden>
+					<h3>متى يناسبك الموعد؟</h3>
+					<p class="wiz__sub">هذه الخطوة اختيارية — يمكنك تخطّيها والمتابعة.</p>
+					<div class="wiz__lbl">اليوم</div>
+					<div class="wz__seg wz__seg--day" data-wiz-day role="group" aria-label="اليوم">
+						<button type="button" class="chipbtn" data-day="0"><b>اليوم</b><small data-dd></small></button><button type="button" class="chipbtn" data-day="1"><b>غداً</b><small data-dd></small></button><button type="button" class="chipbtn" data-day="2"><b>بعد غد</b><small data-dd></small></button>
 					</div>
-				<?php endif; ?>
-				<div class="wz__svcs" data-wiz-svcs aria-live="polite"></div>
-				<label class="fld wz__sel"><span>الخدمة</span><select data-wiz-service><option value="">اختر الخدمة</option></select></label>
-				<?php if ( $areas && ! is_wp_error( $areas ) ) : ?>
-					<div class="wiz__lbl">في أي مدينة؟</div>
-					<div class="wz__seg" data-wiz-city>
-						<?php foreach ( $areas as $a ) : ?><button type="button" class="chipbtn" data-city="<?php echo esc_attr( $a->name ); ?>"><?php echo esc_html( $a->name ); ?></button><?php endforeach; ?>
+					<label class="fld"><span>أو اختر تاريخاً آخر</span><input type="date" name="date"></label>
+					<div class="wiz__lbl">الفترة المفضّلة</div>
+					<div class="wz__seg wz__seg--time" data-wiz-time role="group" aria-label="الفترة">
+						<button type="button" class="chipbtn" data-time="صباحاً"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 18h18M6.5 18a5.5 5.5 0 0 1 11 0M12 5v3M4.6 9.6l2 2M19.4 9.6l-2 2"/></svg><span>صباحاً</span></button>
+						<button type="button" class="chipbtn" data-time="ظهراً"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><span>ظهراً</span></button>
+						<button type="button" class="chipbtn" data-time="مساءً"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4 6.5 6.5 0 0 0 20 14.5z"/></svg><span>مساءً</span></button>
 					</div>
-					<input type="hidden" name="area" value="">
-				<?php endif; ?>
-				<p class="wiz__err" data-err="1" hidden></p>
-			</div>
-
-			<!-- step 2 -->
-			<div class="wiz__step" data-step="2" hidden>
-				<h3>متى يناسبك؟</h3>
-				<p class="wiz__sub">اختياري بالكامل — يمكنك المتابعة مباشرة.</p>
-				<div class="wiz__lbl">اليوم</div>
-				<div class="wz__seg" data-wiz-day>
-					<button type="button" class="chipbtn" data-day="0">اليوم</button><button type="button" class="chipbtn" data-day="1">غداً</button><button type="button" class="chipbtn" data-day="2">بعد غد</button>
+					<input type="hidden" name="time" value="">
+					<div class="wz__where">
+						<label class="fld"><span>الحي أو العنوان</span><input type="text" name="address" autocomplete="address-level2" placeholder="مثال: حي النرجس"></label>
+						<button type="button" class="wiz__geo" data-wiz-geo><?php echo zad_icon( 'pin', 20 ); // phpcs:ignore ?> <span>أو شارك موقعك على الخريطة</span></button>
+					</div>
 				</div>
-				<label class="fld"><span>أو اختر تاريخاً</span><input type="date" name="date"></label>
-				<div class="wiz__lbl">الفترة</div>
-				<div class="wz__seg" data-wiz-time>
-					<button type="button" class="chipbtn" data-time="صباحاً">صباحاً</button><button type="button" class="chipbtn" data-time="ظهراً">ظهراً</button><button type="button" class="chipbtn" data-time="مساءً">مساءً</button>
+
+				<!-- step 3: contact -->
+				<div class="wiz__step" data-step="3" hidden>
+					<h3>آخر خطوة — كيف نتواصل معك؟</h3>
+					<p class="wiz__sub">رقم الجوال هو الحقل الوحيد المطلوب.</p>
+					<div class="fld--row">
+						<label class="fld"><span>رقم الجوال *</span><input type="tel" name="phone" inputmode="tel" autocomplete="tel" dir="ltr" placeholder="05XXXXXXXX" required></label>
+						<label class="fld"><span>الاسم</span><input type="text" name="name" autocomplete="name" placeholder="اسمك"></label>
+					</div>
+					<label class="fld"><span>ملاحظات</span><textarea name="message" rows="2" placeholder="أي تفاصيل تساعدنا على تحضير الزيارة"></textarea></label>
+					<div class="wiz__sum" data-wiz-sum></div>
+					<p class="wiz__err" data-err="3" hidden></p>
+					<p class="qform__note"><?php echo zad_icon( 'shield', 16 ); // phpcs:ignore ?> طلب مبدئي — نؤكّد الموعد النهائي بالاتصال.</p>
 				</div>
-				<input type="hidden" name="time" value="">
-				<button type="button" class="wiz__geo" data-wiz-geo><?php echo zad_icon( 'pin', 20 ); // phpcs:ignore ?> <span>شارك موقعك على الخريطة (اختياري)</span></button>
-				<label class="fld"><span>الحي أو العنوان</span><input type="text" name="address" autocomplete="address-level2" placeholder="مثال: حي النرجس"></label>
-			</div>
 
-			<!-- step 3 -->
-			<div class="wiz__step" data-step="3" hidden>
-				<h3>آخر خطوة</h3>
-				<div class="wiz__sum" data-wiz-sum></div>
-				<p class="wiz__sub">رقم الجوال هو الحقل الوحيد المطلوب.</p>
-				<div class="fld--row">
-					<label class="fld"><span>رقم الجوال *</span><input type="tel" name="phone" inputmode="tel" autocomplete="tel" dir="ltr" placeholder="05XXXXXXXX" required></label>
-					<label class="fld"><span>الاسم</span><input type="text" name="name" autocomplete="name" placeholder="اسمك"></label>
+				<div class="wiz__nav">
+					<button type="button" class="btn btn--ghost-dark" data-wiz-back hidden>رجوع</button>
+					<button type="button" class="btn btn--primary" data-wiz-next>التالي <span aria-hidden="true">←</span></button>
+					<button type="submit" class="btn btn--wa" data-wiz-submit hidden><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> إرسال الطلب</button>
 				</div>
-				<label class="fld"><span>ملاحظات</span><textarea name="message" rows="2" placeholder="أي تفاصيل تساعدنا على تحضير الزيارة"></textarea></label>
-				<p class="wiz__err" data-err="3" hidden></p>
-				<p class="qform__note"><?php echo zad_icon( 'shield', 16 ); // phpcs:ignore ?> طلب مبدئي — نؤكّد الموعد النهائي بالاتصال.</p>
-			</div>
+			</form>
 
-			<div class="wiz__nav">
-				<button type="button" class="btn btn--ghost-dark" data-wiz-back hidden>رجوع</button>
-				<button type="button" class="btn btn--primary" data-wiz-next>التالي</button>
-				<button type="submit" class="btn btn--wa" data-wiz-submit hidden><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> إرسال الطلب</button>
+			<div class="wiz__done" data-wiz-done hidden>
+				<span class="icard__ic"><?php echo zad_icon( 'check', 28 ); // phpcs:ignore ?></span>
+				<h3>تم استلام طلبك</h3>
+				<p data-wiz-done-msg>سنتصل بك خلال دقائق لتأكيد الموعد.</p>
+				<a class="btn btn--wa" data-wiz-wa href="#" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> متابعة عبر واتساب</a>
 			</div>
-		</form>
-
-		<div class="wiz__done" data-wiz-done hidden>
-			<span class="icard__ic"><?php echo zad_icon( 'check', 28 ); // phpcs:ignore ?></span>
-			<h3>تم استلام طلبك</h3>
-			<p data-wiz-done-msg>سنتصل بك خلال دقائق لتأكيد الموعد.</p>
-			<a class="btn btn--wa" data-wiz-wa href="#" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> متابعة عبر واتساب</a>
 		</div>
 	</div></template>
 </div>

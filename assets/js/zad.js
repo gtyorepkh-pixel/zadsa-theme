@@ -103,13 +103,26 @@
 		function go(n) {
 			cur = n;
 			steps.forEach(function (st) { st.hidden = st.getAttribute('data-step') != n; });
-			$$('[data-dot]', wiz).forEach(function (d) { var k = +d.getAttribute('data-dot'); d.classList.toggle('is-on', k <= n); });
+			$$('[data-dot]', wiz).forEach(function (d) { var k = +d.getAttribute('data-dot'); d.classList.toggle('is-on', k <= n); d.classList.toggle('is-cur', k === n); d.classList.toggle('is-done', k < n); });
+			var bar = $('[data-bar]', wiz); if (bar) bar.style.inlineSize = (n / 3 * 100) + '%';
 			$('[data-wiz-back]', wiz).hidden = n === 1;
 			$('[data-wiz-next]', wiz).hidden = n === 3;
 			$('[data-wiz-submit]', wiz).hidden = n !== 3;
 			var lb = $('[data-step-lbl]', wiz); if (lb) lb.textContent = 'الخطوة ' + n + ' من 3 · ' + ['اختر خدمتك', 'اختر وقتك', 'بياناتك'][n - 1];
 			if (n === 3) summary();
+			rail();
 		}
+		/* live values in the side rail: service · city, day · period, phone */
+		function rail() {
+			var s = svcs.filter(function (x) { return String(x.id) === String(hidSvc.value); })[0], ar = form.elements.area ? form.elements.area.value : '';
+			var set = function (k, v) { var el = $('[data-rail="' + k + '"]', wiz); if (el) el.textContent = v; };
+			set('svc', s ? s.name + (ar ? ' · ' + ar : '') : (ar ? ar : 'لم تُختر بعد'));
+			set('when', [form.elements.date.value, form.elements.time.value].filter(Boolean).join(' · ') || 'أي وقت يناسبك');
+			set('who', (form.elements.phone.value || '').replace(/\s+/g, '') || 'رقم الجوال فقط');
+		}
+		form.addEventListener('click', function () { setTimeout(rail, 0); });
+		form.addEventListener('input', rail); form.addEventListener('change', rail);
+		try { var fm = new Intl.DateTimeFormat('ar-SA-u-nu-latn-ca-gregory', { day: 'numeric', month: 'long' }); $$('[data-wiz-day] button', wiz).forEach(function (b) { var d = new Date(); d.setDate(d.getDate() + (+b.getAttribute('data-day'))); var sm = $('[data-dd]', b); if (sm) sm.textContent = fm.format(d); }); } catch (e) {}
 		function err(n, msg) { var e = $('[data-err="' + n + '"]', wiz); if (!e) return; e.hidden = !msg; e.textContent = msg || ''; }
 		function summary() {
 			var s = svcs.filter(function (x) { return String(x.id) === String(hidSvc.value); })[0];
@@ -180,7 +193,7 @@
 				.then(function (j) {
 					btn.disabled = false;
 					if (j && j.success) {
-						form.hidden = true; $('.wiz__progress', wiz).hidden = true;
+						form.hidden = true; $('.wz__steps', wiz).hidden = true;
 						var d = $('[data-wiz-done]', wiz); d.hidden = false;
 						$('[data-wiz-done-msg]', d).textContent = j.data.message;
 						var w = $('[data-wiz-wa]', d); if (j.data.whatsapp) { w.href = j.data.whatsapp; } else { w.hidden = true; }
