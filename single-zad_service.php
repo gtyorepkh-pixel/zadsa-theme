@@ -87,7 +87,6 @@ while ( have_posts() ) :
 
 				<div class="shero__side">
 					<?php $hc = zad_hero_card( $id, (bool) $prices );
-					if ( ( 'ticket' === $hc && '' === zad_ticket_html( $id ) ) || ( 'q30' === $hc && '' === zad_q30_html( $id, 'hero-a' ) ) || ( 'dx' === $hc && '' === zad_dx_html( $id, 'hero-b' ) ) ) { $hc = $prices ? 'est' : 'form'; } // never leave the side empty
 					if ( 'ticket' === $hc ) : echo zad_ticket_html( $id ); // phpcs:ignore
 					elseif ( 'q30' === $hc ) : echo zad_q30_html( $id, 'hero-a' ); // phpcs:ignore
 					elseif ( 'dx' === $hc ) : echo zad_dx_html( $id, 'hero-b' ); // phpcs:ignore
@@ -125,7 +124,7 @@ while ( have_posts() ) :
 						<p class="est__note">السعر تقريبي ويُؤكَّد نهائياً بعد المعاينة.</p>
 					</div>
 					<?php else : ?>
-						<?php echo zad_quote_form( array( 'service_id' => $id, 'id' => 'hq', 'title' => 'اطلب ' . $title, 'compact' => true ) ); // phpcs:ignore ?>
+						<?php echo zad_ticket_html( $id ); // phpcs:ignore ?>
 					<?php endif; ?>
 					<?php $fc = ( 'ticket' === $hc ) ? array() : zad_float_cards( $id ); if ( $fc ) : ?>
 					<ul class="fcards" aria-label="مزايا الخدمة"><?php foreach ( $fc as $n => $c ) : ?>

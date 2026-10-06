@@ -46,7 +46,7 @@ $about_page = zad_page_url( 'temp/memo-about.php', array( 'about' ) );
 			</div>
 		</div>
 		<div class="hero__side" id="quote">
-			<?php echo zad_quote_form( array( 'id' => 'hq' ) ); // phpcs:ignore ?>
+			<?php $tkh = zad_ticket_home_html(); echo '' !== $tkh ? $tkh : zad_quote_form( array( 'id' => 'hq' ) ); // phpcs:ignore ?>
 		</div>
 	</div>
 	<?php if ( $hero_img ) : ?><div class="hero__img"><?php echo wp_get_attachment_image( $hero_img, 'large', false, array( 'loading' => 'eager', 'alt' => '' ) ); ?></div><?php endif; ?>

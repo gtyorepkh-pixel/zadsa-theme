@@ -33,24 +33,32 @@ function zad_ticket_icons() {
 
 /** Guess an icon key from a tile name (Arabic keywords); 'other' when nothing matches. */
 function zad_ticket_guess_icon( $name ) {
-	$map = array(
-		'termite'  => '/نمل\s*أبيض|نمل\s*ابيض|أرضة|ارضة|ارضه|أرضه/u',
-		'ant'      => '/نمل/u',
-		'roach'    => '/صراصير|صرصور|سرسور|حشرات\s*منزلية/u',
-		'bedbug'   => '/بق\b|بق\s*الفراش|فراش/u',
-		'rodent'   => '/فئران|فأر|فار\b|قوارض|جرذ|جرذان/u',
-		'mosquito' => '/بعوض|ذباب|ناموس|حشرات\s*طائرة/u',
-		'sofa'     => '/كنب|أريكة|اريكة|مجلس|مجالس|مقاعد|كنبات|سجاد|موكيت|مفروشات/u',
-		'tank'     => '/خزان|خزانات/u',
-		'ac'       => '/مكيف|تكييف|مكيفات/u',
-		'truck'    => '/نقل|عفش|شاحنة|ونش/u',
-		'box'      => '/تغليف|تعبئة|صندوق|فك\s*وتركيب/u',
-		'house'    => '/بيت|منزل|منازل|فيلا|فلل|شقة|شقق|شقه/u',
+	$map = array( // first match wins: the same words always give the same icon
+		'accentral' => '/كاسيت|دكت|مركزي|مخفي|باكيج/u',
+		'acsplit'   => '/سبليت|سبلت|split/iu',
+		'acwindow'  => '/شباك|window/iu',
+		'snow'      => '/فريون|غاز\s*(?:ال)?مكيف|شحن\s*غاز/u',
+		'ac'        => '/مكيف|تكييف|مكيفات/u',
+		'termite'   => '/نمل\s*أبيض|نمل\s*ابيض|أرضة|ارضة|ارضه|أرضه/u',
+		'ant'       => '/نمل/u',
+		'roach'     => '/صراصير|صرصور|سرسور|حشرات\s*منزلية/u',
+		'bedbug'    => '/بق\b|بق\s*الفراش|فراش/u',
+		'rodent'    => '/فئران|فأر|فار\b|قوارض|جرذ|جرذان/u',
+		'mosquito'  => '/بعوض|ذباب|ناموس|حشرات\s*طائرة/u',
+		'sofa'      => '/كنب|أريكة|اريكة|مجلس|مجالس|مقاعد|كنبات|سجاد|موكيت|مفروشات|ستائر/u',
+		'tank'      => '/خزان|خزانات/u',
+		'truck'     => '/نقل|عفش|شاحنة|ونش|تخزين/u',
+		'box'       => '/تغليف|تعبئة|صندوق|فك\s*وتركيب/u',
+		'drop'      => '/مجاري|تسليك|بيارة|بيارات|مياه|تسرب/u',
+		'paint'     => '/دهان|طلاء|بلاط|رخام|جلي/u',
+		'shield'    => '/عزل|مكافحة|حشرات|رش|تعقيم/u',
+		'house'     => '/بيت|منزل|منازل|فيلا|فلل|شقة|شقق|شقه/u',
+		'tool'      => '/صيانة|اصلاح|إصلاح|تركيب|نجار/u',
 	);
 	foreach ( $map as $key => $re ) {
 		if ( preg_match( $re, (string) $name ) ) { return $key; }
 	}
-	return 'other';
+	return 'sparkle'; // never the meaningless «…» icon
 }
 
 /** SVG for a tile icon key: the ticket set, then the general theme set, else "other". */
@@ -114,19 +122,44 @@ function zad_ticket_message( $svc, $title, $day ) {
 	return 'السلام عليكم، أبغى ' . $svc . ' — ' . $title . ' — الموعد: ' . $day;
 }
 
-/** The card. '' when there are fewer than two real tiles (the caller then falls back to the estimator / form). */
+/** The hero card for a service page. Always renders: with no packages / rows the page's own service name is the single tile. */
 function zad_ticket_html( $id, $src = 'hero_ticket' ) {
 	$tiles = zad_ticket_tiles( $id );
 	$real  = array_values( array_filter( $tiles, function ( $t ) { return empty( $t['more'] ); } ) );
-	if ( count( $real ) < 2 ) { return ''; }
+	if ( ! $real ) {
+		$nm    = function_exists( 'zad_svc_label' ) ? zad_svc_label( $id ) : get_the_title( $id );
+		$tiles = array( array( 'name' => $nm, 'svc' => $nm, 'price' => '', 'icon' => zad_ticket_guess_icon( $nm ), 'url' => '', 'num' => 0, 'pk' => true ) );
+	}
+	return zad_ticket_render( $tiles, array( 'id' => (int) $id, 'title' => get_the_title( $id ), 'city' => zad_current_city( $id )['name'], 'wa' => zad_whatsapp( $id ), 'src' => $src ) ); // the page's own city (meta → parent city page → URL → site default)
+}
+
+/** The same card for the home hero: one tile per booking-sheet section (fixed icons), no prices (≈ «حسب المعاينة»). */
+function zad_ticket_home_html( $src = 'hero_ticket_home' ) {
+	$cats = function_exists( 'zad_wiz_manual' ) ? zad_wiz_manual() : array();
+	if ( ! $cats && function_exists( 'zad_wiz_data' ) ) { $cats = zad_wiz_data()['cats']; }
+	$tiles = array();
+	foreach ( $cats as $c ) {
+		$tiles[] = array( 'name' => $c['name'], 'svc' => $c['name'], 'price' => '', 'icon' => zad_ticket_guess_icon( $c['name'] ), 'url' => '', 'num' => 0, 'pk' => true );
+	}
+	if ( count( $tiles ) > 6 ) { $tiles = array_slice( $tiles, 0, 5 ); $tiles[] = array( 'more' => true ); }
+	if ( ! $tiles ) { return ''; }
+	return zad_ticket_render( $tiles, array( 'id' => 0, 'title' => get_bloginfo( 'name' ), 'city' => (string) zad_opt( 'zad_city_name', '' ), 'wa' => zad_whatsapp( 0 ), 'src' => $src ) );
+}
+
+/** The card markup. $x: id (post, 0 on the home), title, city, wa, src. */
+function zad_ticket_render( $tiles, $x ) {
+	$real  = array_values( array_filter( $tiles, function ( $t ) { return empty( $t['more'] ); } ) );
+	if ( ! $real ) { return ''; }
 	static $n = 0; $n++;
-	$wa    = zad_whatsapp( $id );
-	$title = get_the_title( $id );
+	$id    = (int) $x['id'];
+	$src   = $x['src'];
+	$wa    = $x['wa'];
+	$title = $x['title'];
 	$days  = zad_ticket_days();
+	$city  = $x['city'];
 	$first = $real[0];
 	foreach ( $real as $t ) { if ( ! empty( $t['pk'] ) && $t['num'] > 0 && ( empty( $first['pk'] ) || $first['num'] <= 0 || $t['num'] < $first['num'] ) ) { $first = $t; } } // packages: the cheapest priced one is pre-selected, so the card opens on «يبدأ من <أقل سعر>»
 	$q_txt = ! empty( $first['pk'] ) ? 'حسب المعاينة' : 'بعد المعاينة'; // packages all «بعد المعاينة» → «حسب المعاينة»; old pages keep their wording
-	$city  = zad_current_city( $id )['name']; // the page's own city (meta → parent city page → URL → site default)
 	$q     = trim( (string) zad_opt( 'zad_ticket_title', '' ) ) ?: 'وش المشكلة عندك؟';
 	$msg   = zad_ticket_message( $first['svc'], $title, $days[0] );
 	$href  = $wa ? 'https://wa.me/' . $wa . '?text=' . rawurlencode( $msg ) : '#';

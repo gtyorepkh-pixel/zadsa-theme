@@ -15,14 +15,7 @@ function zad_quick_sources() { return array( 'hero-a' => 'الهيرو (أ)', 'h
 
 /* ---------------- which card in the hero ---------------- */
 function zad_hero_card( $id, $has_prices ) {
-	$all = array( 'ticket', 'est', 'q30', 'dx', 'form' );
-	$c = (string) get_post_meta( $id, '_zad_hero_card', true );
-	if ( ! in_array( $c, $all, true ) ) { $c = (string) zad_opt( 'zad_hero_default', 'ticket' ); }
-	if ( ! in_array( $c, $all, true ) ) { $c = 'ticket'; }
-	if ( 'ticket' === $c && '' === zad_ticket_html( $id ) ) { $c = $has_prices ? 'est' : 'form'; } // fewer than two tiles: the card would look broken
-	if ( 'est' === $c && ! $has_prices ) { $c = 'form'; }
-	if ( 'dx' === $c && ! zad_dx_data( $id ) ) { $c = $has_prices ? 'est' : 'form'; }
-	return $c;
+	return 'ticket'; // one hero card for the whole site: «تذكرة الحجز» (the request form / estimator / 30-second / diagnosis cards are no longer shown)
 }
 
 /* ---------------- data ---------------- */
@@ -142,9 +135,7 @@ function zad_quick_box( $post_id ) {
 	$g = function ( $k ) use ( $post_id ) { return get_post_meta( $post_id, '_zad_' . $k, true ); };
 	$hc = $g( 'hero_card' ); $fin = $g( 'final_req' ); $sec = $g( 'dx_sec' );
 	echo '<h4>بطاقة الهيرو وطلب الخدمة</h4><div class="zad-grid">';
-	echo '<p><label>بطاقة الهيرو لهذه الصفحة<select name="zad[hero_card]">';
-	foreach ( array( '' => 'الافتراضي (من الإعدادات)', 'ticket' => 'تذكرة الحجز', 'est' => 'مُقدّر السعر', 'q30' => 'اطلب في 30 ثانية (أ)', 'dx' => 'شخّص مشكلتك (ب)', 'form' => 'نموذج الطلب' ) as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $hc, $k, false ) . '>' . esc_html( $l ) . '</option>'; }
-	echo '</select></label></p><p><label>قسم الطلب الأخير في آخر الصفحة<select name="zad[final_req]">';
+	echo '<p class="description" style="grid-column:1/-1">بطاقة الهيرو موحّدة في كل الموقع: «تذكرة الحجز» (أيقوناتها ثابتة بحسب اسم الباقة، وتختار الخدمة فقط).</p><p><label>قسم الطلب الأخير في آخر الصفحة<select name="zad[final_req]">';
 	foreach ( array( '' => 'نموذج الطلب (الحالي)', 'q30' => 'اطلب في 30 ثانية (أ)' ) as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $fin, $k, false ) . '>' . esc_html( $l ) . '</option>'; }
 	echo '</select></label></p><p><label>قسم «شخّص مشكلتك» بعد التعريف<select name="zad[dx_sec]">';
 	foreach ( array( '' => 'يظهر إن وُجدت أعراض', 'off' => 'مخفي في هذه الصفحة' ) as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $sec, $k, false ) . '>' . esc_html( $l ) . '</option>'; }
@@ -157,9 +148,7 @@ function zad_quick_box( $post_id ) {
 }
 
 function zad_quick_save( $post_id, $in ) {
-	if ( ! array_key_exists( 'hero_card', $in ) ) { return; }
-	$hc = in_array( $in['hero_card'], array( 'ticket', 'est', 'q30', 'dx', 'form' ), true ) ? $in['hero_card'] : '';
-	update_post_meta( $post_id, '_zad_hero_card', $hc );
+	if ( ! array_key_exists( 'final_req', $in ) ) { return; } // (the hero card is one for the whole site now; _zad_hero_card is left as it was)
 	update_post_meta( $post_id, '_zad_final_req', 'q30' === ( $in['final_req'] ?? '' ) ? 'q30' : '' );
 	update_post_meta( $post_id, '_zad_dx_sec', 'off' === ( $in['dx_sec'] ?? '' ) ? 'off' : '' );
 	foreach ( array( 'q_svcs', 'q_hoods', 'dx', 'hero_tiles' ) as $k ) { update_post_meta( $post_id, '_zad_' . $k, sanitize_textarea_field( $in[ $k ] ?? '' ) ); }
