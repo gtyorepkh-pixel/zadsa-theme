@@ -60,6 +60,8 @@
 		var form = $('[data-wiz-form]', wiz), svcs = [], steps = $$('.wiz__step', wiz), cur = 1;
 		try { svcs = JSON.parse(wiz.getAttribute('data-services') || '[]'); } catch (e) {}
 		var sel = $('[data-wiz-service]', wiz), hidSvc = form.elements.service, cat = '';
+		function catName() { var on = $('[data-wiz-cats] .wiz__cat.is-on .wz__tx', wiz); return on ? on.textContent : ''; }
+		function setLabel() { if (form.elements.svc_label) form.elements.svc_label.value = catName(); }
 		function fillServices() {
 			var keep = hidSvc.value;
 			sel.innerHTML = '<option value="">اختر الخدمة</option>';
@@ -93,7 +95,7 @@
 			var c = wiz.getAttribute('data-current');
 			if (c && c !== '0' && !hidSvc.value) { hidSvc.value = c; }
 			var cs = svcs.filter(function (x) { return String(x.id) === String(hidSvc.value); })[0];
-			if (cs && !cat) { cat = String(cs.cat); $$('[data-wiz-cats] .wiz__cat', wiz).forEach(function (x) { x.classList.toggle('is-on', x.getAttribute('data-cat') === cat); }); }
+			if (cs && !cat) { cat = String(cs.cat); $$('[data-wiz-cats] .wiz__cat', wiz).forEach(function (x) { x.classList.toggle('is-on', x.getAttribute('data-cat') === cat); }); } setLabel();
 			fillServices();
 			var ar = wiz.getAttribute('data-area');
 			if (ar && form.elements.area && !form.elements.area.value) { $$('[data-wiz-city] button', wiz).forEach(function (b) { if (b.getAttribute('data-city') === ar) b.click(); }); }
@@ -114,9 +116,9 @@
 		}
 		/* live values in the side rail: service · city, day · period, phone */
 		function rail() {
-			var s = svcs.filter(function (x) { return String(x.id) === String(hidSvc.value); })[0], ar = form.elements.area ? form.elements.area.value : '';
+			var sn = catName(), ar = form.elements.area ? form.elements.area.value : '';
 			var set = function (k, v) { var el = $('[data-rail="' + k + '"]', wiz); if (el) el.textContent = v; };
-			set('svc', s ? s.name + (ar ? ' · ' + ar : '') : (ar ? ar : 'لم تُختر بعد'));
+			set('svc', sn ? sn + (ar ? ' · ' + ar : '') : (ar ? ar : 'لم تُختر بعد'));
 			set('when', [form.elements.date.value, form.elements.time.value].filter(Boolean).join(' · ') || 'أي وقت يناسبك');
 			set('who', (form.elements.phone.value || '').replace(/\s+/g, '') || 'رقم الجوال فقط');
 		}
@@ -125,8 +127,7 @@
 		try { var fm = new Intl.DateTimeFormat('ar-SA-u-nu-latn-ca-gregory', { day: 'numeric', month: 'long' }); $$('[data-wiz-day] button', wiz).forEach(function (b) { var d = new Date(); d.setDate(d.getDate() + (+b.getAttribute('data-day'))); var sm = $('[data-dd]', b); if (sm) sm.textContent = fm.format(d); }); } catch (e) {}
 		function err(n, msg) { var e = $('[data-err="' + n + '"]', wiz); if (!e) return; e.hidden = !msg; e.textContent = msg || ''; }
 		function summary() {
-			var s = svcs.filter(function (x) { return String(x.id) === String(hidSvc.value); })[0];
-			var rows = [['الخدمة', s ? s.name : '—'], ['المدينة', form.elements.area ? (form.elements.area.value || '—') : '—'],
+			var rows = [['الخدمة', catName() || '—'], ['المدينة', form.elements.area ? (form.elements.area.value || '—') : '—'],
 				['الموعد', [form.elements.date.value, form.elements.time.value].filter(Boolean).join(' ') || 'أي وقت']];
 			$('[data-wiz-sum]', wiz).innerHTML = rows.map(function (r) { return '<div><small>' + r[0] + '</small><b></b></div>'; }).join('');
 			$$('[data-wiz-sum] b', wiz).forEach(function (b, i) { b.textContent = rows[i][1]; });
@@ -141,7 +142,9 @@
 			b.addEventListener('click', function () {
 				var id = b.getAttribute('data-cat'); cat = (cat === id) ? '' : id;
 				$$('[data-wiz-cats] .wiz__cat', wiz).forEach(function (x) { x.classList.toggle('is-on', x.getAttribute('data-cat') === cat); });
-				hidSvc.value = ''; fillServices();
+				var curS = svcs.filter(function (x) { return String(x.id) === String(wiz.getAttribute('data-current')); })[0];
+				hidSvc.value = (curS && String(curS.cat) === cat) ? curS.id : ''; /* a page id only while the section is still the current page's */
+				setLabel(); err(1, ''); fillServices();
 			});
 		});
 		sel.addEventListener('change', function () { hidSvc.value = sel.value; });
@@ -178,7 +181,7 @@
 			}, function () { lbl.textContent = 'تعذّر تحديد الموقع — اكتب الحي بدلاً منه'; }, { timeout: 10000 });
 		});
 		$('[data-wiz-next]', wiz).addEventListener('click', function () {
-			if (cur === 1) { if (svcs.length && !hidSvc.value) { err(1, 'اختر الخدمة المطلوبة للمتابعة.'); return; } err(1, ''); }
+			if (cur === 1) { if ($$('[data-wiz-cats] .wiz__cat', wiz).length && !cat) { err(1, 'اختر الخدمة المطلوبة للمتابعة.'); return; } err(1, ''); }
 			go(cur + 1);
 		});
 		$('[data-wiz-back]', wiz).addEventListener('click', function () { go(cur - 1); });

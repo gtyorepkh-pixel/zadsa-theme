@@ -68,7 +68,7 @@ add_action( 'wp_footer', function () {
 	$data  = zad_wiz_data(); // may be empty: the booking sheet must still open (service step is then optional)
 	$map   = $data['services'];
 	$cats  = zad_wiz_rename( $data['cats'] );
-	$areas = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
+	$cities = zad_lines( zad_opt( 'zad_wiz_cities', "الرياض\nجدة\nالدمام\nالقصيم\nنجران" ) );
 	$cur   = zad_is_service() ? get_the_ID() : 0;
 	?>
 <div class="wiz" id="zad-wizard" aria-hidden="true" data-current="<?php echo (int) $cur; ?>" data-area="" data-services="<?php echo esc_attr( wp_json_encode( array_values( $map ) ) ); ?>"><template id="zad-wizard-tpl">
@@ -101,24 +101,26 @@ add_action( 'wp_footer', function () {
 				<input type="hidden" name="source" value="">
 				<input type="hidden" name="lat" value=""><input type="hidden" name="lng" value="">
 				<input type="hidden" name="service" value="">
+				<input type="hidden" name="svc_label" value=""><input type="hidden" name="wiz" value="1">
 				<div class="qform__hp" aria-hidden="true"><label>لا تملأ هذا الحقل<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
 
 				<!-- step 1: what + where -->
 				<div class="wiz__step" data-step="1">
-					<h3>ما الخدمة التي تحتاجها؟</h3>
+					<h3>ما الخدمة التي تحتاجها ولأي مدينة؟</h3>
+					<p class="wiz__sub">اختر القسم والمدينة للمتابعة.</p>
 					<?php if ( $cats ) : ?>
-						<div class="wiz__cats" data-wiz-cats role="group" aria-label="القسم">
+						<div class="wiz__lbl">الخدمة</div>
+						<div class="wiz__cats" data-wiz-cats role="group" aria-label="الخدمة">
 							<?php foreach ( $cats as $c ) : ?>
-								<button type="button" class="wiz__cat" data-cat="<?php echo esc_attr( $c['key'] ); ?>"><span class="wz__ic"><?php echo zad_icon( $c['icon'], 22 ); // phpcs:ignore ?></span><span class="wz__tx"><?php echo esc_html( $c['name'] ); ?></span></button>
+								<button type="button" class="wiz__cat" data-cat="<?php echo esc_attr( $c['key'] ); ?>"><span class="wz__ic"><?php echo zad_icon( $c['icon'], 24 ); // phpcs:ignore ?></span><span class="wz__tx"><?php echo esc_html( $c['name'] ); ?></span></button>
 							<?php endforeach; ?>
 						</div>
 					<?php endif; ?>
-					<div class="wz__svcs" data-wiz-svcs aria-live="polite"></div>
 					<label class="fld wz__sel"><span>الخدمة</span><select data-wiz-service><option value="">اختر الخدمة</option></select></label>
-					<?php if ( $areas && ! is_wp_error( $areas ) ) : ?>
-						<div class="wiz__lbl">في أي مدينة؟</div>
+					<?php if ( $cities ) : ?>
+						<div class="wiz__lbl">المدينة</div>
 						<div class="wz__seg wz__seg--city" data-wiz-city role="group" aria-label="المدينة">
-							<?php foreach ( $areas as $a ) : ?><button type="button" class="chipbtn" data-city="<?php echo esc_attr( $a->name ); ?>"><?php echo zad_icon( 'pin', 16 ); // phpcs:ignore ?><span><?php echo esc_html( $a->name ); ?></span></button><?php endforeach; ?>
+							<?php foreach ( $cities as $a ) : ?><button type="button" class="chipbtn" data-city="<?php echo esc_attr( $a ); ?>"><?php echo zad_icon( 'pin', 16 ); // phpcs:ignore ?><span><?php echo esc_html( $a ); ?></span></button><?php endforeach; ?>
 						</div>
 						<input type="hidden" name="area" value="">
 					<?php endif; ?>

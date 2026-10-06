@@ -130,8 +130,11 @@ function zad_handle_quote() {
 	$lat     = isset( $_POST['lat'] ) && is_numeric( $_POST['lat'] ) ? (float) $_POST['lat'] : 0;
 	$lng     = isset( $_POST['lng'] ) && is_numeric( $_POST['lng'] ) ? (float) $_POST['lng'] : 0;
 	$map     = ( $lat && $lng ) ? 'https://maps.google.com/?q=' . $lat . ',' . $lng : '';
+	$wiz     = ! empty( $_POST['wiz'] ); // the booking sheet: section (not a page) + city, name optional
+	$label   = isset( $_POST['svc_label'] ) ? sanitize_text_field( wp_unslash( $_POST['svc_label'] ) ) : '';
 	$source  = isset( $_POST['source'] ) ? rawurldecode( esc_url_raw( wp_unslash( $_POST['source'] ) ) ) : ''; // decoded: readable in the admin (Arabic slugs)
 
+	if ( $wiz && mb_strlen( $name ) < 2 ) { $name = 'عميل'; }
 	if ( mb_strlen( $name ) < 2 ) {
 		$fail( 'يرجى كتابة الاسم.' );
 	}
@@ -139,12 +142,15 @@ function zad_handle_quote() {
 		$fail( 'رقم الجوال غير صحيح.' );
 	}
 	$service = $sid ? get_post( $sid ) : null;
-	if ( ! $service || ! in_array( $service->post_type, zad_service_types(), true ) ) {
+	if ( $service && ! in_array( $service->post_type, zad_service_types(), true ) ) { $service = null; }
+	if ( ! $service && ! $wiz ) {
 		$fail( 'اختر الخدمة المطلوبة.' );
 	}
+	$svc_title = $service ? $service->post_title : ( '' !== $label ? $label : 'طلب حجز' );
+	if ( $service && '' !== $label && $wiz ) { $svc_title = $service->post_title; }
 
 	// Same phone + service within 10 minutes = double click / resend: confirm without a second lead.
-	$dup_key = 'zad_dup_' . md5( $phone . '|' . $sid );
+	$dup_key = 'zad_dup_' . md5( $phone . '|' . $sid . '|' . $label );
 	if ( get_transient( $dup_key ) ) {
 		$ajax ? wp_send_json_success( array( 'message' => 'وصل طلبك يا ' . $name . '، سنتصل بك قريباً.', 'whatsapp' => zad_wa_link( 'مرحباً، أنا ' . $name, $sid ) ) ) : wp_safe_redirect( add_query_arg( 'zad_sent', 'ok', wp_get_referer() ?: home_url( '/' ) ) );
 		exit;
@@ -156,11 +162,11 @@ function zad_handle_quote() {
 	$lead_id = wp_insert_post( array(
 		'post_type'   => 'zad_lead',
 		'post_status' => 'publish',
-		'post_title'  => $name . ' - ' . $service->post_title,
+		'post_title'  => $name . ' - ' . $svc_title,
 	) );
 	if ( $lead_id && ! is_wp_error( $lead_id ) ) {
 		update_post_meta( $lead_id, '_lead_phone', $phone );
-		update_post_meta( $lead_id, '_lead_service', $service->post_title );
+		update_post_meta( $lead_id, '_lead_service', $svc_title );
 		update_post_meta( $lead_id, '_lead_area', $area );
 		update_post_meta( $lead_id, '_lead_message', trim( $message . ( $date || $time ? "\nالموعد المفضّل: $date $time" : '' ) . ( $addr ? "\nالعنوان: $addr" : '' ) . ( $map ? "\nالموقع: $map" : '' ) ) );
 		update_post_meta( $lead_id, '_lead_source', $source );
@@ -171,12 +177,12 @@ function zad_handle_quote() {
 	$to = zad_opt( 'memopt_lead_email', zad_opt( 'memopt_mail', get_option( 'admin_email' ) ) );
 	if ( is_email( $to ) ) {
 		$body  = "طلب جديد من الموقع\n\n";
-		$body .= "الاسم: $name\nالجوال: $phone\nالخدمة: {$service->post_title}\nالمنطقة: $area\nالتفاصيل: $message\nالموعد المفضّل: $date $time\nالعنوان: $addr\nالموقع: $map\nالصفحة: $source\n";
+		$body .= "الاسم: $name\nالجوال: $phone\nالخدمة: {$svc_title}\nالمنطقة: $area\nالتفاصيل: $message\nالموعد المفضّل: $date $time\nالعنوان: $addr\nالموقع: $map\nالصفحة: $source\n";
 		$body .= "واتساب: https://wa.me/" . zad_intl_number( $phone ) . "\n";
-		wp_mail( $to, 'طلب جديد: ' . $service->post_title, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
+		wp_mail( $to, 'طلب جديد: ' . $svc_title, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 	}
 
-	$wa_text = "مرحباً، أنا $name وأرغب بخدمة: {$service->post_title}" . ( $area ? " في $area" : '' );
+	$wa_text = "مرحباً، أنا $name وأرغب بخدمة: {$svc_title}" . ( $area ? " في $area" : '' );
 	$wa      = zad_wa_link( $wa_text, $sid );
 
 	if ( $ajax ) {

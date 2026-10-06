@@ -6,7 +6,7 @@
  */
 
 define('MEMO_VERSION_VERSION', '1.1');
-define( 'ZAD_VERSION', '3.15.2' );
+define( 'ZAD_VERSION', '3.16.0' );
 define( 'MEMO_THEME_DIR', trailingslashit( get_template_directory() ) );
 define( 'MEMO_THEME_URI', trailingslashit( esc_url( get_template_directory_uri() ) ) );
 

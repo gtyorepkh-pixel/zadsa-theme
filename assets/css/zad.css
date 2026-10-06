@@ -1371,3 +1371,12 @@ p.has-background{padding:1.25em 2em}
 .pkgx__fac li{counter-increment:pf;display:flex;gap:10px;align-items:baseline;line-height:1.7;color:var(--ink)}
 .pkgx__fac li::before{content:counter(pf);flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--pk-soft);color:var(--pk-ink);font-weight:800;font-size:.85rem}
 .pkgx__fac b{color:var(--pk-ink)}.pkgx__fac span{color:var(--muted)}
+
+/* booking sheet step 1: section tiles (icon above label) + city chips */
+.wz .wiz__cats{grid-template-columns:repeat(2,1fr)}
+.wz .wiz__cat{flex-direction:column;justify-content:center;gap:8px;text-align:center;min-height:104px;padding:14px 8px}
+.wz .wiz__cat::after{position:absolute;inset-block-start:8px;inset-inline-end:8px;inline-size:18px;block-size:18px}
+.wz .wiz__cat{position:relative}
+.wz .wiz__cat .wz__tx{flex:none;font-size:.92rem;line-height:1.5}
+.wz__seg--city{grid-auto-flow:row;grid-template-columns:repeat(auto-fit,minmax(92px,1fr))}
+@media (min-width:760px){.wz .wiz__cats{grid-template-columns:repeat(3,1fr)}}
