@@ -1,21 +1,45 @@
 <?php defined( 'ABSPATH' ) || exit;
 /** Booking wizard (3 steps) shown in a drawer; opened by any [data-open-wizard]. */
 
-/** Services list for the booking drawer: built once, cached until content changes. */
-function zad_wiz_map() {
-	$map = get_transient( 'zad_wiz_map' );
-	if ( is_array( $map ) && $map ) {
-		return $map;
+/** Icon for a section from its name (the sprite has: bug drop snow truck tool shield paint home sparkle). */
+function zad_wiz_icon_for( $name ) {
+	$map = array( '/حشر|مكافح|قوارض|pest/iu' => 'bug', '/خزان|مياه|مجار|تسليك/u' => 'drop', '/مكيف|تبريد|تكييف/u' => 'snow', '/نقل|تخزين|أثاث|اثاث/u' => 'truck', '/عزل/u' => 'shield', '/دهان|طلاء|بلاط|رخام|جلي/u' => 'paint', '/صيانة|نجار|كهرب|سباك/u' => 'tool', '/منزل|تنظيف|نظاف/u' => 'sparkle' );
+	foreach ( $map as $re => $ic ) { if ( preg_match( $re, (string) $name ) ) { return $ic; } }
+	return 'sparkle';
+}
+
+/**
+ * Sections + services for the booking sheet: built once, cached until content changes.
+ * A section is the page's service_cat term, or — for pages that were never saved since the term existed — its post type,
+ * so every kind of service shows up (not only the ones that already carry a term). Per section: shallowest pages first, 30 at most.
+ */
+function zad_wiz_data() {
+	$d = get_transient( 'zad_wiz_map2' );
+	if ( is_array( $d ) && ! empty( $d['services'] ) ) {
+		return $d;
 	}
-	$map = array();
-	foreach ( get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 100, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) ) as $s ) {
+	$buckets = array(); $cats = array();
+	foreach ( get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 600, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) ) as $s ) {
 		$t = get_the_terms( $s->ID, 'service_cat' );
-		$map[ $s->ID ] = array( 'id' => $s->ID, 'name' => $s->post_title, 'cat' => ( $t && ! is_wp_error( $t ) ) ? $t[0]->term_id : 0 );
+		if ( $t && ! is_wp_error( $t ) ) {
+			$key = (string) $t[0]->term_id; $nm = zad_wiz_cat_label( $t[0]->name ); $ic = (string) get_term_meta( $t[0]->term_id, 'zad_icon', true );
+		} else {
+			$o   = get_post_type_object( $s->post_type );
+			$key = 'pt-' . $s->post_type; $nm = zad_wiz_cat_label( $o ? $o->labels->name : $s->post_type ); $ic = '';
+		}
+		if ( ! isset( $cats[ $key ] ) ) { $cats[ $key ] = array( 'key' => $key, 'name' => $nm, 'icon' => ( '' === $ic || 'sparkle' === $ic ) ? zad_wiz_icon_for( $nm ) : $ic ); }
+		$buckets[ $key ][] = array( 'id' => $s->ID, 'name' => $s->post_title, 'cat' => $key, 'depth' => count( get_post_ancestors( $s ) ) );
 	}
-	if ( $map ) {
-		set_transient( 'zad_wiz_map', $map, 12 * HOUR_IN_SECONDS ); // never cache an empty list
+	$services = array();
+	foreach ( $buckets as $rows ) {
+		usort( $rows, function ( $a, $b ) { return $a['depth'] <=> $b['depth']; } ); // stable in PHP 8: menu order / title kept inside a depth
+		foreach ( array_slice( $rows, 0, 30 ) as $r ) { unset( $r['depth'] ); $services[] = $r; }
 	}
-	return $map;
+	$d = array( 'services' => $services, 'cats' => array_values( $cats ) );
+	if ( $services ) {
+		set_transient( 'zad_wiz_map2', $d, 12 * HOUR_IN_SECONDS ); // never cache an empty list
+	}
+	return $d;
 }
 
 /** «صفحات مكافحة الحشرات» (post-type label) → «مكافحة الحشرات». */
@@ -25,8 +49,9 @@ function zad_wiz_cat_label( $name ) {
 }
 
 add_action( 'wp_footer', function () {
-	$map = zad_wiz_map(); // may be empty: the booking sheet must still open (service step is then optional)
-	$cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true ) );
+	$data  = zad_wiz_data(); // may be empty: the booking sheet must still open (service step is then optional)
+	$map   = $data['services'];
+	$cats  = $data['cats'];
 	$areas = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
 	$cur   = zad_is_service() ? get_the_ID() : 0;
 	?>
@@ -65,10 +90,10 @@ add_action( 'wp_footer', function () {
 				<!-- step 1: what + where -->
 				<div class="wiz__step" data-step="1">
 					<h3>ما الخدمة التي تحتاجها؟</h3>
-					<?php if ( $cats && ! is_wp_error( $cats ) ) : ?>
+					<?php if ( $cats ) : ?>
 						<div class="wiz__cats" data-wiz-cats role="group" aria-label="القسم">
-							<?php foreach ( $cats as $c ) : $ic = get_term_meta( $c->term_id, 'zad_icon', true ) ?: 'sparkle'; ?>
-								<button type="button" class="wiz__cat" data-cat="<?php echo (int) $c->term_id; ?>"><span class="wz__ic"><?php echo zad_icon( $ic, 22 ); // phpcs:ignore ?></span><span class="wz__tx"><?php echo esc_html( zad_wiz_cat_label( $c->name ) ); ?></span></button>
+							<?php foreach ( $cats as $c ) : ?>
+								<button type="button" class="wiz__cat" data-cat="<?php echo esc_attr( $c['key'] ); ?>"><span class="wz__ic"><?php echo zad_icon( $c['icon'], 22 ); // phpcs:ignore ?></span><span class="wz__tx"><?php echo esc_html( $c['name'] ); ?></span></button>
 							<?php endforeach; ?>
 						</div>
 					<?php endif; ?>

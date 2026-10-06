@@ -59,12 +59,12 @@
 		function setupWizard() {
 		var form = $('[data-wiz-form]', wiz), svcs = [], steps = $$('.wiz__step', wiz), cur = 1;
 		try { svcs = JSON.parse(wiz.getAttribute('data-services') || '[]'); } catch (e) {}
-		var sel = $('[data-wiz-service]', wiz), hidSvc = form.elements.service, cat = 0;
+		var sel = $('[data-wiz-service]', wiz), hidSvc = form.elements.service, cat = '';
 		function fillServices() {
 			var keep = hidSvc.value;
 			sel.innerHTML = '<option value="">اختر الخدمة</option>';
 			svcs.forEach(function (s) {
-				if (cat && s.cat !== cat) return;
+				if (cat && String(s.cat) !== cat) return;
 				var o = document.createElement('option'); o.value = s.id; o.textContent = s.name;
 				if (String(s.id) === String(keep)) o.selected = true;
 				sel.appendChild(o);
@@ -74,7 +74,7 @@
 		function renderSvcs(keep) {
 			var box = $('[data-wiz-svcs]', wiz); if (!box) return;
 			var hasCats = $$('[data-wiz-cats] .wiz__cat', wiz).length > 0;
-			var list = svcs.filter(function (s) { return !cat || !s.cat || s.cat === cat; });
+			var list = svcs.filter(function (s) { return !cat || !s.cat || String(s.cat) === cat; });
 			if (hasCats && !cat && svcs.length > 8) { list = svcs.filter(function (s) { return String(s.id) === String(keep); }); }
 			box.innerHTML = '';
 			if (!list.length) { if (hasCats && svcs.length) { var h = document.createElement('p'); h.className = 'wz__hint'; h.textContent = 'اختر القسم لتظهر خدماته'; box.appendChild(h); } return; }
@@ -93,7 +93,7 @@
 			var c = wiz.getAttribute('data-current');
 			if (c && c !== '0' && !hidSvc.value) { hidSvc.value = c; }
 			var cs = svcs.filter(function (x) { return String(x.id) === String(hidSvc.value); })[0];
-			if (cs && !cat) { cat = cs.cat; $$('[data-wiz-cats] .wiz__cat', wiz).forEach(function (x) { x.classList.toggle('is-on', +x.getAttribute('data-cat') === cat); }); }
+			if (cs && !cat) { cat = String(cs.cat); $$('[data-wiz-cats] .wiz__cat', wiz).forEach(function (x) { x.classList.toggle('is-on', x.getAttribute('data-cat') === cat); }); }
 			fillServices();
 			var ar = wiz.getAttribute('data-area');
 			if (ar && form.elements.area && !form.elements.area.value) { $$('[data-wiz-city] button', wiz).forEach(function (b) { if (b.getAttribute('data-city') === ar) b.click(); }); }
@@ -139,8 +139,8 @@
 		document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && wiz.classList.contains('is-open')) close(); });
 		$$('[data-wiz-cats] .wiz__cat', wiz).forEach(function (b) {
 			b.addEventListener('click', function () {
-				var id = +b.getAttribute('data-cat'); cat = (cat === id) ? 0 : id;
-				$$('[data-wiz-cats] .wiz__cat', wiz).forEach(function (x) { x.classList.toggle('is-on', +x.getAttribute('data-cat') === cat); });
+				var id = b.getAttribute('data-cat'); cat = (cat === id) ? '' : id;
+				$$('[data-wiz-cats] .wiz__cat', wiz).forEach(function (x) { x.classList.toggle('is-on', x.getAttribute('data-cat') === cat); });
 				hidSvc.value = ''; fillServices();
 			});
 		});

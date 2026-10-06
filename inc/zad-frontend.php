@@ -187,6 +187,7 @@ function zad_flush_nav_cache() {
 	delete_transient( 'zad_mega_html2' );
 	update_option( 'zad_nav_ver', time(), false ); // invalidates the per-page sidebar caches
 	delete_transient( 'zad_wiz_map' );
+	delete_transient( 'zad_wiz_map2' );
 }
 add_action( 'save_post', 'zad_flush_nav_cache' );
 add_action( 'deleted_post', 'zad_flush_nav_cache' );
