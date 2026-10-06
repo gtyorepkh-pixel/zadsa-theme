@@ -8,6 +8,18 @@ function zad_wiz_icon_for( $name ) {
 	return 'sparkle';
 }
 
+/** Fixed sections from the theme setting «أقسام نافذة احجز موعدك» (سطر: الاسم | أيقونة): replaces the automatic list when filled. */
+function zad_wiz_manual() {
+	$out = array();
+	foreach ( zad_lines( zad_opt( 'zad_wiz_cats', '' ) ) as $i => $l ) {
+		$c  = array_map( 'trim', explode( '|', $l ) );
+		if ( '' === $c[0] ) { continue; }
+		$ic = isset( $c[1] ) ? sanitize_key( $c[1] ) : '';
+		$out[] = array( 'key' => 'm' . $i, 'name' => $c[0], 'icon' => in_array( $ic, zad_icon_keys(), true ) ? $ic : zad_wiz_icon_for( $c[0] ) );
+	}
+	return $out;
+}
+
 /** Renames from the theme setting «أسماء أقسام نافذة احجز موعدك»: «الاسم الحالي | الاسم الظاهر | أيقونة» (matched by the current name or the section key). */
 function zad_wiz_rename( $cats ) {
 	$rules = array();
@@ -30,7 +42,7 @@ function zad_wiz_rename( $cats ) {
  * so every kind of service shows up (not only the ones that already carry a term). Per section: shallowest pages first, 30 at most.
  */
 function zad_wiz_data() {
-	$d = get_transient( 'zad_wiz_map2' );
+	$d = get_transient( 'zad_wiz_map3' );
 	if ( is_array( $d ) && ! empty( $d['services'] ) ) {
 		return $d;
 	}
@@ -38,11 +50,12 @@ function zad_wiz_data() {
 	foreach ( get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 600, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) ) as $s ) {
 		$t = get_the_terms( $s->ID, 'service_cat' );
 		if ( $t && ! is_wp_error( $t ) ) {
-			$key = (string) $t[0]->term_id; $nm = zad_wiz_cat_label( $t[0]->name ); $ic = (string) get_term_meta( $t[0]->term_id, 'zad_icon', true );
+			$nm = zad_wiz_cat_label( $t[0]->name ); $ic = (string) get_term_meta( $t[0]->term_id, 'zad_icon', true );
 		} else {
 			$o   = get_post_type_object( $s->post_type );
-			$key = 'pt-' . $s->post_type; $nm = zad_wiz_cat_label( $o ? $o->labels->name : $s->post_type ); $ic = '';
+			$nm = zad_wiz_cat_label( $o ? $o->labels->name : $s->post_type ); $ic = '';
 		}
+		$key = 'n' . substr( md5( $nm ), 0, 8 ); // one section per name: the term «مكافحة الحشرات» and the post type «صفحات مكافحة الحشرات» are the same section
 		if ( ! isset( $cats[ $key ] ) ) { $cats[ $key ] = array( 'key' => $key, 'name' => $nm, 'icon' => ( '' === $ic || 'sparkle' === $ic ) ? zad_wiz_icon_for( $nm ) : $ic ); }
 		$buckets[ $key ][] = array( 'id' => $s->ID, 'name' => $s->post_title, 'cat' => $key, 'depth' => count( get_post_ancestors( $s ) ) );
 	}
@@ -51,9 +64,10 @@ function zad_wiz_data() {
 		usort( $rows, function ( $a, $b ) { return $a['depth'] <=> $b['depth']; } ); // stable in PHP 8: menu order / title kept inside a depth
 		foreach ( array_slice( $rows, 0, 30 ) as $r ) { unset( $r['depth'] ); $services[] = $r; }
 	}
+	if ( count( $cats ) > 1 ) { foreach ( $cats as $k => $c ) { if ( in_array( $c['name'], array( 'الخدمات', 'خدمات' ), true ) ) { unset( $cats[ $k ] ); } } } // the generic default type is not a section when real ones exist
 	$d = array( 'services' => $services, 'cats' => array_values( $cats ) );
 	if ( $services ) {
-		set_transient( 'zad_wiz_map2', $d, 12 * HOUR_IN_SECONDS ); // never cache an empty list
+		set_transient( 'zad_wiz_map3', $d, 12 * HOUR_IN_SECONDS ); // never cache an empty list
 	}
 	return $d;
 }
@@ -67,7 +81,8 @@ function zad_wiz_cat_label( $name ) {
 add_action( 'wp_footer', function () {
 	$data  = zad_wiz_data(); // may be empty: the booking sheet must still open (service step is then optional)
 	$map   = $data['services'];
-	$cats  = zad_wiz_rename( $data['cats'] );
+	$cats  = zad_wiz_manual();
+	if ( ! $cats ) { $cats = zad_wiz_rename( $data['cats'] ); }
 	$cities = zad_lines( zad_opt( 'zad_wiz_cities', "الرياض\nجدة\nالدمام\nالقصيم\nنجران" ) );
 	$cur   = zad_is_service() ? get_the_ID() : 0;
 	?>
