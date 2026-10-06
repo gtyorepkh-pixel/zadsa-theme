@@ -3,9 +3,25 @@
 
 /** Icon for a section from its name (the sprite has: bug drop snow truck tool shield paint home sparkle). */
 function zad_wiz_icon_for( $name ) {
-	$map = array( '/حشر|مكافح|قوارض|pest/iu' => 'bug', '/خزان|مياه|مجار|تسليك/u' => 'drop', '/مكيف|تبريد|تكييف/u' => 'snow', '/نقل|تخزين|أثاث|اثاث/u' => 'truck', '/عزل/u' => 'shield', '/دهان|طلاء|بلاط|رخام|جلي/u' => 'paint', '/صيانة|نجار|كهرب|سباك/u' => 'tool', '/منزل|تنظيف|نظاف/u' => 'sparkle' );
+	$map = array( '/حشر|مكافح|قوارض|pest/iu' => 'bug', '/خزان|مياه|مجار|تسليك/u' => 'drop', '/مكيف|تبريد|تكييف/u' => 'snow', '/نقل|تخزين|أثاث|اثاث/u' => 'truck', '/عزل/u' => 'shield', '/دهان|طلاء|بلاط|رخام|جلي/u' => 'paint', '/صيانة|نجار|كهرب|سباك/u' => 'tool', '/فلل|شقق|منزل/u' => 'home', '/تنظيف|نظاف/u' => 'sparkle' );
 	foreach ( $map as $re => $ic ) { if ( preg_match( $re, (string) $name ) ) { return $ic; } }
 	return 'sparkle';
+}
+
+/** Renames from the theme setting «أسماء أقسام نافذة احجز موعدك»: «الاسم الحالي | الاسم الظاهر | أيقونة» (matched by the current name or the section key). */
+function zad_wiz_rename( $cats ) {
+	$rules = array();
+	foreach ( zad_lines( zad_opt( 'zad_wiz_names', '' ) ) as $l ) {
+		$c = array_map( 'trim', explode( '|', $l ) );
+		if ( count( $c ) >= 2 && '' !== $c[0] && '' !== $c[1] ) { $rules[ $c[0] ] = array( $c[1], isset( $c[2] ) ? sanitize_key( $c[2] ) : '' ); }
+	}
+	if ( ! $rules ) { return $cats; }
+	foreach ( $cats as &$c ) {
+		$r = isset( $rules[ $c['name'] ] ) ? $rules[ $c['name'] ] : ( isset( $rules[ $c['key'] ] ) ? $rules[ $c['key'] ] : null );
+		if ( $r ) { $c['name'] = $r[0]; if ( '' !== $r[1] && in_array( $r[1], zad_icon_keys(), true ) ) { $c['icon'] = $r[1]; } }
+	}
+	unset( $c );
+	return $cats;
 }
 
 /**
@@ -51,7 +67,7 @@ function zad_wiz_cat_label( $name ) {
 add_action( 'wp_footer', function () {
 	$data  = zad_wiz_data(); // may be empty: the booking sheet must still open (service step is then optional)
 	$map   = $data['services'];
-	$cats  = $data['cats'];
+	$cats  = zad_wiz_rename( $data['cats'] );
 	$areas = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
 	$cur   = zad_is_service() ? get_the_ID() : 0;
 	?>
