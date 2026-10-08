@@ -585,7 +585,7 @@ if ( ! class_exists( 'CSF_Setup' ) ) {
       }
 
       // Check for developer mode
-      $min = ( self::$premium && SCRIPT_DEBUG ) ? '' : '.min';
+      $min = '.min'; // the unminified copies were removed from the theme (always the .min files, even with SCRIPT_DEBUG)
 
       // Main style
       wp_enqueue_style( 'csf', self::include_plugin_url( 'assets/css/style'. $min .'.css' ), array(), self::$version, 'all' );
