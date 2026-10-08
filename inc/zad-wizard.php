@@ -8,10 +8,13 @@ function zad_wiz_icon_for( $name ) {
 	return 'sparkle';
 }
 
-/** Fixed sections from the theme setting «أقسام نافذة احجز موعدك» (سطر: الاسم | أيقونة): replaces the automatic list when filled. */
+/** Sections of the booking sheet and the home hero card: the theme setting «أقسام نافذة احجز موعدك» (سطر: الاسم | أيقونة), else a fixed default list; write «auto» in the setting to take them from the pages instead. */
 function zad_wiz_manual() {
 	$out = array();
-	foreach ( zad_lines( zad_opt( 'zad_wiz_cats', '' ) ) as $i => $l ) {
+	$src = trim( (string) zad_opt( 'zad_wiz_cats', '' ) );
+	if ( 'auto' === $src ) { return array(); } // «auto»: sections come from the site's pages
+	if ( '' === $src ) { $src = "مكافحة الحشرات | bug\nتنظيف المكيفات | snow\nتنظيف الخزانات | drop\nتنظيف الكنب والمفروشات | sparkle\nتنظيف فلل وشقق | home"; } // default sections: fixed, not dependent on how pages are filed
+	foreach ( zad_lines( $src ) as $i => $l ) {
 		$c  = array_map( 'trim', explode( '|', $l ) );
 		if ( '' === $c[0] ) { continue; }
 		$ic = isset( $c[1] ) ? sanitize_key( $c[1] ) : '';

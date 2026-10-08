@@ -88,7 +88,7 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_reg', 'type' => 'text', 'title' => 'رقم السجل التجاري (اختياري)' ),
 		array( 'id' => 'zad_rating_text', 'type' => 'text', 'title' => 'نص التقييم أعلى الموقع', 'default' => 'تقييمات حقيقية على Google' ),
 		array( 'id' => 'zad_card_badges', 'type' => 'textarea', 'title' => 'شارات بطاقات الخدمات (سطر لكل شارة)', 'default' => "فحص مجاني\nضمان مكتوب" ),
-		array( 'id' => 'zad_wiz_cats', 'type' => 'textarea', 'title' => 'أقسام نافذة «احجز موعدك» (اختياري)', 'desc' => 'سطر لكل قسم: الاسم | أيقونة (اختيارية: bug drop snow truck tool shield paint home sparkle). إن تركتها فارغة تُؤخذ الأقسام تلقائياً من الموقع. مثال: مكافحة الحشرات | bug' ),
+		array( 'id' => 'zad_wiz_cats', 'type' => 'textarea', 'title' => 'أقسام نافذة «احجز موعدك» (اختياري)', 'desc' => 'سطر لكل قسم: الاسم | أيقونة (اختيارية: bug drop snow truck tool shield paint home sparkle). إن تركتها فارغة تظهر الأقسام الافتراضية الخمسة؛ واكتب auto لأخذها من صفحات الموقع. مثال: مكافحة الحشرات | bug' ),
 		array( 'id' => 'zad_wiz_cities', 'type' => 'textarea', 'title' => 'مدن نافذة «احجز موعدك» (سطر لكل مدينة)', 'default' => "الرياض\nجدة\nالدمام\nالقصيم\nنجران" ),
 		array( 'id' => 'zad_wiz_names', 'type' => 'textarea', 'title' => 'أسماء أقسام نافذة «احجز موعدك» (اختياري)', 'desc' => 'سطر لكل قسم: الاسم الحالي | الاسم الذي يظهر | أيقونة (اختيارية: bug drop snow truck tool shield paint home sparkle). مثال: تنظيف المنازل | تنظيف فلل وشقق | home' ),
 		array( 'id' => 'zad_trustindex', 'type' => 'text', 'title' => 'معرّف ودجت Trustindex (اختياري)' ),
