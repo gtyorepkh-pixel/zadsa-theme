@@ -43,8 +43,8 @@ function zsc_defaults() {
 			'lat'           => 24.774265,
 			'lng'           => 46.738586,
 			'has_map'       => '',
-			'image_license' => 'https://zadksa.com/privacy-policy/',
-			'image_acquire' => 'https://zadksa.com/contact/',
+			'image_license' => '',
+			'image_acquire' => '',
 			'same_as'       => array( 'https://www.facebook.com/zadksa2', 'https://x.com/zadksa2', 'https://www.instagram.com/zadksa2/', 'https://www.youtube.com/channel/UC5jWpqhaDYs9MO7CMTx-bFA' ),
 			'area_served'   => array( array( 'City', 'الرياض' ), array( 'City', 'جدة' ), array( 'City', 'الدمام' ), array( 'City', 'القطيف' ), array( 'AdministrativeArea', 'القصيم' ), array( 'City', 'نجران' ) ),
 			'hours'         => array(
@@ -114,8 +114,6 @@ function zsc_settings() {
 	$b['lat']         = (float) zad_opt( 'zad_lat', $b['lat'] );
 	$b['lng']         = (float) zad_opt( 'zad_lng', $b['lng'] );
 	$b['has_map']     = zad_opt( 'zad_map_url', $b['has_map'] );
-	$b['image_license'] = zad_opt( 'zad_img_license', $b['image_license'] );
-	$b['image_acquire'] = zad_opt( 'zad_img_acquire', $b['image_acquire'] );
 
 	$same = array();
 	foreach ( array( 'memopt_fb', 'memopt_tw', 'memopt_insta', 'memopt_yt', 'zad_linkedin', 'zad_pinterest', 'zad_tiktok', 'zad_snapchat' ) as $k ) {
@@ -411,14 +409,8 @@ function zsc_image_node( $src, $id, $fallback = '', $attachment_id = 0 ) {
 	$img = array( '@type' => 'ImageObject', '@id' => $id, 'url' => $url, 'contentUrl' => $url );
 	if ( $w && $h ) { $img['width'] = $w; $img['height'] = $h; }
 	if ( '' !== $caption ) { $img['caption'] = $caption; $img['name'] = $caption; }
-	$img['inLanguage']      = 'ar';
-	$img['creditText']      = $b['legal_name'];
-	$img['creator']         = array( '@id' => $home . '#organization' );
-	$img['copyrightHolder'] = array( '@id' => $home . '#organization' );
-	$img['copyrightNotice'] = '© ' . ( $year ? $year . ' ' : '' ) . $b['legal_name'];
-	if ( $year ) { $img['copyrightYear'] = (int) $year; }
-	if ( ! empty( $b['image_license'] ) ) { $img['license'] = $b['image_license']; }
-	if ( ! empty( $b['image_acquire'] ) ) { $img['acquireLicensePage'] = $b['image_acquire']; }
+	$img['inLanguage'] = 'ar';
+	$img += zad_img_claims( $aid, $year, (string) $b['legal_name'] ); // ownership / licence: only for «صورة من شغلنا» and only when the rights page is set
 	return $img;
 }
 
@@ -454,6 +446,7 @@ function zsc_site_nodes() {
 		if ( empty( $lb[ $k ] ) ) { unset( $lb[ $k ] ); }
 	}
 	if ( empty( $b['lat'] ) || empty( $b['lng'] ) ) { unset( $lb['geo'] ); }
+	if ( ! empty( $b['telephone'] ) ) { $lb['contactPoint'] = array( '@type' => 'ContactPoint', 'telephone' => $b['telephone'], 'contactType' => 'customer service', 'availableLanguage' => 'ar' ); } // the settings' phone
 	$site = array(
 		'@type' => 'WebSite', '@id' => $home . '#website', 'url' => $home, 'name' => $b['alternate'], 'alternateName' => $b['name'],
 		'description' => $b['description'], 'publisher' => array( '@id' => $home . '#organization' ), 'inLanguage' => 'ar',
@@ -653,7 +646,7 @@ function zsc_with_breadcrumb( $nodes, $url ) {
 		$items[] = array( '@type' => 'ListItem', 'position' => $i + 1, 'name' => $c[0], 'item' => $c[1] ? $c[1] : $url );
 	}
 	foreach ( $nodes as &$n ) {
-		if ( isset( $n['@type'] ) && ( 'WebPage' === $n['@type'] || ( is_array( $n['@type'] ) && in_array( 'WebPage', $n['@type'], true ) ) ) ) {
+		if ( isset( $n['@type'] ) && array_intersect( (array) $n['@type'], array( 'WebPage', 'AboutPage', 'ContactPage', 'CollectionPage', 'ProfilePage' ) ) ) {
 			$n['breadcrumb'] = array( '@id' => $url . '#breadcrumb' );
 		}
 	}
@@ -686,7 +679,7 @@ function zsc_is_owned_type( $node ) {
 		if ( in_array( $t, $keep, true ) ) {
 			return false;
 		}
-		if ( preg_match( '/(Organization|Corporation|Business|Store|Contractor|Company|Service|Person|WebSite|WebPage|AboutPage|ContactPage|Article|BlogPosting|BreadcrumbList|SiteNavigationElement|Plumber|Electrician|Locksmith|HousePainter|Agent)$/', $t ) ) {
+		if ( preg_match( '/(Organization|Corporation|Business|Store|Contractor|Company|Service|Person|WebSite|WebPage|AboutPage|ContactPage|CollectionPage|Article|BlogPosting|BreadcrumbList|SiteNavigationElement|Plumber|Electrician|Locksmith|HousePainter|Agent)$/', $t ) ) {
 			return true;
 		}
 	}

@@ -1,82 +1,10 @@
 <?php defined( 'ABSPATH' ) || exit;
 /**
- * Structured data (JSON-LD), shaped like the reference site's graph:
- *  @graph: Organization, WebSite(+SearchAction), LocalBusiness, BreadcrumbList
- *  then separate scripts: Service(+OfferCatalog), FAQPage, VideoObject (service pages), QAPage (questions).
+ * Structured data (JSON-LD): ONE printer (the wp_head callback below) builds one @graph per request:
+ *  Organization, WebSite(+SearchAction), LocalBusiness + the page's own nodes (Service / AboutPage / ContactPage / CollectionPage+ItemList /
+ *  Article / ProfilePage…) + BreadcrumbList. Node builders: inc/zad-sc.php and inc/zad-schema-extra.php.
+ *  FAQPage (service pages, home, question pages) stays a separate script.
  */
-
-function zad_company() {
-	$b = zsc_settings()['business'];
-	$c = zad_company_raw();
-	// the validated company data fills whatever the theme options leave empty
-	$map = array( 'legal' => $b['legal_name'], 'phone' => $b['telephone'], 'email' => $b['email'], 'street' => $b['street'], 'city' => $b['locality'], 'region' => $b['region'], 'postal' => $b['postal_code'], 'lat' => $b['lat'], 'lng' => $b['lng'], 'cr' => $b['cr'], 'vat' => $b['vat'], 'desc' => $b['description'] );
-	foreach ( $map as $k => $v ) {
-		if ( empty( $c[ $k ] ) || ( 'legal' === $k && get_bloginfo( 'name' ) === $c[ $k ] ) ) { $c[ $k ] = $v; }
-	}
-	if ( ! $c['same'] ) { $c['same'] = $b['same_as']; }
-	return $c;
-}
-
-function zad_company_raw() {
-	$logo = zad_opt( 'memopt_logo' );
-	$logo = is_array( $logo ) ? $logo : array();
-	$w    = 0;
-	$h    = 0;
-	if ( ! empty( $logo['id'] ) ) {
-		$m = wp_get_attachment_metadata( $logo['id'] );
-		$w = (int) ( $m['width'] ?? 0 );
-		$h = (int) ( $m['height'] ?? 0 );
-	}
-	$sameas = array();
-	foreach ( array( 'memopt_fb', 'memopt_tw', 'memopt_insta', 'zad_linkedin', 'zad_pinterest', 'zad_tiktok', 'zad_snapchat', 'memopt_yt' ) as $k ) {
-		$u = zad_opt( $k );
-		if ( $u && preg_match( '#^https?://#', $u ) ) {
-			$sameas[] = $u;
-		}
-	}
-	$phone = zad_intl_number( zad_opt( 'memopt_phone' ) );
-	return array(
-		'name'   => get_bloginfo( 'name' ),
-		'legal'  => zad_opt( 'zad_legal_name', get_bloginfo( 'name' ) ),
-		'logo'   => $logo['url'] ?? '',
-		'logo_w' => $w,
-		'logo_h' => $h,
-		'phone'  => $phone ? '+' . $phone : '',
-		'email'  => zad_opt( 'memopt_mail' ),
-		'street' => trim( zad_opt( 'zad_street' ) . ( zad_opt( 'zad_district' ) ? '، ' . zad_opt( 'zad_district' ) : '' ) ),
-		'city'   => zad_opt( 'zad_city_name', 'الرياض' ),
-		'region' => zad_opt( 'zad_region', '' ),
-		'postal' => zad_opt( 'zad_postal' ),
-		'lat'    => zad_opt( 'zad_lat' ),
-		'lng'    => zad_opt( 'zad_lng' ),
-		'map'    => zad_opt( 'zad_map_url' ),
-		'cr'     => zad_opt( 'zad_cr' ),
-		'vat'    => zad_opt( 'zad_vat' ),
-		'same'   => $sameas,
-		'desc'   => zad_opt( 'zad_site_desc', get_bloginfo( 'description' ) ),
-	);
-}
-
-function zad_knows_about() {
-	$names = array();
-	$t = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true ) );
-	if ( $t && ! is_wp_error( $t ) ) {
-		$names = wp_list_pluck( $t, 'name' );
-	}
-	return array_values( $names );
-}
-
-function zad_opening_hours() {
-	$out = array();
-	foreach ( zad_lines( zad_opt( 'zad_hours_spec', "Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday | 08:00 | 22:00" ) ) as $l ) {
-		$c = array_map( 'trim', explode( '|', $l ) );
-		if ( count( $c ) >= 3 ) {
-			$days = array_values( array_filter( array_map( 'trim', explode( ',', $c[0] ) ) ) );
-			$out[] = array( '@type' => 'OpeningHoursSpecification', 'dayOfWeek' => $days, 'opens' => $c[1], 'closes' => $c[2] );
-		}
-	}
-	return $out;
-}
 
 function zad_current_url() {
 	if ( is_singular() ) {
@@ -172,158 +100,6 @@ function zad_page_url( $template, $slugs = array() ) {
 	return '';
 }
 
-function zad_graph() {
-	$c    = zad_company();
-	$home = home_url( '/' );
-	$org  = array(
-		'@type'     => 'Organization',
-		'@id'       => $home . '#organization',
-		'name'      => $c['name'],
-		'legalName' => $c['legal'],
-		'url'       => $home,
-	);
-	if ( $c['logo'] ) {
-		$logo = array( '@type' => 'ImageObject', 'url' => $c['logo'] );
-		if ( $c['logo_w'] ) { $logo['width'] = $c['logo_w']; $logo['height'] = $c['logo_h']; }
-		$org['logo'] = $logo;
-	}
-	$wd = trim( (string) zad_opt( 'zad_wikidata', '' ) );
-	$org_same = $c['same'];
-	if ( preg_match( '#^https?://#', $wd ) && ! in_array( $wd, (array) $org_same, true ) ) { $org_same[] = $wd; }
-	if ( $org_same ) { $org['sameAs'] = $org_same; }
-	if ( zad_knows_about() ) { $org['knowsAbout'] = zad_knows_about(); }
-
-	$site = array(
-		'@type'     => 'WebSite',
-		'@id'       => $home . '#website',
-		'url'       => $home,
-		'name'      => $c['name'],
-		'publisher' => array( '@id' => $home . '#organization' ),
-		'inLanguage'=> 'ar',
-		'potentialAction' => array( array(
-			'@type'       => 'SearchAction',
-			'target'      => array( '@type' => 'EntryPoint', 'urlTemplate' => $home . '?s={search_term_string}' ),
-			'query-input' => array( '@type' => 'PropertyValueSpecification', 'valueRequired' => true, 'valueName' => 'search_term_string' ),
-		) ),
-	);
-	if ( $c['desc'] ) { $site['description'] = $c['desc']; }
-
-	$lb = array(
-		'@type'     => 'LocalBusiness',
-		'@id'       => $home . '#localbusiness',
-		'name'      => $c['name'],
-		'legalName' => $c['legal'],
-		'url'       => $home,
-	);
-	if ( $c['logo'] ) { $lb['image'] = $org['logo']; }
-	$pr = trim( (string) zad_opt( 'zad_price_range', '' ) );
-	if ( '' !== $pr && '100–500 ر.س' !== $pr ) { $lb['priceRange'] = $pr; }
-	if ( $c['phone'] ) { $lb['telephone'] = $c['phone']; }
-	if ( $c['email'] ) { $lb['email'] = $c['email']; }
-	$addr = array( '@type' => 'PostalAddress', 'addressCountry' => 'SA' );
-	if ( $c['street'] ) { $addr['streetAddress'] = $c['street']; }
-	if ( $c['city'] ) { $addr['addressLocality'] = $c['city']; }
-	if ( $c['region'] ) { $addr['addressRegion'] = $c['region']; }
-	if ( $c['postal'] ) { $addr['postalCode'] = $c['postal']; }
-	$lb['address'] = $addr;
-	if ( $c['lat'] && $c['lng'] ) {
-		$lb['geo'] = array( '@type' => 'GeoCoordinates', 'latitude' => (string) $c['lat'], 'longitude' => (string) $c['lng'] );
-	}
-	if ( zad_opening_hours() ) { $lb['openingHoursSpecification'] = zad_opening_hours(); }
-	if ( $c['same'] ) { $lb['sameAs'] = $c['same']; }
-	if ( $c['map'] ) { $lb['hasMap'] = $c['map']; }
-	$cities = get_terms( array( 'taxonomy' => 'service_area', 'parent' => 0, 'hide_empty' => false ) );
-	$areas  = array();
-	if ( $cities && ! is_wp_error( $cities ) ) {
-		foreach ( $cities as $t ) { $areas[] = array( '@type' => 'City', 'name' => $t->name ); }
-	}
-	$lb['areaServed'] = $areas ? $areas : array( array( '@type' => 'City', 'name' => $c['city'] ) );
-	if ( $c['vat'] ) { $lb['taxID'] = $c['vat']; }
-	$ids = array();
-	if ( $c['cr'] ) { $ids[] = array( '@type' => 'PropertyValue', 'name' => 'السجل التجاري', 'value' => $c['cr'] ); }
-	if ( $c['vat'] ) { $ids[] = array( '@type' => 'PropertyValue', 'name' => 'الرقم الضريبي', 'value' => $c['vat'] ); }
-	if ( $ids ) { $lb['identifier'] = $ids; }
-	if ( zad_knows_about() ) { $lb['knowsAbout'] = zad_knows_about(); }
-	$lb['parentOrganization'] = array( '@id' => $home . '#organization' );
-
-	$graph = array( $org, $site, $lb );
-	$crumbs = zad_current_crumbs();
-	if ( $crumbs ) {
-		$items = array();
-		foreach ( $crumbs as $i => $cr ) {
-			$it = array( '@type' => 'ListItem', 'position' => $i + 1, 'name' => $cr[0] );
-			if ( $cr[1] ) { $it['item'] = $cr[1]; }
-			$items[] = $it;
-		}
-		$graph[] = array( '@type' => 'BreadcrumbList', '@id' => zad_current_url() . '#breadcrumb', 'itemListElement' => $items );
-	}
-	return array( '@context' => 'https://schema.org', '@graph' => $graph );
-}
-
-function zad_service_schema( $id ) {
-	$home = home_url( '/' );
-	$name = get_the_title( $id );
-	$url  = get_permalink( $id );
-	$cats = get_the_terms( $id, 'service_cat' );
-	$cat  = ( $cats && ! is_wp_error( $cats ) ) ? $cats[0]->name : '';
-
-	$areas = array();
-	$terms = get_the_terms( $id, 'service_area' );
-	if ( $terms && ! is_wp_error( $terms ) ) {
-		foreach ( $terms as $t ) {
-			$areas[] = array( '@type' => 0 === (int) $t->parent ? 'City' : 'Place', 'name' => $t->name );
-		}
-	}
-	if ( ! $areas && function_exists( 'zad_current_city' ) ) { // page without service_area terms: its own city (never the default)
-		$cc = zad_current_city( $id );
-		if ( 'default' !== $cc['source'] ) { $areas[] = array( '@type' => 'City', 'name' => $cc['name'] ); }
-	}
-	$desc = get_post_meta( $id, '_zad_tagline', true );
-	$ex   = get_the_excerpt( $id );
-	$desc = trim( wp_strip_all_tags( $ex ?: $desc ) );
-
-	$s = array(
-		'@context'    => 'https://schema.org',
-		'@type'       => 'Service',
-		'name'        => $name,
-		'serviceType' => $cat ? $cat : $name,
-		'provider'    => array( '@id' => $home . '#localbusiness' ),
-		'url'         => $url,
-	);
-	if ( $areas ) { $s['areaServed'] = $areas; }
-	if ( $cat ) { $s['additionalType'] = $cat; }
-	if ( has_post_thumbnail( $id ) ) {
-		$tid  = get_post_thumbnail_id( $id );
-		$meta = wp_get_attachment_metadata( $tid );
-		$img  = array( '@type' => 'ImageObject', 'url' => wp_get_attachment_url( $tid ), 'caption' => $name, 'name' => $name, 'creator' => array( '@id' => $home . '#organization' ), 'creditText' => get_bloginfo( 'name' ), 'copyrightNotice' => get_bloginfo( 'name' ), 'copyrightYear' => (int) get_the_date( 'Y', $tid ) );
-		$lic  = zad_page_url( '', array( 'terms', 'الشروط-والاحكام', 'terms-and-conditions' ) );
-		$acq  = zad_page_url( 'temp/memo-contact.php', array( 'contact', 'اتصل-بنا' ) );
-		if ( $lic ) { $img['license'] = $lic; }
-		if ( $acq ) { $img['acquireLicensePage'] = $acq; }
-		if ( ! empty( $meta['width'] ) ) { $img['width'] = (int) $meta['width']; $img['height'] = (int) $meta['height']; }
-		$s['image'] = $img;
-	}
-	if ( $desc ) { $s['description'] = $desc; }
-
-	$offers = array(); $nums = array();
-	foreach ( zad_price_rows( $id ) as $r ) { // packages, else the old price table; same reader as everywhere
-		$pp = zad_price_parse( $r['price'] );
-		if ( 'quote' === $pp['kind'] ) { continue; }
-		$o = array( '@type' => 'Offer', 'name' => $r['name'] ) + zad_price_offer( $pp, (bool) preg_match( '/شهر/u', $r['price'] ) );
-		if ( $r['group'] ) { $o['category'] = $r['group']; }
-		$offers[] = $o;
-		$nums[]   = $pp['min'];
-		if ( 'range' === $pp['kind'] ) { $nums[] = $pp['max']; }
-	}
-	if ( $offers ) {
-		$s['hasOfferCatalog'] = array( '@type' => 'OfferCatalog', 'name' => 'أسعار ' . $name, 'itemListElement' => $offers );
-		$s['offers'] = array( '@type' => 'AggregateOffer', 'priceCurrency' => 'SAR', 'lowPrice' => min( $nums ), 'highPrice' => max( $nums ), 'offerCount' => count( $offers ), 'url' => $url );
-	}
-	$pkc = function_exists( 'zad_pk_catalog' ) ? zad_pk_catalog( $id ) : null;
-	if ( $pkc ) { $s['hasOfferCatalog'] = $pkc; } // packages on the page: the catalog is built from them only
-	return $s;
-}
-
 /** Print one @graph made of nodes. */
 function zad_print_graph( $nodes ) {
 	zad_print_schema( array( '@context' => 'https://schema.org', '@graph' => array_values( $nodes ) ) );
@@ -341,8 +117,15 @@ add_action( 'wp_head', function () {
 		$nodes = array_merge( $site, zsc_home_nodes() );
 		zad_print_graph( $nodes );
 	} elseif ( $id && in_array( $ptype, zad_service_types(), true ) && 'none' !== zsc_meta( $id, 'mode' ) ) {
-		$nodes = zsc_with_breadcrumb( array_merge( $site, zsc_service_nodes( $id ) ), get_permalink( $id ) );
-		zad_print_graph( $nodes );
+		$nodes = zsc_service_nodes( $id );
+		$kids  = zsc_hub_children( $id ); // a hub page (pillar / city with published children): CollectionPage whose list is the children; the Service node stays (about)
+		$list  = zsc_itemlist_node( get_permalink( $id ), get_the_title( $id ), $kids, 'service' );
+		if ( $list ) {
+			$nodes[0]['@type']      = 'CollectionPage';
+			$nodes[0]['mainEntity'] = array( '@id' => $list['@id'] );
+			$nodes[]                = $list;
+		}
+		zad_print_graph( zsc_with_breadcrumb( array_merge( $site, $nodes ), get_permalink( $id ) ) );
 	} elseif ( is_author() ) {
 		$uid    = get_queried_object_id();
 		$person = zsc_person_node( $uid );
@@ -355,9 +138,31 @@ add_action( 'wp_head', function () {
 	} elseif ( $id && zsc_is_article_page( $id ) ) {
 		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), zsc_article_nodes( $id ) ), get_permalink( $id ) ) );
 	} elseif ( $id ) {
-		$u  = get_permalink( $id );
-		$wp = array( '@type' => 'WebPage', '@id' => $u . '#webpage', 'url' => $u, 'name' => wp_strip_all_tags( get_the_title( $id ) ), 'isPartOf' => array( '@id' => home_url( '/#website' ) ), 'inLanguage' => 'ar', 'datePublished' => get_post_time( 'c', true, $id ), 'dateModified' => get_post_modified_time( 'c', true, $id ) );
-		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), array( $wp ) ), $u ) );
+		$u    = get_permalink( $id );
+		$role = zad_page_role( $id );
+		$name = wp_strip_all_tags( get_the_title( $id ) );
+		$nodes = array_slice( $site, 0, 2 );
+		if ( 'about' === $role ) { // mainEntity: the organization
+			$wp = zsc_page_node( 'AboutPage', $u, $name, $id ); $wp['mainEntity'] = array( '@id' => home_url( '/#organization' ) ); $nodes = array_merge( $nodes, array( $wp ) );
+		} elseif ( 'contact' === $role ) { // mainEntity: the business (its node is in the graph, so the @id resolves)
+			$wp = zsc_page_node( 'ContactPage', $u, $name, $id ); $wp['mainEntity'] = array( '@id' => home_url( '/#localbusiness' ) ); $nodes = array_merge( $site, array( $wp ) );
+		} elseif ( 'services' === $role ) {
+			$wp   = zsc_page_node( 'CollectionPage', $u, $name, $id );
+			$top  = get_posts( array( 'post_type' => zad_service_types(), 'post_parent' => 0, 'post_status' => 'publish', 'numberposts' => 40, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
+			$list = zsc_itemlist_node( $u, $name, $top, 'service' );
+			if ( $list ) { $wp['mainEntity'] = array( '@id' => $list['@id'] ); }
+			$nodes = array_merge( $nodes, array( $wp ), $list ? array( $list ) : array() );
+		} elseif ( 'prices' === $role ) {
+			$wp  = zsc_page_node( 'WebPage', $u, $name, $id );
+			$cat = zsc_prices_catalog( $u );
+			if ( $cat ) { $wp['mainEntity'] = array( '@id' => $cat['@id'] ); }
+			$nodes = array_merge( $nodes, array( $wp ), $cat ? array( $cat ) : array() );
+		} else {
+			$nodes = array_merge( $nodes, array( zsc_page_node( 'WebPage', $u, $name, $id ) ) );
+		}
+		zad_print_graph( zsc_with_breadcrumb( $nodes, $u ) );
+	} elseif ( $arch = zsc_archive_nodes() ) {
+		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), $arch ), $arch[0]['url'] ) );
 	} else {
 		zad_print_graph( zsc_with_breadcrumb( array_slice( $site, 0, 2 ), zad_current_url() ) );
 	}

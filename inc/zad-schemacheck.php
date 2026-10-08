@@ -46,7 +46,7 @@ function zad_schemacheck_run( $url ) {
 	}
 	$types = array();
 	foreach ( $r['nodes'] as $n ) { foreach ( (array) $n['@type'] as $t ) { $types[ $t ][] = $n; } }
-	$single = array( 'Organization', 'LocalBusiness', 'WebSite', 'WebPage', 'BreadcrumbList', 'FAQPage', 'Article', 'BlogPosting', 'Service', 'HomeAndConstructionBusiness', 'AboutPage', 'ContactPage', 'ItemList' );
+	$single = array( 'Organization', 'LocalBusiness', 'WebSite', 'WebPage', 'BreadcrumbList', 'FAQPage', 'Article', 'BlogPosting', 'Service', 'HomeAndConstructionBusiness', 'AboutPage', 'ContactPage', 'CollectionPage', 'ItemList' );
 	foreach ( $types as $t => $list ) {
 		if ( in_array( $t, $single, true ) && count( $list ) > 1 ) {
 			$srcs = array_unique( array_map( function ( $n ) { return $n['__src']; }, $list ) );
