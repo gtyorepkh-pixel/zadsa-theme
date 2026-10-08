@@ -132,7 +132,17 @@ add_action( 'template_redirect', function () {
 	ob_start( 'zad_sprite_buffer' );
 }, 0 );
 
+/** Images with no source at all (no src / data-src / srcset…) and an empty alt are dead markup: dropped. */
+function zad_strip_dead_imgs( $html ) {
+	return preg_replace_callback( '/<img\b[^>]*>/i', function ( $m ) {
+		$t = $m[0];
+		if ( preg_match( '/\s(?:src|data-src|data-lazy-src|data-original|srcset|data-srcset)\s*=\s*["\']?\s*[^"\'\s>]/i', $t ) ) { return $t; }
+		return preg_match( '/\salt\s*=\s*(?:""|\'\')|\salt(?=[\s>\/])/i', $t ) || ! preg_match( '/\salt\s*=/i', $t ) ? '' : $t;
+	}, $html );
+}
+
 function zad_sprite_buffer( $html ) {
+	$html = zad_strip_dead_imgs( $html );
 	if ( false === strpos( $html, 'href="#zi-' ) ) { return $html; }
 	$icons = zad_icons();
 	$pos   = strripos( $html, '</body>' );

@@ -264,12 +264,24 @@ function zad_coverage_save( $post_id, $in ) {
 function zad_is_placeholder_post( $p ) {
 	return 'hello-world' === $p->post_name || in_array( trim( (string) $p->post_title ), array( 'Hello world!', 'مرحبا بالعالم!', 'أهلاً بالعالم!', 'أهلا بالعالم!' ), true );
 }
-/** Articles picked by hand in the service editor (_zad_guides). Empty = the section is not shown (never auto-filled). */
+/**
+ * Guides of a service page: the ones picked by hand (_zad_guides, post / guide / sections / pests-library / best_guide…).
+ * Nothing picked: only when the setting «مطابقة الأدلة تلقائياً بنفس الخدمة» is on, guides filed under the SAME service_cat; never latest posts.
+ */
 function zad_service_guides( $id, $limit = 4 ) {
 	$ids = array_values( array_filter( array_map( 'intval', (array) get_post_meta( $id, '_zad_guides', true ) ) ) );
-	if ( ! $ids ) { return array(); }
+	$args = array( 'post_type' => zad_article_types(), 'post_status' => 'publish', 'numberposts' => $limit, 'ignore_sticky_posts' => true );
+	if ( $ids ) {
+		$args['post__in'] = $ids; $args['orderby'] = 'post__in';
+	} elseif ( zad_opt( 'zad_guides_auto', false ) ) {
+		$t = wp_get_post_terms( $id, 'service_cat', array( 'fields' => 'ids' ) );
+		if ( ! $t || is_wp_error( $t ) ) { return array(); }
+		$args['tax_query'] = array( array( 'taxonomy' => 'service_cat', 'terms' => $t ) );
+	} else {
+		return array();
+	}
 	$out = array();
-	foreach ( get_posts( array( 'post_type' => zad_article_types(), 'post__in' => $ids, 'orderby' => 'post__in', 'post_status' => 'publish', 'numberposts' => $limit, 'ignore_sticky_posts' => true ) ) as $p ) {
+	foreach ( get_posts( $args ) as $p ) {
 		if ( ! zad_is_placeholder_post( $p ) ) { $out[] = $p; }
 	}
 	return $out;
@@ -278,14 +290,14 @@ function zad_service_guides( $id, $limit = 4 ) {
 /** Editor field: choose the articles for «مقالات ونصائح مفيدة». */
 function zad_guides_box( $post_id ) {
 	$sel = array_map( 'intval', (array) get_post_meta( $post_id, '_zad_guides', true ) );
-	echo '<h4>مقالات ونصائح مفيدة <small>(اختيار يدوي؛ فارغ = لا يظهر القسم. يظهر فقط إن فُعِّل من إعدادات القالب)</small></h4><input type="hidden" name="zad[guides_present]" value="1"><select name="zad[guides][]" multiple size="8" style="width:100%">';
+	echo '<h4>أدلة تهمّك <small>(اختيار يدوي، حتى 4: مقال أو دليل أو قسم أو مكتبة آفات…؛ فارغ = لا يظهر القسم)</small></h4><input type="hidden" name="zad[guides_present]" value="1"><select name="zad[guides][]" multiple size="8" style="width:100%">';
 	foreach ( get_posts( array( 'post_type' => zad_article_types(), 'post_status' => 'publish', 'numberposts' => 300, 'orderby' => 'date', 'order' => 'DESC' ) ) as $a ) {
 		echo '<option value="' . (int) $a->ID . '"' . ( in_array( (int) $a->ID, $sel, true ) ? ' selected' : '' ) . '>' . esc_html( $a->post_title ) . '</option>';
 	}
-	echo '</select><p class="description">اضغط Ctrl/⌘ لاختيار أكثر من مقال (حتى 4 تظهر). الترتيب حسب القائمة.</p>';
+	echo '</select><p class="description">اضغط Ctrl/⌘ لاختيار أكثر من دليل (حتى 4 تظهر). الترتيب حسب القائمة.</p>';
 }
 function zad_guides_save( $post_id, $in ) {
 	if ( empty( $in['guides_present'] ) ) { return; }
 	$ids = isset( $in['guides'] ) ? array_values( array_unique( array_filter( array_map( 'absint', (array) $in['guides'] ) ) ) ) : array();
-	update_post_meta( $post_id, '_zad_guides', array_slice( $ids, 0, 12 ) );
+	update_post_meta( $post_id, '_zad_guides', array_slice( $ids, 0, 4 ) );
 }

@@ -32,7 +32,7 @@ function zsc_defaults() {
 			'logo'          => 'https://zadksa.com/wp-content/uploads/2024/05/logo.png',
 			'telephone'     => '+966552744437',
 			'email'         => 'info@zadksa.com',
-			'price_range'   => '$$',
+			'price_range'   => '',
 			'vat'           => '310778555100003',
 			'cr'            => '1010769699',
 			'street'        => '2851 شارع عبدالملك بن مروان، حي العليا',
@@ -102,7 +102,8 @@ function zsc_settings() {
 	if ( $ph ) { $b['telephone'] = '+' . $ph; }
 	$b['email']       = zad_opt( 'memopt_mail', $b['email'] );
 	$pr = zad_opt( 'zad_price_range', '' );
-	$b['price_range'] = ( '' !== $pr && '100–500 ر.س' !== $pr ) ? $pr : $b['price_range']; // old theme default is not real data
+	$b['price_range'] = ( '' !== trim( (string) $pr ) && '100–500 ر.س' !== $pr ) ? trim( (string) $pr ) : ''; // only what is written; the old theme default is not real data, and «$$» is gone
+	$b['wikidata']    = trim( (string) zad_opt( 'zad_wikidata', '' ) );
 	$b['vat']         = zad_opt( 'zad_vat', $b['vat'] );
 	$b['cr']          = zad_opt( 'zad_cr', $b['cr'] );
 	$street           = zad_opt( 'zad_street', '' );
@@ -435,6 +436,7 @@ function zsc_site_nodes() {
 		'logo' => array( '@type' => 'ImageObject', '@id' => $home . '#logo', 'url' => $b['logo'], 'contentUrl' => $b['logo'], 'caption' => $b['name'], 'name' => $b['name'], 'inLanguage' => 'ar' ),
 		'sameAs' => $b['same_as'], 'knowsAbout' => $b['knows_about'],
 	);
+	if ( preg_match( '#^https?://#', (string) $b['wikidata'] ) && ! in_array( $b['wikidata'], (array) $org['sameAs'], true ) ) { $org['sameAs'][] = $b['wikidata']; } // optional Wikidata entity
 	$lb = array(
 		'@type' => 'HomeAndConstructionBusiness', '@id' => $home . '#localbusiness', 'name' => $b['name'], 'legalName' => $b['legal_name'], 'url' => $home,
 		'image' => array( '@id' => $home . '#logo' ), 'description' => $b['description'], 'telephone' => $b['telephone'], 'email' => $b['email'],
@@ -505,6 +507,14 @@ function zsc_service_nodes( $post ) {
 	);
 	if ( $d['description'] ) { $service['description'] = $d['description']; }
 	if ( $image ) { $service['image'] = $image; }
+	$spec = array(); // «البطاقة الفنية»: the visible rows, nothing else
+	foreach ( zad_spec_rows( $post->ID ) as $r ) { $spec[] = array( '@type' => 'PropertyValue', 'name' => $r[0], 'value' => $r[1] ); }
+	if ( $spec ) { $service['additionalProperty'] = $spec; }
+	$aud = trim( (string) get_post_meta( $post->ID, '_zad_audience', true ) );
+	if ( '' !== $aud ) { $service['audience'] = array( '@type' => 'Audience', 'audienceType' => $aud ); }
+	$hrs = array();
+	foreach ( zsc_settings()['business']['hours'] as $h ) { $hrs[] = array( '@type' => 'OpeningHoursSpecification', 'dayOfWeek' => $h[0], 'opens' => $h[1], 'closes' => $h[2] ); } // the working hours of the settings
+	if ( $hrs ) { $service['hoursAvailable'] = $hrs; }
 
 	$pkcat = function_exists( 'zad_pk_catalog' ) ? zad_pk_catalog( $post->ID ) : null;
 	if ( $d['offers'] ) {

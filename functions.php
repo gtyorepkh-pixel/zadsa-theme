@@ -6,7 +6,7 @@
  */
 
 define('MEMO_VERSION_VERSION', '1.1');
-define( 'ZAD_VERSION', '3.17.4' );
+define( 'ZAD_VERSION', '3.18.0' );
 define( 'MEMO_THEME_DIR', trailingslashit( get_template_directory() ) );
 define( 'MEMO_THEME_URI', trailingslashit( esc_url( get_template_directory_uri() ) ) );
 
@@ -50,6 +50,7 @@ require_once MEMO_THEME_DIR .'inc/zad-svcconvert.php';
 require_once MEMO_THEME_DIR .'inc/zad-secheads.php';
 require_once MEMO_THEME_DIR .'inc/zad-packages.php';
 require_once MEMO_THEME_DIR .'inc/zad-qnet.php';
+require_once MEMO_THEME_DIR .'inc/zad-links.php';
 require_once MEMO_THEME_DIR .'inc/zad-corecss.php';
 require_once MEMO_THEME_DIR .'inc/zad-domaudit.php';
 require_once MEMO_THEME_DIR .'inc/zad-assets.php';

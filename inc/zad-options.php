@@ -53,7 +53,7 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_strip_wp_css', 'type' => 'switcher', 'title' => 'تقليل CSS ووردبريس في الواجهة', 'default' => true, 'desc' => 'يزيل global-styles وclassic-theme-styles وwp-block-library وأنماط البلوكات المضمَّنة (نحو 20KB inline)، ويكتفي بقواعد البلوكات الأساسية الموجودة في ملف الثيم المخزّن (صور، جداول، قوائم، أعمدة، ألوان وأحجام الخطوط الافتراضية). إن ظهر محتوى بلوكات مبعثراً أوقفه.' ),
 		array( 'id' => 'zad_icon_sprite', 'type' => 'switcher', 'title' => 'الأيقونات: sprite واحد بدل SVG مكرر', 'default' => true, 'desc' => 'يطبع كل أيقونة <use> ويضع تعريفات الأيقونات المستخدمة مرة واحدة في آخر الصفحة (يقلّل عناصر DOM).' ),
 		array( 'id' => 'zad_reviewer', 'type' => 'select', 'title' => 'المراجع الفني لصفحات الخدمات', 'options' => 'users', 'default' => '', 'desc' => 'اسمه يظهر في سطر «آخر تحديث … · راجعه …» تحت عنوان الصفحة، ويُضاف reviewedBy وlastReviewed في السكيما. فارغ = كاتب الصفحة.' ),
-		array( 'id' => 'zad_svc_guides_show', 'type' => 'switcher', 'title' => 'صفحات الخدمات: إظهار قسم «مقالات ونصائح مفيدة»', 'default' => false, 'desc' => 'مخفي افتراضياً. حتى لو فُعِّل: يظهر فقط في الصفحات التي اخترتَ لها مقالات يدوياً (حقل «مقالات ونصائح مفيدة» في محرر الخدمة)، ولا يُملأ تلقائياً.' ),
+		array( 'id' => 'zad_guides_auto', 'type' => 'switcher', 'title' => 'مطابقة الأدلة تلقائياً بنفس الخدمة', 'default' => false, 'desc' => 'مغلق افتراضياً. إن فُعِّل وكان اختيار «أدلة تهمّك» فارغاً في الصفحة، تُعرض الأدلة المصنّفة تحت نفس تصنيف الخدمة فقط (لا أحدث المقالات أبداً).' ),
 		array( 'id' => 'zad_sbar_on', 'type' => 'switcher', 'title' => 'صفحات الخدمات: القائمة الجانبية «كل خدماتنا»', 'default' => true, 'desc' => 'عند التفعيل تعرض فقط الخدمات التي في نفس القسم ونفس المدينة. عند الإيقاف تختفي القائمة (وزر الطلب والاتصال الذي فيها) ويتوسّط المحتوى.' ),
 		array( 'id' => 'zad_related_auto', 'type' => 'switcher', 'title' => 'ملء «ذات صلة» تلقائياً عند الفراغ', 'default' => false, 'desc' => 'مغلق افتراضياً: إن لم تختر شيئاً في الصفحة لا يظهر القسم. فعّله فقط إن أردت أن يملأه الموقع من نفس القسم.' ),
 		array( 'id' => 'zad_cov_eyebrow', 'type' => 'text', 'title' => 'قسم التغطية: الوسم الصغير', 'desc' => 'قسم «التغطية» (أحياء نصل إليها). يظهر فقط إذا عبّأت العنوان أو الأحياء. مثال: تغطيتنا', 'default' => '' ),
@@ -91,6 +91,8 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_wiz_cats', 'type' => 'textarea', 'title' => 'أقسام نافذة «احجز موعدك» (اختياري)', 'desc' => 'سطر لكل قسم: الاسم | أيقونة (اختيارية: bug drop snow truck tool shield paint home sparkle). إن تركتها فارغة تظهر الأقسام الافتراضية الخمسة؛ واكتب auto لأخذها من صفحات الموقع. مثال: مكافحة الحشرات | bug' ),
 		array( 'id' => 'zad_wiz_cities', 'type' => 'textarea', 'title' => 'مدن نافذة «احجز موعدك» (سطر لكل مدينة)', 'default' => "الرياض\nجدة\nالدمام\nالقصيم\nنجران" ),
 		array( 'id' => 'zad_wiz_names', 'type' => 'textarea', 'title' => 'أسماء أقسام نافذة «احجز موعدك» (اختياري)', 'desc' => 'سطر لكل قسم: الاسم الحالي | الاسم الذي يظهر | أيقونة (اختيارية: bug drop snow truck tool shield paint home sparkle). مثال: تنظيف المنازل | تنظيف فلل وشقق | home' ),
+		array( 'id' => 'zad_edu_hub', 'type' => 'text', 'title' => 'مركز المحتوى التعليمي في الفوتر (العنوان | الرابط)', 'desc' => 'فارغ = لا يظهر. مثال: مركز الأدلة | /guide/' ),
+		array( 'id' => 'zad_wikidata', 'type' => 'text', 'title' => 'رابط Wikidata للشركة (sameAs)', 'desc' => 'اختياري؛ يُضاف إلى sameAs في بيانات المنظمة إن كُتب.' ),
 		array( 'id' => 'zad_trustindex', 'type' => 'text', 'title' => 'معرّف ودجت Trustindex (اختياري)' ),
 	),
 ) );

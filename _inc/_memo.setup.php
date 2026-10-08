@@ -37,8 +37,9 @@ if ( ! class_exists( 'MemoSetupTheme' ) ) :
         register_nav_menus(
             array(
                 'mainmenu' => 'القائمه العلوية',
-                'footermenu' => 'قائمة الفوتر',
-                'footerinfo' => 'قائمة الفوتر الثانية',
+                'footermenu' => 'الفوتر: روابط مهمة',
+                'footerinfo' => 'الفوتر: الخدمات',
+                'footercities' => 'الفوتر: المدن',
                 'legalmenu' => 'الروابط القانونية (أسفل الفوتر)',
             )
         );

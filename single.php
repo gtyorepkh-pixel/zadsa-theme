@@ -12,11 +12,11 @@ while ( have_posts() ) :
 		<article class="slayout__main">
 			<?php echo zad_author_byline(); // phpcs:ignore ?>
 			<?php if ( has_post_thumbnail() ) : ?><div class="post-thumb"><?php the_post_thumbnail( 'large' ); ?></div><?php endif; ?>
-			<div class="prose entry-content"><?php the_content(); ?></div>
-			<?php $psid = (int) get_post_meta( get_the_ID(), '_zad_post_service', true );
-			if ( $psid && 'publish' === get_post_status( $psid ) ) : $psw = zad_wa_link( 'مرحباً، قرأت مقال: ' . get_the_title() . ' وأرغب بخدمة: ' . get_the_title( $psid ), $psid ); ?>
+			<div class="prose entry-content"><?php echo zad_content_with_box( get_the_ID() ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+			<?php $psid = zad_linked_service( get_the_ID() ); // the one published service this article points to
+			if ( $psid ) : $psw = zad_wa_link( 'مرحباً، قرأت مقال: ' . get_the_title() . ' وأرغب بخدمة: ' . get_the_title( $psid ), $psid ); ?>
 				<div class="svc-cta"><div><span class="eyebrow">الحل المناسب</span><h3><?php echo esc_html( zad_card_title( $psid ) ); ?></h3><p><?php echo esc_html( get_post_meta( $psid, '_zad_tagline', true ) ?: wp_trim_words( get_the_excerpt( $psid ), 22 ) ); ?></p></div>
-				<div class="svc-cta__b"><a class="btn btn--accent" href="<?php echo esc_url( get_permalink( $psid ) ); ?>">تفاصيل الخدمة</a><?php if ( $psw ) : ?><a class="btn btn--wa" href="<?php echo esc_url( $psw ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> واتساب</a><?php endif; ?></div></div>
+				<div class="svc-cta__b"><a class="btn btn--accent" href="<?php echo esc_url( get_permalink( $psid ) ); ?>"><?php echo esc_html( 'تعرّف على خدمة ' . zad_card_title( $psid ) ); ?></a><?php if ( $psw ) : ?><a class="btn btn--wa" href="<?php echo esc_url( $psw ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> واتساب</a><?php endif; ?></div></div>
 			<?php endif; ?>
 			<?php echo zad_author_box(); // phpcs:ignore ?>
 			<div class="footer-meta"><?php memo_tags_in(); ?></div>

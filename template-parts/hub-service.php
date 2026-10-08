@@ -46,14 +46,11 @@ $faqs = array();
 if ( $ids ) {
 	$mq = array( 'relation' => 'OR' );
 	foreach ( $ids as $i ) { $mq[] = array( 'key' => '_zad_faq_services', 'value' => '"' . (int) $i . '"', 'compare' => 'LIKE' ); }
-	$fq = new WP_Query( array( 'post_type' => zad_faq_types(), 'posts_per_page' => 8, 'no_found_rows' => true, 'meta_query' => $mq ) );
+	$fq = new WP_Query( array( 'post_type' => zad_faq_types(), 'posts_per_page' => 6, 'no_found_rows' => true, 'meta_query' => $mq ) );
 	$faqs = $fq->posts;
 }
-// Guides tied to these services, else latest
-$gq = new WP_Query( array( 'post_type' => zad_article_types(), 'posts_per_page' => 3, 'no_found_rows' => true, 'ignore_sticky_posts' => 1, 'meta_query' => $ids ? array( array( 'key' => '_zad_post_service', 'value' => $ids, 'compare' => 'IN' ) ) : array() ) );
-if ( ! $gq->have_posts() ) {
-	$gq = new WP_Query( array( 'post_type' => zad_article_types(), 'posts_per_page' => 3, 'no_found_rows' => true, 'ignore_sticky_posts' => 1 ) );
-}
+// Guides tied to these services (_zad_post_service); never «latest» — no match = no block
+$gq = new WP_Query( $ids ? array( 'post_type' => zad_article_types(), 'posts_per_page' => 4, 'no_found_rows' => true, 'ignore_sticky_posts' => 1, 'meta_query' => array( array( 'key' => '_zad_post_service', 'value' => $ids, 'compare' => 'IN' ) ) ) : array( 'post__in' => array( 0 ), 'no_found_rows' => true ) );
 $toc = array( 'directory' => 'فهرس الخدمات' );
 if ( $decide ) { $toc['choose'] = 'اختر حسب حالتك'; }
 if ( count( $rows ) > 1 ) { $toc['compare'] = 'مقارنة سريعة'; }

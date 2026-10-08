@@ -13,8 +13,8 @@ $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'n
 		</div>
 	</div>
 	<?php endif; ?>
-	<?php $f_areas = zad_link_lines( 'zad_footer_areas' ); ?>
-	<div class="wrap ftr__grid<?php echo $f_areas ? '' : ' ftr__grid--3'; ?>">
+	<?php $f_areas = zad_link_lines( 'zad_footer_areas' ); $f_cities = has_nav_menu( 'footercities' ) ? array( true ) : zad_footer_cities_fallback(); // the cities column (menu or the cities that have pages) replaces the plain «مناطق نخدمها» list, never both ?>
+	<div class="wrap ftr__grid<?php echo ( $f_cities || $f_areas ) ? '' : ' ftr__grid--3'; ?>">
 		<div class="ftr__brand ftr__about">
 			<b><?php bloginfo( 'name' ); ?></b>
 			<?php echo wp_kses_post( wpautop( zad_opt( 'memopt_footer_h' ) ) ); ?>
@@ -36,7 +36,17 @@ $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'n
 		</div>
 		<div>
 			<h3>أهم الروابط</h3>
-			<?php wp_nav_menu( array( 'theme_location' => 'footermenu', 'container' => false, 'menu_class' => 'ftr__list', 'items_wrap' => '<ul class="%2$s">%3$s</ul>', 'depth' => 1, 'fallback_cb' => false ) ); ?>
+			<?php
+			$edu = zad_footer_edu_item(); // optional «مركز المحتوى التعليمي» (setting); nothing when empty
+			if ( has_nav_menu( 'footermenu' ) ) {
+				wp_nav_menu( array( 'theme_location' => 'footermenu', 'container' => false, 'menu_class' => 'ftr__list', 'items_wrap' => '<ul class="%2$s">%3$s</ul>', 'depth' => 1, 'fallback_cb' => false ) );
+				echo $edu ? zad_footer_list( array( $edu ) ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput
+			} else {
+				$imp = zad_footer_important_fallback();
+				if ( $edu ) { $imp[] = $edu; }
+				echo zad_footer_list( $imp ); // phpcs:ignore WordPress.Security.EscapeOutput
+			}
+			?>
 		</div>
 		<div>
 			<h3>خدماتنا</h3>
@@ -44,18 +54,21 @@ $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'n
 			if ( has_nav_menu( 'footerinfo' ) ) {
 				wp_nav_menu( array( 'theme_location' => 'footerinfo', 'container' => false, 'menu_class' => 'ftr__list', 'items_wrap' => '<ul class="%2$s">%3$s</ul>', 'depth' => 1 ) );
 			} elseif ( $cats && ! is_wp_error( $cats ) ) {
-				echo '<ul class="ftr__list">';
-				foreach ( $cats as $c ) {
-					echo '<li><a href="' . esc_url( get_term_link( $c ) ) . '">' . esc_html( $c->name ) . '</a></li>';
-				}
-				echo '</ul>';
+				$cl = array();
+				foreach ( $cats as $c ) { $u = get_term_link( $c ); if ( $u && ! is_wp_error( $u ) ) { $cl[] = array( $c->name, $u ); } }
+				echo zad_footer_list( $cl ); // phpcs:ignore WordPress.Security.EscapeOutput
 			}
 			?>
 		</div>
-		<?php if ( $f_areas ) : ?>
+		<?php if ( $f_cities || $f_areas ) : ?>
 		<div>
+			<?php if ( $f_cities ) : ?>
+			<h3>المدن</h3>
+			<?php if ( has_nav_menu( 'footercities' ) ) { wp_nav_menu( array( 'theme_location' => 'footercities', 'container' => false, 'menu_class' => 'ftr__list', 'items_wrap' => '<ul class="%2$s">%3$s</ul>', 'depth' => 1 ) ); } else { echo zad_footer_list( $f_cities ); } // phpcs:ignore WordPress.Security.EscapeOutput ?>
+			<?php else : ?>
 			<h3>مناطق نخدمها</h3>
 			<ul class="ftr__list"><?php foreach ( $f_areas as $a ) { echo '<li>' . esc_html( $a['name'] ) . '</li>'; } ?></ul>
+			<?php endif; ?>
 		</div>
 		<?php endif; ?>
 	</div>

@@ -1,7 +1,7 @@
 <?php defined( 'ABSPATH' ) || exit;
 /**
  * Structured data (JSON-LD), shaped like the reference site's graph:
- *  @graph: Organization, WebSite(+SearchAction), LocalBusiness, BreadcrumbList, SiteNavigationElement
+ *  @graph: Organization, WebSite(+SearchAction), LocalBusiness, BreadcrumbList
  *  then separate scripts: Service(+OfferCatalog), FAQPage, VideoObject (service pages), QAPage (questions).
  */
 
@@ -157,24 +157,6 @@ function zad_current_crumbs_base() {
 	return array();
 }
 
-function zad_nav_schema() {
-	$locs = get_nav_menu_locations();
-	if ( empty( $locs['mainmenu'] ) ) {
-		return null;
-	}
-	$items = wp_get_nav_menu_items( $locs['mainmenu'] );
-	if ( ! $items ) {
-		return null;
-	}
-	$names = array();
-	$urls  = array();
-	foreach ( $items as $it ) {
-		$names[] = $it->title;
-		$urls[]  = $it->url;
-	}
-	return array( '@type' => 'SiteNavigationElement', '@id' => home_url( '/#sitenav' ), 'name' => $names, 'url' => $urls );
-}
-
 /** URL of the first page using a template (e.g. contact), or of a page by slug. */
 function zad_page_url( $template, $slugs = array() ) {
 	$q = get_posts( array( 'post_type' => 'page', 'numberposts' => 1, 'meta_key' => '_wp_page_template', 'meta_value' => $template, 'fields' => 'ids' ) );
@@ -205,7 +187,10 @@ function zad_graph() {
 		if ( $c['logo_w'] ) { $logo['width'] = $c['logo_w']; $logo['height'] = $c['logo_h']; }
 		$org['logo'] = $logo;
 	}
-	if ( $c['same'] ) { $org['sameAs'] = $c['same']; }
+	$wd = trim( (string) zad_opt( 'zad_wikidata', '' ) );
+	$org_same = $c['same'];
+	if ( preg_match( '#^https?://#', $wd ) && ! in_array( $wd, (array) $org_same, true ) ) { $org_same[] = $wd; }
+	if ( $org_same ) { $org['sameAs'] = $org_same; }
 	if ( zad_knows_about() ) { $org['knowsAbout'] = zad_knows_about(); }
 
 	$site = array(
@@ -231,7 +216,8 @@ function zad_graph() {
 		'url'       => $home,
 	);
 	if ( $c['logo'] ) { $lb['image'] = $org['logo']; }
-	if ( zad_opt( 'zad_price_range', '100–500 ر.س' ) ) { $lb['priceRange'] = zad_opt( 'zad_price_range', '100–500 ر.س' ); }
+	$pr = trim( (string) zad_opt( 'zad_price_range', '' ) );
+	if ( '' !== $pr && '100–500 ر.س' !== $pr ) { $lb['priceRange'] = $pr; }
 	if ( $c['phone'] ) { $lb['telephone'] = $c['phone']; }
 	if ( $c['email'] ) { $lb['email'] = $c['email']; }
 	$addr = array( '@type' => 'PostalAddress', 'addressCountry' => 'SA' );
@@ -271,8 +257,6 @@ function zad_graph() {
 		}
 		$graph[] = array( '@type' => 'BreadcrumbList', '@id' => zad_current_url() . '#breadcrumb', 'itemListElement' => $items );
 	}
-	$nav = zad_nav_schema();
-	if ( $nav ) { $graph[] = $nav; }
 	return array( '@context' => 'https://schema.org', '@graph' => $graph );
 }
 
@@ -350,17 +334,14 @@ add_action( 'wp_head', function () {
 		return;
 	}
 	$site  = zsc_site_nodes();
-	$nav   = zad_nav_schema();
 	$id    = is_singular() ? get_queried_object_id() : 0;
 	$ptype = $id ? get_post_type( $id ) : '';
 
 	if ( is_front_page() ) {
 		$nodes = array_merge( $site, zsc_home_nodes() );
-		if ( $nav ) { $nodes[] = $nav; }
 		zad_print_graph( $nodes );
 	} elseif ( $id && in_array( $ptype, zad_service_types(), true ) && 'none' !== zsc_meta( $id, 'mode' ) ) {
 		$nodes = zsc_with_breadcrumb( array_merge( $site, zsc_service_nodes( $id ) ), get_permalink( $id ) );
-		if ( $nav ) { $nodes[] = $nav; }
 		zad_print_graph( $nodes );
 	} elseif ( is_author() ) {
 		$uid    = get_queried_object_id();

@@ -1,7 +1,7 @@
 <?php defined( 'ABSPATH' ) || exit;
 $id    = get_the_ID();
 if ( ! empty( $args['lite'] ) ) : // minimal card (related sections): <article><a><img><h3></a><p></article> ?>
-<article class="scard scard--lite"><a class="scard__lite" href="<?php the_permalink(); ?>"><?php if ( has_post_thumbnail() ) { the_post_thumbnail( 'zad-card', array( 'loading' => 'lazy', 'alt' => '' ) ); } ?><h3 class="scard__title"><?php echo esc_html( zad_card_title( $id ) ); ?></h3></a><p class="scard__desc"><?php echo esc_html( get_post_meta( $id, '_zad_tagline', true ) ?: wp_trim_words( get_the_excerpt(), 18 ) ); ?></p></article>
+<article class="scard scard--lite"><a class="scard__lite" href="<?php the_permalink(); ?>"><?php if ( has_post_thumbnail() ) { the_post_thumbnail( 'zad-card', array( 'loading' => 'lazy', 'alt' => '' ) ); } ?><h3 class="scard__title"><?php echo esc_html( ! empty( $args['anchor'] ) ? $args['anchor'] : zad_card_title( $id ) ); ?></h3></a><p class="scard__desc"><?php echo esc_html( get_post_meta( $id, '_zad_tagline', true ) ?: wp_trim_words( get_the_excerpt(), 18 ) ); ?></p></article>
 <?php return; endif;
 $price = get_post_meta( $id, '_zad_price', true );
 $unit  = get_post_meta( $id, '_zad_price_unit', true ) ?: 'ريال';
@@ -13,7 +13,7 @@ $terms = get_the_terms( $id, 'service_cat' );
 $wa    = zad_wa_link( 'مرحباً، أرغب بطلب خدمة: ' . zad_card_title( $id ), $id );
 ?>
 <article class="scard">
-	<a class="scard__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
+	<a class="scard__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-label="<?php echo esc_attr( zad_card_title( $id ) ); ?>">
 		<?php if ( has_post_thumbnail() ) {
 			the_post_thumbnail( 'zad-card', array( 'loading' => 'lazy', 'alt' => '' ) );
 		} else { ?>

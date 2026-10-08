@@ -1380,3 +1380,8 @@ p.has-background{padding:1.25em 2em}
 .wz .wiz__cat .wz__tx{flex:none;font-size:.92rem;line-height:1.5}
 .wz__seg--city{grid-auto-flow:row;grid-template-columns:repeat(auto-fit,minmax(92px,1fr))}
 @media (min-width:760px){.wz .wiz__cats{grid-template-columns:repeat(3,1fr)}}
+
+/* «الخدمة المرتبطة» inside articles / FAQ / guides */
+.svc-link-box{margin:22px 0;padding:14px 18px;background:var(--tint);border:1px solid var(--line);border-inline-start:4px solid var(--accent);border-radius:var(--r);font-size:1rem}
+.svc-link-box a{font-weight:800}
+.svc-link-btn{margin:22px 0 0}

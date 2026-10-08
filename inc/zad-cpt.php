@@ -217,8 +217,8 @@ function zad_service_metabox( $post ) {
 		<h4>الضمان <small>(بطاقات)</small></h4>
 		<?php zad_repeater_ui( $post->ID, 'warrantyrows', 't', 'd', 'العنوان', 'الوصف', 'إضافة بند ضمان' ); ?>
 
-		<h4>البطاقة الفنية <small>(سطر: العنوان | القيمة — تضاف إلى البيانات التلقائية)</small></h4>
-		<p><textarea name="zad[spec]" rows="4" style="width:100%" placeholder="المواد المستخدمة | مبيدات مبطّنة مرخصة SFDA"><?php echo esc_textarea( $g( 'spec' ) ); ?></textarea></p>
+		<h4>البطاقة الفنية <small>(سطر: الاسم | القيمة — تظهر كجدول وفي بيانات Google فقط إن كتبت؛ فارغ = لا قسم)</small></h4>
+		<p><textarea name="zad[spec]" rows="4" style="width:100%" placeholder="الاسم | القيمة"><?php echo esc_textarea( $g( 'spec' ) ); ?></textarea></p>
 
 		<p><label>ملاحظة تحت جدول الأسعار (خصومات، شروط…)<textarea name="zad[price_note]" rows="2" style="width:100%"><?php echo esc_textarea( $g( 'price_note' ) ); ?></textarea></label></p>
 
@@ -249,6 +249,8 @@ function zad_service_metabox( $post ) {
 		<h4>خدمات ومقالات ذات صلة <small>(فارغ = لا يظهر القسم؛ اختر 3–6 صفحات وثيقة الصلة)</small></h4>
 		<?php zad_related_picker( $post->ID, $related ); ?>
 		<?php zad_guides_box( $post->ID ); ?>
+		<?php zad_anchors_box( $post->ID ); ?>
+		<?php zad_links_box( $post->ID ); ?>
 		<?php zad_sbar_box( $post->ID ); ?>
 		<?php zad_sec_box( $post->ID ); ?>
 		<?php zad_coverage_box( $post->ID ); ?>
@@ -338,6 +340,7 @@ add_action( 'save_post', function ( $post_id ) {
 	update_post_meta( $post_id, '_zad_ba', isset( $in['ba'] ) ? implode( ',', array_filter( array_map( 'absint', explode( ',', $in['ba'] ) ) ) ) : '' );
 	zad_related_save( $post_id, $in );
 	zad_guides_save( $post_id, $in );
+	zad_links_save( $post_id, $in );
 	zad_sbar_save( $post_id, $in );
 	zad_sec_save( $post_id, $in );
 	zad_coverage_save( $post_id, $in );

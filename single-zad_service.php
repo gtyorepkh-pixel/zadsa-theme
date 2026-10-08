@@ -258,31 +258,8 @@ while ( have_posts() ) :
 	<!-- 10. Prices: the packages section is the only price section (_zad_prices is no longer printed) -->
 	<?php echo zad_pk_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
-	<!-- 11. Technical card (spec) -->
-	<section class="sec sec--mint"><div class="wrap wrap--narrow">
-		<?php echo zad_sec_head( $id, 'spec', 'check' ); // phpcs:ignore ?>
-		<dl class="info">
-			<?php
-			$info = array(
-				'اسم الخدمة'     => $title,
-				'مقدّم الخدمة'   => $provider,
-				'التصنيف'        => ( $cats && ! is_wp_error( $cats ) ) ? $cats[0]->name : '',
-				'مناطق الخدمة'   => implode( '، ', $area_names ),
-				'نطاق السعر'     => $min ? 'من ' . number_format_i18n( $min ) . ' ' . $unit : '',
-				'مدة التنفيذ'    => $m( 'duration' ),
-				'الضمان'         => $m( 'warranty' ),
-				'ساعات العمل'    => zad_hours_text(),
-			);
-			foreach ( zad_lines( $m( 'spec' ) ) as $l ) {
-				$c = array_map( 'trim', explode( '|', $l ) );
-				if ( count( $c ) >= 2 ) { $info[ $c[0] ] = $c[1]; }
-			}
-			foreach ( $info as $k => $v ) {
-				if ( $v ) { echo '<div><dt>' . esc_html( $k ) . '</dt><dd>' . esc_html( $v ) . '</dd></div>'; }
-			}
-			?>
-		</dl>
-	</div></section>
+	<!-- 11. Technical card: only the page's own «الاسم | القيمة» lines; empty = no section -->
+	<?php echo zad_spec_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
 	<!-- 11b. Signs + harms -->
 	<?php if ( $signs ) : ?>
@@ -397,15 +374,9 @@ while ( have_posts() ) :
 	<!-- 15a. Related detailed questions (right after the page's own FAQ; before «related services» when there is none) -->
 	<?php $qn = zad_qnet_html( $id ); if ( $faq ) { echo $qn; } // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
-	<!-- 15b. Guides -->
-	<?php $gp = zad_opt( 'zad_svc_guides_show', false ) ? zad_service_guides( $id, 4 ) : array(); // global switch (off by default) + articles picked by hand on the page; nothing picked = no section
-	if ( $gp ) : ?>
-	<section class="sec"><div class="wrap">
-		<header class="sec__head"><span class="eyebrow">أدلة تهمّك</span><h2>مقالات ونصائح مفيدة</h2></header>
-		<div class="sgrid"><?php foreach ( $gp as $gpost ) { $GLOBALS['post'] = $gpost; setup_postdata( $gpost ); get_template_part( 'template-parts/post-card' ); } wp_reset_postdata(); ?></div>
-		<p class="sec__more"><a class="btn btn--ghost-dark" href="<?php echo esc_url( get_permalink( get_option( 'page_for_posts' ) ) ?: home_url( '/blog/' ) ); ?>">كل المقالات</a></p>
-	</div></section>
-	<?php endif; ?>
+	<!-- 15b. Guides (hand-picked / strict match) + the same service in other cities (hand-picked) -->
+	<?php echo zad_guides_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+	<?php echo zad_other_cities_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
 	<?php echo function_exists( 'zad_bridges_html' ) ? zad_bridges_html( $id ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 	<?php if ( ! $faq ) { echo $qn; } // phpcs:ignore WordPress.Security.EscapeOutput ?>
@@ -415,7 +386,7 @@ while ( have_posts() ) :
 	if ( $rel->have_posts() ) : ?>
 	<section class="sec sec--mint"><div class="wrap">
 		<?php echo zad_sec_head( $id, 'related' ); // phpcs:ignore ?>
-		<div class="sgrid"><?php while ( $rel->have_posts() ) { $rel->the_post(); get_template_part( 'template-parts/' . ( in_array( get_post_type(), zad_service_types(), true ) ? 'service-card' : 'post-card' ), null, array( 'lite' => true ) ); } wp_reset_postdata(); ?></div>
+		<div class="sgrid"><?php while ( $rel->have_posts() ) { $rel->the_post(); $is_svc = in_array( get_post_type(), zad_service_types(), true ); get_template_part( 'template-parts/' . ( $is_svc ? 'service-card' : 'post-card' ), null, $is_svc ? array( 'lite' => true, 'anchor' => zad_anchor_for( get_the_ID(), $id ) ) : array( 'lite' => true ) ); } wp_reset_postdata(); ?></div>
 	</div></section>
 	<?php endif; ?>
 

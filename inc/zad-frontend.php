@@ -229,22 +229,27 @@ function zad_mega_html_build() {
 }
 
 /** Legal links: menu "legalmenu" or pages by common slugs. */
+/** Default legal links (privacy / terms / …) that exist and are published: [ [label, url], … ]. Empty when a legal menu is assigned. */
+function zad_legal_items() {
+	if ( has_nav_menu( 'legalmenu' ) ) { return array(); }
+	$map = array( 'سياسة الخصوصية' => array( 'privacy-policy', 'privacy' ), 'الشروط والأحكام' => array( 'terms', 'terms-and-conditions' ), 'سياسة الضمان' => array( 'warranty-policy', 'warranty' ) );
+	$out = array();
+	foreach ( $map as $label => $slugs ) {
+		foreach ( $slugs as $sl ) {
+			$p = get_page_by_path( $sl );
+			if ( $p && 'publish' === $p->post_status ) { $out[] = array( $label, get_permalink( $p ) ); break; }
+		}
+	}
+	return $out;
+}
+
 function zad_legal_links() {
 	if ( has_nav_menu( 'legalmenu' ) ) {
 		wp_nav_menu( array( 'theme_location' => 'legalmenu', 'container' => false, 'menu_class' => 'ftr__legal', 'items_wrap' => '<ul class="%2$s">%3$s</ul>', 'depth' => 1 ) );
 		return;
 	}
-	$map = array( 'سياسة الخصوصية' => array( 'privacy-policy', 'privacy' ), 'الشروط والأحكام' => array( 'terms', 'terms-and-conditions' ), 'سياسة الضمان' => array( 'warranty-policy', 'warranty' ) );
-	$li  = '';
-	foreach ( $map as $label => $slugs ) {
-		foreach ( $slugs as $sl ) {
-			$p = get_page_by_path( $sl );
-			if ( $p && 'publish' === $p->post_status ) {
-				$li .= '<li><a href="' . esc_url( get_permalink( $p ) ) . '">' . esc_html( $label ) . '</a></li>';
-				break;
-			}
-		}
-	}
+	$li = '';
+	foreach ( zad_legal_items() as $i ) { $li .= '<li><a href="' . esc_url( $i[1] ) . '">' . esc_html( $i[0] ) . '</a></li>'; }
 	if ( $li ) {
 		echo '<ul class="ftr__legal">' . $li . '</ul>'; // phpcs:ignore
 	}
@@ -271,7 +276,7 @@ add_filter( 'wp_get_attachment_image_attributes', function ( $a ) {
 } );
 
 
-/* Post → related service (CTA card on the article) */
+/* Article / guide → related service (box inside the content + button at the end) */
 add_action( 'add_meta_boxes', function () {
 	add_meta_box( 'zad_post_service', 'ربط المقال بخدمة', function ( $post ) {
 		wp_nonce_field( 'zad_post_service', 'zad_ps_nonce' );
@@ -280,10 +285,11 @@ add_action( 'add_meta_boxes', function () {
 		foreach ( get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 200, 'orderby' => 'title', 'order' => 'ASC' ) ) as $s ) {
 			echo '<option value="' . (int) $s->ID . '"' . selected( $cur, $s->ID, false ) . '>' . esc_html( $s->post_title ) . '</option>';
 		}
-		echo '</select><p class="description">تظهر بطاقة الخدمة تحت المقال.</p>';
-	}, 'post', 'side' );
+		echo '</select><p class="description">يظهر صندوق ثابت داخل المحتوى وزر في آخر الصفحة.</p>';
+	}, zad_article_types(), 'side' ); // articles, guides, sections, pests library…
 } );
-add_action( 'save_post_post', function ( $id ) {
+add_action( 'save_post', function ( $id ) {
+	if ( ! in_array( get_post_type( $id ), zad_article_types(), true ) ) { return; }
 	if ( ! isset( $_POST['zad_ps_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['zad_ps_nonce'] ) ), 'zad_post_service' ) || ! current_user_can( 'edit_post', $id ) ) {
 		return;
 	}
