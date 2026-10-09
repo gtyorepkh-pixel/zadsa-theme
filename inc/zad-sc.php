@@ -296,8 +296,13 @@ function zsc_page_data( $post ) {
 	$offers = array();
 	foreach ( zsc_lines( zsc_meta( $post->ID, 'offers' ) ) as $line ) {
 		$p = array_map( 'trim', explode( '|', $line ) );
-		if ( count( $p ) >= 2 && '' !== $p[0] && zsc_num( $p[1] ) > 0 ) {
-			$offers[] = array( 'name' => $p[0], 'price' => zsc_num( $p[1] ), 'unit' => $p[2] ?? '' );
+		if ( count( $p ) >= 2 && '' !== $p[0] ) {
+			$pp = function_exists( 'zad_price_parse' ) ? zad_price_parse( $p[1] ) : null; // «200 - 300» is a range, «من 200» a floor, text = no price (never a made-up number)
+			if ( $pp && in_array( $pp['kind'], array( 'range', 'from' ), true ) ) {
+				$offers[] = array( 'name' => $p[0], 'price' => $pp['min'], 'unit' => $p[2] ?? '', 'kind' => $pp['kind'], 'min' => $pp['min'], 'max' => $pp['max'] );
+			} elseif ( zsc_num( $p[1] ) > 0 ) {
+				$offers[] = array( 'name' => $p[0], 'price' => zsc_num( $p[1] ), 'unit' => $p[2] ?? '' );
+			}
 		}
 	}
 
