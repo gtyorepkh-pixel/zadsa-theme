@@ -376,7 +376,7 @@
 		}
 		form.addEventListener('submit', function (e) {
 			var bad = null;
-			['name', 'phone', 'service'].forEach(function (n) {
+			['name', 'phone', 'service', 'section'].forEach(function (n) {
 				var el = form.elements[n];
 				if (!el) return;
 				var v = (el.value || '').trim();

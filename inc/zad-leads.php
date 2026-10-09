@@ -3,6 +3,14 @@
  * Quote request form: render, AJAX/no-JS handler, lead storage, email.
  */
 
+/** Names of the main sections (the same list as the booking sheet): the service choice of forms that sit on non-service pages. */
+function zad_lead_sections() {
+	if ( ! function_exists( 'zad_wiz_manual' ) ) { return array(); }
+	$cats = zad_wiz_manual();
+	if ( ! $cats ) { $cats = zad_wiz_rename( zad_wiz_data()['cats'] ); }
+	return array_values( array_unique( array_filter( array_map( function ( $c ) { return $c['name']; }, (array) $cats ) ) ) );
+}
+
 function zad_quote_form( $args = array() ) {
 	$a = wp_parse_args( $args, array(
 		'service_id' => 0,
@@ -19,7 +27,8 @@ function zad_quote_form( $args = array() ) {
 		$lp = get_post( (int) $a['service_id'] );
 		if ( $lp && 'publish' === $lp->post_status && ( in_array( $lp->post_type, zad_service_types(), true ) || ( function_exists( 'zad_hood_active' ) && zad_hood_active( $lp->ID ) ) ) ) { $locked = $lp; }
 	}
-	$services = $locked ? array() : get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 100, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
+	$sections = $locked ? array() : zad_lead_sections(); // no service page → the short list of sections; only when it is empty the old list of pages is used
+	$services = ( $locked || $sections ) ? array() : get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 100, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
 	$page_id  = is_singular() ? (int) get_queried_object_id() : 0;
 	$areas    = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
 	$sel_area = $a['area'];
@@ -36,6 +45,7 @@ function zad_quote_form( $args = array() ) {
 		<input type="hidden" name="action" value="zad_quote">
 		<input type="hidden" name="source" value="<?php echo esc_url( $page_id ? get_permalink( $page_id ) : home_url( add_query_arg( null, null ) ) ); ?>">
 		<?php if ( $page_id ) : ?><input type="hidden" name="page_id" value="<?php echo (int) $page_id; ?>"><?php endif; ?>
+		<input type="hidden" name="page_title" value="<?php echo esc_attr( wp_strip_all_tags( $page_id ? get_the_title( $page_id ) : wp_get_document_title() ) ); ?>">
 		<?php if ( '' !== (string) $a['hood'] ) : ?><input type="hidden" name="hood" value="<?php echo esc_attr( $a['hood'] ); ?>"><?php endif; ?>
 		<div class="qform__hp" aria-hidden="true"><label>لا تملأ هذا الحقل<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
 
@@ -47,6 +57,12 @@ function zad_quote_form( $args = array() ) {
 			<label class="fld fld--lock" for="<?php echo $id; ?>-service"><span>الخدمة</span>
 				<input id="<?php echo $id; ?>-service" type="text" value="<?php echo esc_attr( zad_card_title( $locked->ID ) ); ?>" readonly aria-readonly="true"></label>
 			<input type="hidden" name="service" value="<?php echo (int) $locked->ID; ?>">
+		<?php elseif ( $sections ) : ?>
+		<label class="fld" for="<?php echo $id; ?>-section"><span>الخدمة</span>
+			<select id="<?php echo $id; ?>-section" name="section" required>
+				<option value="">اختر القسم</option>
+				<?php foreach ( $sections as $sn ) : ?><option value="<?php echo esc_attr( $sn ); ?>"><?php echo esc_html( $sn ); ?></option><?php endforeach; ?>
+			</select></label>
 		<?php else : ?>
 		<label class="fld" for="<?php echo $id; ?>-service"><span>الخدمة</span>
 			<select id="<?php echo $id; ?>-service" name="service" required>
@@ -149,11 +165,13 @@ function zad_handle_quote() {
 	$wiz     = ! empty( $_POST['wiz'] ); // the booking sheet: section (not a page) + city, name optional
 	$label   = isset( $_POST['svc_label'] ) ? sanitize_text_field( wp_unslash( $_POST['svc_label'] ) ) : '';
 	$source  = isset( $_POST['source'] ) ? rawurldecode( esc_url_raw( wp_unslash( $_POST['source'] ) ) ) : ''; // decoded: readable in the admin (Arabic slugs)
+	$section = isset( $_POST['section'] ) ? sanitize_text_field( wp_unslash( $_POST['section'] ) ) : '';
+	if ( '' !== $section && ! in_array( $section, zad_lead_sections(), true ) ) { $section = ''; } // only a name from the sections list
 	$hood    = isset( $_POST['hood'] ) ? sanitize_text_field( wp_unslash( $_POST['hood'] ) ) : '';
 	$pid     = isset( $_POST['page_id'] ) ? absint( $_POST['page_id'] ) : 0;
 	$pg      = $pid ? get_post( $pid ) : null;
 	if ( $pg && 'publish' !== $pg->post_status ) { $pg = null; }
-	$pg_title = $pg ? wp_strip_all_tags( $pg->post_title ) : '';
+	$pg_title = $pg ? wp_strip_all_tags( $pg->post_title ) : ( isset( $_POST['page_title'] ) ? mb_substr( sanitize_text_field( wp_unslash( $_POST['page_title'] ) ), 0, 200 ) : '' );
 	if ( $pg ) { $source = rawurldecode( get_permalink( $pg ) ); } // the page the form sat on (not whatever the browser posted)
 
 	if ( $wiz && mb_strlen( $name ) < 2 ) { $name = 'عميل'; }
@@ -165,14 +183,14 @@ function zad_handle_quote() {
 	}
 	$service = $sid ? get_post( $sid ) : null;
 	if ( $service && ! in_array( $service->post_type, zad_service_types(), true ) && ! ( function_exists( 'zad_hood_active' ) && zad_hood_active( $service->ID ) ) ) { $service = null; }
-	if ( ! $service && ! $wiz ) {
+	if ( ! $service && ! $wiz && '' === $section ) {
 		$fail( 'اختر الخدمة المطلوبة.' );
 	}
-	$svc_title = $service ? $service->post_title : ( '' !== $label ? $label : 'طلب حجز' );
+	$svc_title = $service ? $service->post_title : ( '' !== $section ? $section : ( '' !== $label ? $label : 'طلب حجز' ) );
 	if ( $service && '' !== $label && $wiz ) { $svc_title = $service->post_title; }
 
 	// Same phone + service within 10 minutes = double click / resend: confirm without a second lead.
-	$dup_key = 'zad_dup_' . md5( $phone . '|' . $sid . '|' . $label );
+	$dup_key = 'zad_dup_' . md5( $phone . '|' . $sid . '|' . $label . '|' . $section );
 	if ( get_transient( $dup_key ) ) {
 		$ajax ? wp_send_json_success( array( 'message' => 'وصل طلبك يا ' . $name . '، سنتصل بك قريباً.', 'whatsapp' => zad_wa_link( 'مرحباً، أنا ' . $name, $sid ) ) ) : wp_safe_redirect( add_query_arg( 'zad_sent', 'ok', wp_get_referer() ?: home_url( '/' ) ) );
 		exit;
@@ -193,7 +211,9 @@ function zad_handle_quote() {
 		update_post_meta( $lead_id, '_lead_message', trim( $message . ( $date || $time ? "\nالموعد المفضّل: $date $time" : '' ) . ( $addr ? "\nالعنوان: $addr" : '' ) . ( $map ? "\nالموقع: $map" : '' ) ) );
 		update_post_meta( $lead_id, '_lead_source', $source );
 		if ( '' !== $hood ) { update_post_meta( $lead_id, '_lead_hood', $hood ); }
-		if ( $pg ) { update_post_meta( $lead_id, '_lead_page_id', $pg->ID ); update_post_meta( $lead_id, '_lead_page_title', $pg_title ); }
+		if ( $pg ) { update_post_meta( $lead_id, '_lead_page_id', $pg->ID ); }
+		if ( '' !== $pg_title ) { update_post_meta( $lead_id, '_lead_page_title', $pg_title ); }
+		if ( '' !== $section ) { update_post_meta( $lead_id, '_lead_section', $section ); }
 		update_post_meta( $lead_id, '_lead_ip', $ip );
 		update_post_meta( $lead_id, '_lead_status', 'new' );
 	}
