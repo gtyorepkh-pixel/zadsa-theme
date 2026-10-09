@@ -160,6 +160,7 @@ add_action( 'wp_head', function () {
 		} else {
 			$nodes = array_merge( $nodes, array( zsc_page_node( 'WebPage', $u, $name, $id ) ) );
 		}
+		$nodes = apply_filters( 'zad_schema_page_nodes', $nodes, $id, $role ); // extra nodes of this page (the zad-tools plugin adds WebApplication + FAQPage here)
 		zad_print_graph( zsc_with_breadcrumb( $nodes, $u ) );
 	} elseif ( $arch = zsc_archive_nodes() ) {
 		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), $arch ), $arch[0]['url'] ) );
