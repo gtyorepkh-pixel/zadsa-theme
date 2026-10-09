@@ -52,7 +52,7 @@ function zf_keys_in( $text ) {
 function zf_re() {
 	static $r = null;
 	if ( null !== $r ) { return $r; }
-	$SP   = '[\s\x{00A0}]';
+	$SP   = '(?:[\s\x{00A0}]|&nbsp;)';
 	$W    = '(?:ثلاثة|ثلاث|أربعة|اربعة|أربع|اربع|خمسة|خمس|ستة|ست|سبعة|سبع|ثمانية|ثماني|تسعة|تسع|عشرة|عشر)';
 	$N    = '(?:[0-9٠-٩]+|' . $W . ')';
 	$U    = '(?:سنوات|سنين|سنة|أعوام|اعوام|عام|أشهر|اشهر|شهور|شهراً|شهرا|شهر)';
@@ -64,7 +64,7 @@ function zf_re() {
 	$r = array(
 		'dur1' => $DUR1,
 		// «ضمان … 10 سنوات» (noun, up to two adjectives, connector, duration, optional tail)
-		'main' => '/(?<![\p{L}])(?<pre>[بولكف]{0,2})(?<noun>ضمانات|ضماناً|ضمانا|الضمان|ضمان)(?<mid>(?:' . $SP . '+' . $ADJ . '){0,2})(?:' . $SP . '+على' . $SP . '+(?:جميع' . $SP . '+)?(?:الخدمة|الخدمات|التنفيذ|المعالجة|العمل|الإبادة|الرش|النتائج))?(?<conn>(?:' . $SP . '*[:：]' . $SP . '*|' . $SP . '+)' . $CONN . ')(?<dur>' . $DUR1 . ')' . $TAIL . '/u',
+		'main' => '/(?<![\p{L}])(?<pre>[بولكف]{0,2})(?<noun>ضمانات|ضمان(?:اً|ًا|ا)|الضمان|ضمان)(?<mid>(?:' . $SP . '+' . $ADJ . '){0,2})(?:' . $SP . '+على' . $SP . '+(?:جميع' . $SP . '+)?(?:الخدمة|الخدمات|التنفيذ|المعالجة|العمل|الإبادة|الرش|النتائج))?(?<conn>(?:' . $SP . '*[:：]' . $SP . '*|' . $SP . '+)' . $CONN . ')(?<dur>' . $DUR1 . ')' . $TAIL . '/u',
 		// «مدة الضمان [على X] إلى 10 سنوات» → only the duration is replaced
 		'dur2' => '/(?<![\p{L}])(?<lead>(?:مدة|فترة)' . $SP . '+(?:ال)?ضمان(?:' . $SP . '+(?:على|في|لـ|ل)[^<>\n.؛!؟،:]{1,45}?)?' . $SP . '+(?:هي|هو|تبلغ|تصل' . $SP . '+إلى|يصل' . $SP . '+إلى|إلى|الى|حتى)' . $SP . '+)(?<dur>' . $DUR1 . ')/u',
 		// «100% ضمان»
@@ -93,7 +93,7 @@ function zf_ctx( $text, $off, $len ) {
 /** The phrase to print for a match: accusative / «الضمان» / plain forms. */
 function zf_phrase( $m, $k ) {
 	$P = zf_policy();
-	if ( in_array( $m['noun'], array( 'ضماناً', 'ضمانا' ), true ) ) { return $m['pre'] . $P[ $k ]['acc']; }
+	if ( preg_match( '/^ضمان(?:اً|ًا|ا)$/u', $m['noun'] ) ) { return $m['pre'] . $P[ $k ]['acc']; }
 	if ( 'الضمان' === $m['noun'] ) { return $m['pre'] . 'الضمان' . ( preg_match( '/[:：]/u', $m['conn'] ) ? ': ' : ' ' ) . $P[ $k ]['bare']; }
 	return $m['pre'] . $P[ $k ]['nom'];
 }
@@ -289,13 +289,18 @@ function zf_fix_value( $v, $key, $hubs, $meta_key, $path = '' ) {
 	return array( $s, $log );
 }
 
-/** Hand-written replacements (zad-fix-manual.json: [{"id":25793,"field":"post_content","find":"…","replace":"…"}]); exact text, per page. */
+/** Hand-written replacements (zad-fix-manual.json: [{"id":25793,"field":"post_content","find":"…","replace":"…"}]) per page; "regex":true = a PCRE pattern (without delimiters; $1 in the replacement works). */
 function zf_manual( $v, $rules, $field, &$hit, $path = '' ) {
 	$log = array();
 	if ( is_array( $v ) ) { foreach ( $v as $k => $x ) { list( $nv, $l ) = zf_manual( $x, $rules, $field, $hit, $path . '/' . $k ); $v[ $k ] = $nv; foreach ( $l as $e ) { $log[] = $e; } } return array( $v, $log ); }
 	if ( ! is_string( $v ) || '' === $v ) { return array( $v, $log ); }
 	foreach ( $rules as $i => $r ) {
 		if ( '' !== (string) ( $r['field'] ?? '' ) && false === strpos( $field, $r['field'] ) ) { continue; }
+		if ( ! empty( $r['regex'] ) ) {
+			$nv = @preg_replace( '~' . $r['find'] . '~u', $r['replace'], $v, -1, $n );
+			if ( null !== $nv && $n ) { $log[] = array( 'MANUAL', 'manual-regex', mb_substr( $r['find'], 0, 120 ), $r['replace'] ); $v = $nv; $hit[ $i ] = ( $hit[ $i ] ?? 0 ) + $n; }
+			continue;
+		}
 		$n = substr_count( $v, $r['find'] );
 		if ( $n ) { $v = str_replace( $r['find'], $r['replace'], $v ); $hit[ $i ] = ( $hit[ $i ] ?? 0 ) + $n; for ( $q = 0; $q < $n; $q++ ) { $log[] = array( 'MANUAL', 'manual', $r['find'], $r['replace'] ); } }
 	}
