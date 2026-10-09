@@ -26,3 +26,10 @@ zt_register_tool( 'ac-size', array( 'title' => '…', 'desc' => '…', 'collects
 1. صفحة بقالب «تتبع الطلب (zad-tools)» (مثلاً `/track/`) — تتبع الإضافة عنوانها تلقائياً.
 2. صفحة بقالب «التحقق من الضمان (zad-tools)» (مثلاً `/warranty/verify/`).
 3. من «أدوات زاد»: اعتمد قيم تبويبي «عام» و«الطلبات والضمان»، واكتب شروط الضمان، وضع Place ID.
+
+## المرحلة 2 — حاسبة المكيف · متى أرجع بعد الرش · حاسبة الخزان (إصدار 0.3.0)
+
+- كل أداة: ملف `includes/tools/<tool>.php` (إعدادات + نموذج + نتيجة من السيرفر + «إزاي بنحسب» + أمثلة) و`assets/js/<tool>.js` (الدالة الصافية + الربط).
+- المحرك المشترك: `includes/ui.php` (`zt_result_html` ⇄ `ZT.resultHtml` يخرجان HTML متطابقاً بايت ببايت، `.ics`، تواريخ بأعداد صحيحة، `zt_ar_count`)، و`ZT.mount()` في `zt-core.js`.
+- الاختبارات: `npm test` (JS + PHP + تطابق JS/PHP) و`npm run e2e` (Chromium على صفحات مولّدة بـ stub). Lighthouse: `LH_DIR=<مجلد فيه lighthouse> node tests/e2e/lh.mjs`.
+- لإضافة أداة جديدة: `zt_register_tool( slug, [render, result, how, examples, related, js, collects_data] )` + `zt_register_settings()`.

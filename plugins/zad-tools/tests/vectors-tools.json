@@ -1,0 +1,70 @@
+{
+  "ac": {
+    "cfg": {"base":700,"refH":3,"personBtu":600,"peopleFree":2,"topPct":15,"tonBtu":12000,"maxUnits":4,
+      "sizes":[12000,18000,24000,30000,36000,48000,60000],
+      "rooms":[{"k":"bedroom","l":"غرفة نوم","p":0},{"k":"living","l":"صالة","p":10},{"k":"kitchen","l":"مطبخ","p":30}],
+      "sun":[{"k":"normal","l":"عادي","p":0},{"k":"shade","l":"ظل","p":-10},{"k":"sunny","l":"شمس","p":10}],
+      "win":[{"k":"normal","l":"عادية","p":0},{"k":"large","l":"كبيرة","p":10}],
+      "ins":[{"k":"normal","l":"عادي","p":0},{"k":"good","l":"جيد","p":-10},{"k":"weak","l":"ضعيف","p":15}]},
+    "inputs": [
+      {"a":16},
+      {"l":4,"w":4,"top":true,"p":4,"hood":"النرجس"},
+      {"a":"","l":6,"w":5,"rt":"living","sn":"sunny","p":4},
+      {"a":12,"rt":"kitchen","wn":"large","in":"weak","h":3.5},
+      {"a":9},
+      {"a":40,"top":true},
+      {"a":80},
+      {"a":150},
+      {"a":400},
+      {"a":2000},
+      {"a":16,"h":25},
+      {"l":4},
+      {},
+      {"a":20,"sn":"shade","in":"good","h":2.5,"hood":"حي الملقا"},
+      {"a":33.3,"p":7.9,"rt":"unknown"}
+    ]
+  },
+  "spray": {
+    "cfg": {"pests":[{"k":"roach","l":"صراصير"},{"k":"ant","l":"نمل"}],"methods":[{"k":"spray","l":"رش سائل"},{"k":"gel","l":"جل"}],
+      "matrix":{"roach|spray":6,"ant|spray":24,"roach|gel":1.5},"notes":{"roach|spray":"تهوية جيدة"},
+      "factors":[{"k":"kids","l":"أطفال","min":12,"txt":"يبعدون عن المكان."},{"k":"pets","l":"حيوانات","min":null,"txt":"تخرج مع أوانيها."},{"k":"asthma","l":"ربو","min":48,"txt":""}],
+      "before":["غطِّ الطعام."],"during":[],"after":["هوِّ المكان.","لا تمسح الأسطح."]},
+    "inputs": [
+      {"ps":"roach","md":"spray","f":[]},
+      {"ps":"roach","md":"spray","f":["kids"],"t":"22:30"},
+      {"ps":"roach","md":"spray","f":["pets"],"t":"09:05","hood":"النرجس"},
+      {"ps":"ant","md":"spray","f":["asthma","kids"],"t":"23:59"},
+      {"ps":"roach","md":"gel","f":[],"t":"12:00"},
+      {"ps":"ant","md":"gel","f":["kids"]},
+      {"ps":"ant","md":"gel","f":[],"t":"٢٠:٣٠"},
+      {"ps":"","md":"spray"},
+      {"ps":"roach","md":"x"},
+      {"ps":"roach","md":"spray","f":["nope"],"t":"25:00"},
+      {"ps":"roach","md":"spray","f":[],"t":"00:00"}
+    ]
+  },
+  "tank": {
+    "today": "2026-10-09",
+    "cfg": {"locs":[{"k":"ground","l":"خزان أرضي","m":6},{"k":"roof","l":"خزان علوي","m":4}],"lpp":null,"tiers":[{"max":1000,"price":150},{"max":3000,"price":220}],"fromPrice":null,"ics":"https://zadksa.com/"},
+    "cfg2": {"locs":[{"k":"ground","l":"خزان أرضي","m":6}],"lpp":200,"tiers":[],"fromPrice":120,"ics":""},
+    "inputs": [
+      {"loc":"ground","shape":"rect","a":2,"b":1,"c":1,"unit":"m"},
+      {"loc":"roof","shape":"rect","a":2,"b":1.5,"c":1.5,"unit":"m","last":"2026-08-31","people":5},
+      {"loc":"ground","shape":"cyl_v","a":1.5,"b":2,"unit":"m","last":"2026-01-15"},
+      {"loc":"ground","shape":"cyl_h","a":120,"b":250,"unit":"cm","last":"2025-12-31","hood":"الملقا"},
+      {"loc":"roof","shape":"rect","a":3,"b":2,"c":1.5,"unit":"m","last":"2026-10-09"},
+      {"loc":"ground","shape":"rect","a":4,"b":3,"c":2,"unit":"m","people":6},
+      {"loc":"ground","shape":"rect","a":4,"b":3,"unit":"m"},
+      {"loc":"ground","shape":"rect","a":2,"b":1,"c":1,"unit":"m","last":"2030-01-01"},
+      {"loc":"nope","shape":"rect","a":200,"b":100,"c":100,"unit":"cm","last":"2026-04-30"},
+      {"loc":"ground","shape":"rect","a":2,"b":1,"c":1,"unit":"m","last":"2026-13-40"}
+    ]
+  },
+  "views": [
+    {"error":"x"},
+    {"badge":"تقديري","big":"مكيف 1.5 طن","lines":["a & b","<c>"],"table":{"title":"t","head":["h1","h2"],"rows":[["r1","v1"],["r2","\"v2\""]]},"notes":["n1"],"wa":"السلام (عليكم) !*'","links":[{"href":"https://x/?a=1&b=2","label":"l","event":"e"}],"optin":{"date":"2027-02-28","service":"تنظيف","title":"ذكّرني"}},
+    {"big":"b","lines":[],"table":null,"notes":[]}
+  ],
+  "dates": [["2026-08-31",6],["2026-01-31",1],["2024-02-29",12],["2026-12-15",1],["2026-10-09",0],["bad",1],["2026-02-30",1]],
+  "counts": [[1],[2],[3],[10],[11],[2.5],[24],[100]]
+}

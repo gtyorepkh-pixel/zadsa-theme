@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Zad Tools — أدوات زاد
  * Description: بنية أدوات زاد التفاعلية: صفحة إعدادات واحدة، محرك التذكيرات، قالب صفحة الأداة الموحد، REST آمن، وقياس GA4. كل البيانات والإعدادات هنا (لا تضيع لو تغيّر الثيم).
- * Version: 0.2.0
+ * Version: 0.3.0
  * Author: Zad
  * Text Domain: zad-tools
  * Requires PHP: 7.4
  */
 defined( 'ABSPATH' ) || exit;
 
-define( 'ZT_VERSION', '0.2.0' );
+define( 'ZT_VERSION', '0.3.0' );
 define( 'ZT_FILE', __FILE__ );
 define( 'ZT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ZT_URL', plugin_dir_url( __FILE__ ) );
@@ -18,9 +18,13 @@ require_once ZT_DIR . 'includes/core.php';
 require_once ZT_DIR . 'includes/settings.php';
 require_once ZT_DIR . 'includes/reminders.php';
 require_once ZT_DIR . 'includes/rest.php';
+require_once ZT_DIR . 'includes/ui.php';
 require_once ZT_DIR . 'includes/tool-page.php';
 require_once ZT_DIR . 'includes/orders.php';
 require_once ZT_DIR . 'includes/tracking.php';
+require_once ZT_DIR . 'includes/tools/ac-size.php';
+require_once ZT_DIR . 'includes/tools/after-spray.php';
+require_once ZT_DIR . 'includes/tools/tank.php';
 
 register_activation_hook( __FILE__, function () {
 	zt_reminders_install();

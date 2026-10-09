@@ -24,7 +24,16 @@
 .zt-faq details{border:1px solid var(--zt-line);border-radius:var(--zt-r);padding:12px 16px;margin-bottom:10px;background:var(--surface,#fff)}
 .zt-faq summary{cursor:pointer;font-weight:700}
 .zt-links{display:flex;flex-wrap:wrap;gap:8px 18px;list-style:none;padding:0;margin:14px 0 0}
-.zt-consent{display:flex;gap:10px;align-items:flex-start}
-.zt-consent input{width:auto;min-height:0;margin-top:.45em}
+.zt-consent{display:flex;gap:10px;align-items:center;min-height:44px;padding:4px 0}
+.zt-consent input{width:22px;height:22px;min-height:0;flex:none}
 .zt-hp{position:absolute;inset-inline-start:-9999px;width:1px;height:1px;overflow:hidden}
 @media print{.zt-actions,.zt-form,.site-header,.site-footer,.topbar{display:none!important}}
+
+.zt-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.zt-h3{font-size:1.05rem;margin:1rem 0 .5rem}
+.zt-error{margin:0;padding:12px 16px;border-radius:var(--zt-r);background:#fdecea;border:1px solid #f5c2c0;color:#7a1c17}
+.zt-lines{margin:.5rem 0 1rem;padding-inline-start:1.2rem}
+.zt-noteline{font-size:.93rem;color:var(--muted,#56656f);margin:.5rem 0}
+.zt-optin{margin-top:1.25rem;padding-top:1rem;border-top:1px dashed var(--zt-line)}
+.zt-optin__msg{margin:0;min-height:1.4em;font-weight:700}.zt-optin__msg.is-ok{color:#0a6b3d}.zt-optin__msg.is-err{color:#b32d2e}
+.btn--ghost{background:transparent}

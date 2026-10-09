@@ -9,6 +9,7 @@
  *   zt_register_tool( 'ac-size', array(
  *     'title' => 'حاسبة حجم المكيف', 'desc' => '…', 'settings_tab' => 'ac-size',
  *     'render'   => callable( $ctx )  → prints the tool's HTML (with a no-JS fallback),
+ *     'result'   => callable( $ctx )  → returns the answer's HTML for the current ?query (zt_result_html), printed inside #zt-result,
  *     'how'      => callable( $ctx )  → returns html (formula + parameters table),
  *     'examples' => callable( $ctx )  → returns html,
  *     'js' => 'assets/js/ac-size.js', 'css' => '…', 'service_keywords' => array( … ),
@@ -111,9 +112,12 @@ function zt_render_body( $ctx ) {
 	$banner = zt_active_banner();
 	if ( '' !== $banner ) { echo '<div class="wrap wrap--narrow"><p class="zt-banner" role="note">' . esc_html( $banner ) . '</p></div>'; }
 	// 2 · the tool
-	echo '<section class="sec zt-sec" id="zt-tool" data-zt-tool="' . esc_attr( $ctx['tool'] ) . '"><div class="wrap wrap--narrow">';
+	echo '<section class="sec zt-sec" id="zt-tool" data-zt-tool="' . esc_attr( $ctx['tool'] ) . '"><div class="wrap wrap--narrow"><h2 class="zt-sr">' . esc_html( $ctx['title'] ) . ' — أدخل بياناتك</h2>';
 	if ( is_callable( $def['render'] ?? null ) ) { call_user_func( $def['render'], $ctx ); }
-	echo '<div class="zt-result" id="zt-result" role="status" aria-live="polite" aria-atomic="true"></div>'; // the space is reserved: the result never shifts the page (CLS)
+	// the answer for a shared link / a no-JS submit is printed here by the server (same renderer as the JS one); the space is reserved so a JS answer never shifts the page (CLS)
+	echo '<div class="zt-result" id="zt-result" role="status" aria-live="polite" aria-atomic="true">';
+	if ( is_callable( $def['result'] ?? null ) ) { echo call_user_func( $def['result'], $ctx ); } // phpcs:ignore WordPress.Security.EscapeOutput -- built by zt_result_html(), every value escaped there
+	echo '</div>';
 	echo '</div></section>';
 	// 3 · how we calculate
 	if ( is_callable( $def['how'] ?? null ) ) {
@@ -136,10 +140,15 @@ function zt_render_body( $ctx ) {
 }
 
 function zt_render_cta( $ctx ) {
-	if ( ! $ctx['services'] ) { return; }
-	$first = $ctx['services'][0];
-	$label = '' !== $ctx['cta'] ? $ctx['cta'] : 'اطلب الخدمة الآن';
-	echo '<section class="sec zt-sec"><div class="wrap wrap--narrow"><p><a class="btn btn--accent" href="' . esc_url( get_permalink( $first ) ) . '" data-zt-event="tool_cta">' . esc_html( $label ) . '</a></p>';
+	$rel = is_callable( $ctx['def']['related'] ?? null ) ? (string) call_user_func( $ctx['def']['related'], $ctx ) : ''; // e.g. «احسب فاتورة كهرباء المكيف»
+	if ( ! $ctx['services'] && '' === $rel ) { return; }
+	echo '<section class="sec zt-sec"><div class="wrap wrap--narrow">';
+	if ( $ctx['services'] ) {
+		$first = $ctx['services'][0];
+		$label = '' !== $ctx['cta'] ? $ctx['cta'] : 'اطلب الخدمة الآن';
+		echo '<p><a class="btn btn--accent" href="' . esc_url( get_permalink( $first ) ) . '" data-zt-event="tool_cta">' . esc_html( $label ) . '</a></p>';
+	}
+	echo wp_kses_post( $rel );
 	if ( count( $ctx['services'] ) > 1 ) {
 		echo '<ul class="zt-links">';
 		foreach ( array_slice( $ctx['services'], 1, 6 ) as $sid ) { echo '<li><a href="' . esc_url( get_permalink( $sid ) ) . '">' . esc_html( function_exists( 'zad_card_title' ) ? zad_card_title( $sid ) : get_the_title( $sid ) ) . '</a></li>'; }
@@ -173,7 +182,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	wp_enqueue_script( 'zt-core', ZT_URL . 'assets/js/zt-core.js', array(), ZT_VERSION, array( 'in_footer' => true, 'strategy' => 'defer' ) );
 	wp_localize_script( 'zt-core', 'ZT_CFG', array(
 		'tool' => $ctx['tool'], 'wa' => zt_wa_number(), 'rest' => esc_url_raw( rest_url( 'zad/v1/' ) ), 'ga' => (bool) zt_opt( 'general.ga_events' ),
-		'brand' => zt_brand(), 'url' => $ctx['url'], 'privacy' => zt_privacy_url(),
+		'brand' => zt_brand(), 'url' => $ctx['url'], 'privacy' => zt_privacy_url(), 'ics' => home_url( '/' ),
 	) );
 	$def = $ctx['def'];
 	if ( $def && $ctx['ready'] ) {
