@@ -9,17 +9,20 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const posted = [];
+const posted = [], batch = [];
+// per-tool setting overrides (the moving tool stays closed until the owner fills the rooms table)
+const SET = { moving: { 'moving.rooms': '2 | 1 | 2 | 300-400\n4 | 2 | 4 | 600-800', 'moving.routes': 'riyadh | jeddah | 900', 'moving.floor_price': '20-30', 'moving.packing_price': '40-60' } };
 const server = http.createServer((req, res) => {
 	const u = new URL(req.url, 'http://x');
 	const send = (code, type, body) => { res.writeHead(code, { 'Content-Type': type + '; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(body); };
 	let m;
-	if ((m = u.pathname.match(/^\/t\/([a-z-]+)\/$/))) { return send(200, 'text/html', execFileSync('php', [root + '/tests/e2e/render-page.php', m[1], u.search.slice(1), '0', u.searchParams.get('__set') || ''], { encoding: 'utf8' })); }
+	if ((m = u.pathname.match(/^\/t\/([a-z-]+)\/$/))) { return send(200, 'text/html', execFileSync('php', [root + '/tests/e2e/render-page.php', m[1], u.search.slice(1), '0', JSON.stringify(Object.assign({}, SET[m[1]] || {}, JSON.parse(u.searchParams.get('__set') || '{}')))], { encoding: 'utf8' })); }
 	if (u.pathname === '/' && u.searchParams.has('zad_ics')) { res.writeHead(200, { 'Content-Type': 'text/calendar; charset=utf-8', 'Content-Disposition': 'attachment; filename="zad-reminder.ics"' }); return res.end(execFileSync('php', [root + '/tests/e2e/ics.php', u.search.slice(1)], { encoding: 'utf8' })); }
 	if (u.pathname === '/wp-json/zad/v1/token') { return send(200, 'application/json', JSON.stringify({ t: 'tok.123' })); }
 	if (u.pathname === '/wp-json/zad/v1/reminders' && req.method === 'POST') { let b = ''; req.on('data', (c) => b += c); req.on('end', () => { const j = JSON.parse(b); posted.push(j); send(j.consent ? 200 : 400, 'application/json', JSON.stringify(j.consent ? { ok: true } : { message: 'يلزم الموافقة' })); }); return; }
+	if (u.pathname === '/wp-json/zad/v1/reminders/batch' && req.method === 'POST') { let b = ''; req.on('data', (c) => b += c); req.on('end', () => { const j = JSON.parse(b); batch.push(j); send(j.consent ? 200 : 400, 'application/json', JSON.stringify(j.consent ? { ok: true, added: j.items.length, skipped: 0 } : { message: 'يلزم الموافقة' })); }); return; }
 	if (u.pathname === '/favicon.ico') { res.writeHead(204); return res.end(); }
-	const f = path.join(root, u.pathname);
+	const f = path.join(root, u.pathname.replace(/^\/p\//, '/'));
 	if (f.startsWith(root + '/assets') && existsSync(f)) { return send(200, f.endsWith('.css') ? 'text/css' : 'application/javascript', readFileSync(f)); }
 	send(404, 'text/plain', 'nf');
 });
@@ -35,6 +38,7 @@ async function jsRun(tool, fill, label) {
 	const errs = []; p.on('pageerror', (e) => errs.push(String(e))); p.on('console', (m) => { if (m.type() === 'error') { errs.push(m.text()); } });
 	await p.goto(base + '/t/' + tool + '/'); await p.waitForFunction(() => window.ZT && document.querySelector('form[data-zt-form]'));
 	await fill(p);
+	const cls0 = await p.evaluate(() => window.__cls); // shifts caused by the test's programmatic field changes are not the page's
 	await p.click('form[data-zt-form] button[type=submit]'); await p.waitForSelector('#zt-result .zt-card, #zt-result .zt-error');
 	const html = await p.$eval('#zt-result', (e) => e.innerHTML), url = p.url();
 	const ev = await p.evaluate(() => window.dataLayer.map((d) => d.event));
@@ -43,7 +47,7 @@ async function jsRun(tool, fill, label) {
 	ok(!JSON.stringify(await p.evaluate(() => window.dataLayer)).match(/05\d{8}|first_name|phone/), label + ': GA payload has nothing personal');
 	ok(await p.$eval('#zt-result', (e) => e.getAttribute('aria-live') === 'polite' && e.getAttribute('role') === 'status'), label + ': result is an aria-live region');
 	ok(!!(await p.$('#zt-result [data-zt-share]')) && !!(await p.$('#zt-result [data-zt-print]')), label + ': share + print buttons');
-	const cls = await p.evaluate(() => window.__cls); ok(cls < 0.05, label + ': CLS after submit ' + cls.toFixed(4));
+	const cls = (await p.evaluate(() => window.__cls)) - cls0; ok(cls < 0.05, label + ': CLS caused by showing the answer ' + cls.toFixed(4));
 	return { ctx, p, html, url };
 }
 async function serverRun(url, label) {
@@ -103,7 +107,84 @@ async function noJs(url, label, expect) {
 	const ctx = await browser.newContext(); const p = await ctx.newPage(); await p.goto(base + '/t/tank/?loc=ground&shape=rect&a=2&b=1&c=1&unit=m&people=5&__set=' + encodeURIComponent(JSON.stringify({ 'tank.liters_per_person': 100, 'tank.price_tiers': '3000 | 220' })));
 	const t = await p.$eval('#zt-result', (e) => e.textContent); ok(/نحو 4 أيام/.test(t) && /220 ريال/.test(t), 'Tank: settings (consumption 100 L, tier 220) shape the answer: ' + t.slice(0, 160)); await ctx.close();
 }
+
+/* -------- electricity -------- */
+{
+	const r = await jsRun('ac-power', async (p) => { await p.fill('[name=t1]', '٢'); await p.fill('[name=q1]', '1'); await p.fill('[name=h]', '١٠'); await p.fill('[name=d]', '30'); await p.fill('[name=hood]', 'الملقا'); }, 'Power');
+	ok(/720 كيلوواط ساعة شهريًا/.test(r.html), 'Power: 1.2 × 2 × 10 × 30 = 720 kWh via JS');
+	ok(/غير مفعّل حاليًا/.test(r.html) && !/تكلفة المكيفات التقديرية/.test(r.html), 'Power: empty tariff → kWh only, no riyal figure');
+	const s = await serverRun(r.url, 'Power'); ok(norm(s.html) === norm(r.html), 'Power: server HTML == JS HTML');
+	await noJs(r.url, 'Power', /720/);
+	const nj = await browser.newContext({ javaScriptEnabled: false }); const q = await nj.newPage(); await q.goto(base + '/t/ac-power/'); await q.fill('[name=t1]', '2'); await q.fill('[name=h]', '10'); await q.fill('[name=d]', '30'); await q.click('button[type=submit]'); await q.waitForLoadState();
+	ok(/720/.test(await q.$eval('#zt-result', (e) => e.textContent)), 'Power: no-JS submit → answer'); await nj.close();
+	// the tariff, once the owner enters it, produces riyals with the source line
+	const ctx = await browser.newContext(); const p = await ctx.newPage(); await p.goto(base + '/t/ac-power/?t1=2&q1=1&ty1=split&ag1=new&h=10&d=30&__set=' + encodeURIComponent(JSON.stringify({ 'ac-power.tariff': '1 | | 10', 'ac-power.tariff_source': 'https://example.test/tariff', 'ac-power.tariff_updated': '2026-02-01' })));
+	const t = await p.$eval('#zt-result', (e) => e.textContent); ok(/72 ريال/.test(t) && /example\.test\/tariff — آخر تحديث: 2026-02-01/.test(t), 'Power: tariff set → 72 SAR + source + date shown'); await ctx.close();
+	await r.ctx.close(); await s.ctx.close();
+}
+/* -------- moving -------- */
+{
+	const r = await jsRun('moving', async (p) => { await p.selectOption('[name=ty]', 'inter'); await p.selectOption('[name=fc]', 'riyadh'); await p.selectOption('[name=tc]', 'jeddah'); await p.fill('[name=r]', '٣'); await p.check('[name=pk]'); await p.fill('[name=ff]', '2'); await p.fill('[name=hood]', 'النرجس'); }, 'Moving');
+	ok(/سيارتان و4 عمال/.test(r.html) && /بعد المعاينة/.test(r.html), 'Moving: 2 trucks + 4 workers; unpriced items say «بعد المعاينة»');
+	ok(/600 – 800 ريال/.test(r.html) && /1,800 ريال/.test(r.html), 'Moving: table range + route 900 × 2 trucks');
+	const s = await serverRun(r.url, 'Moving'); ok(norm(s.html) === norm(r.html), 'Moving: server HTML == JS HTML'); if (norm(s.html) !== norm(r.html)) { const a = norm(s.html), b = norm(r.html); let i = 0; while (a[i] === b[i]) { i++; } console.log('first difference at', i, '\nserver:', a.slice(i - 60, i + 140), '\njs    :', b.slice(i - 60, i + 140)); }
+	await noJs(r.url, 'Moving', /سيارتان و4 عمال/);
+	ok(await s.p.$eval('[name=tc]', (e) => !e.closest('.fld').hidden), 'Moving: destination city shown for inter-city');
+	// checklist: ticks persist in this browser, print/download appear with JS
+	await s.p.check('[data-k=c1]'); await s.p.check('[data-k=c4]'); await s.p.reload(); await s.p.waitForFunction(() => window.ZT);
+	ok(await s.p.isChecked('[data-k=c1]') && await s.p.isChecked('[data-k=c4]') && !(await s.p.isChecked('[data-k=c2]')), 'Moving: checklist ticks survive a reload (localStorage)');
+	ok(await s.p.locator('[data-zt-chk-actions]').isVisible(), 'Moving: print / download buttons shown once JS runs');
+	const [dl] = await Promise.all([s.p.waitForEvent('download'), s.p.click('[data-act=download]')]); const txt = readFileSync(await dl.path(), 'utf8');
+	ok(/\[x\] .*احجز شركة النقل/.test(txt) && /\[ \] /.test(txt) && /قبل بأسبوعين/.test(txt), 'Moving: downloaded checklist keeps the ticks');
+	const nj = await browser.newContext({ javaScriptEnabled: false }); const q = await nj.newPage(); await q.goto(base + '/t/moving/'); ok((await q.locator('.zt-checklist li').count()) >= 10 && !(await q.locator('[data-zt-chk-actions]').isVisible()), 'Moving: no-JS shows the list (JS-only buttons hidden)'); await nj.close();
+	await r.ctx.close(); await s.ctx.close();
+}
+/* -------- plan -------- */
+{
+	const r = await jsRun('plan', async (p) => { await p.selectOption('[name=tk]', 'both'); await p.fill('[name=acn]', '٣'); await p.fill('[name=hood]', 'النرجس'); }, 'Plan');
+	ok(await r.p.locator('#zt-result .zt-cal__m').count() === 12, 'Plan: 12 calendar months'); ok(/تنظيف المكيفات/.test(r.html), 'Plan: AC cleaning scheduled');
+	const s = await serverRun(r.url, 'Plan'); ok(norm(s.html) === norm(r.html), 'Plan: server HTML == JS HTML'); if (norm(s.html) !== norm(r.html)) { const a = norm(s.html), b = norm(r.html); let i = 0; while (a[i] === b[i]) { i++; } console.log('first difference at', i, '\nserver:', a.slice(i - 60, i + 140), '\njs    :', b.slice(i - 60, i + 140)); }
+	await noJs(r.url, 'Plan', /خلال 12 شهرًا/);
+	const nEv = await s.p.$$eval('#zt-result .zt-cal li li', (l) => l.length);
+	const ics0 = await s.p.$eval('#zt-result a[href*="zad_ics"]', (a) => a.href), ics = base + new URL(ics0).pathname + new URL(ics0).search; const body = await (await s.ctx.request.get(ics)).text();
+	ok((body.match(/BEGIN:VEVENT/g) || []).length === nEv && nEv > 0, 'Plan: .ics has one event per calendar item (' + nEv + ')');
+	ok((await s.p.$eval('#zt-result a[href^="https://wa.me/?text="]', (a) => a.href)).includes('wa.me/?text='), 'Plan: «send to myself» link has no number');
+	const f = s.p.locator('form[data-zt-optin]'); ok(await f.isVisible(), 'Plan: opt-in visible with JS'); ok(!(await f.locator('[name=consent]').isChecked()), 'Plan: consent not pre-checked');
+	await f.locator('[name=first_name]').fill('أحمد'); await f.locator('[name=phone]').fill('0551234567'); await f.locator('button[type=submit]').click(); await s.p.waitForFunction(() => /يلزم الموافقة/.test(document.querySelector('.zt-optin__msg').textContent)); ok(batch.length === 0, 'Plan: nothing sent without consent');
+	await f.locator('[name=consent]').check(); await f.locator('button[type=submit]').click(); await s.p.waitForFunction(() => /تم تفعيل/.test(document.querySelector('.zt-optin__msg').textContent));
+	ok(batch.length === 1 && batch[0].consent === true && Array.isArray(batch[0].items) && batch[0].items.length > 0 && batch[0].items.every((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.date) && x.service) && batch[0].tool === 'plan' && batch[0].t === 'tok.123' && batch[0].hood === 'النرجس', 'Plan: ONE batch request with all dates ' + JSON.stringify(batch[0]).slice(0, 160));
+	await r.ctx.close(); await s.ctx.close();
+}
+/* -------- coverage -------- */
+{
+	const ctx = await browser.newContext({ viewport: { width: 390, height: 800 }, geolocation: { latitude: 24.801, longitude: 46.651 }, permissions: ['geolocation'] });
+	const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+	let tiles = 0, external = []; await ctx.route('**/*', (route) => { const u = route.request().url(); if (/tile\.openstreetmap\.org/.test(u)) { tiles++; return route.fulfill({ status: 200, contentType: 'image/png', body: png }); } if (!u.startsWith(base)) { external.push(u); return route.abort(); } return route.continue(); });
+	const p = await ctx.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(String(e))); p.on('console', (m) => { if (m.type() === 'error') { errs.push(m.text()); } });
+	const reqs = []; p.on('request', (r) => reqs.push(r.url()));
+	await p.addInitScript(() => { delete window.IntersectionObserver; });             // force "load only on click"
+	await p.goto(base + '/t/coverage/'); await p.waitForFunction(() => window.ZT);
+	ok(!reqs.some((u) => /leaflet/.test(u)), 'Coverage: Leaflet is NOT loaded with the page'); ok(tiles === 0, 'Coverage: no tile requests before the map is asked for');
+	ok(await p.locator('.zt-hoods li').count() === 4, 'Coverage: all 4 districts listed by the server'); ok(await p.locator('h3.zt-h3', { hasText: 'الرياض' }).count() === 1 && await p.locator('h3.zt-h3', { hasText: 'جدة' }).count() === 1, 'Coverage: grouped by city');
+	ok((await p.locator('.zt-hoods a').count()) === 8, 'Coverage: every district lists its service links (8)');
+	ok(/متوسط وقت الوصول نحو 35 دقيقة \(من 14 طلب مكتمل\)/.test(await p.textContent('#zt-hoodlist')) && /وقت الوصول المعتاد نحو 25 دقيقة/.test(await p.textContent('#zt-hoodlist')), 'Coverage: ETA from orders and the labelled manual figure');
+	ok(await p.locator('.zt-map').evaluate((e) => e.getBoundingClientRect().height) >= 400, 'Coverage: map space reserved (no layout shift)');
+	await p.click('[data-zt-showmap]'); await p.waitForSelector('.leaflet-container'); await p.waitForFunction(() => document.querySelectorAll('.leaflet-interactive').length === 3);
+	ok(true, 'Coverage: 3 markers (the district without coordinates has none)'); ok(reqs.filter((u) => /leaflet\.js/.test(u)).length === 1 && tiles > 0, 'Coverage: Leaflet loaded locally once, tiles requested after the click');
+	ok(external.every((u) => /tile\.openstreetmap\.org/.test(u)) && !reqs.some((u) => /unpkg|cdn|cloudflare|jsdelivr/.test(u)), 'Coverage: no CDN; only OpenStreetMap tiles are external');
+	ok(await p.locator('.leaflet-control-attribution', { hasText: 'OpenStreetMap' }).count() === 1, 'Coverage: OSM attribution on the map');
+	await p.click('.zt-chip[data-svc="تنظيف كنب"]'); ok(await p.locator('.zt-hoods li:visible').count() === 2 && await p.locator('.leaflet-interactive').count() === 2, 'Coverage: filter by service updates list AND map');
+	ok(/عدد الأحياء التي تتوفر فيها خدمة «تنظيف كنب»: 2/.test(await p.textContent('.zt-cov-msg')), 'Coverage: filter result announced (aria-live)');
+	await p.click('.zt-chip[data-svc=""]');
+	await p.click('[data-zt-locate]'); await p.waitForFunction(() => /أقرب حي نخدمه: النرجس/.test(document.querySelector('.zt-cov-msg').textContent)); ok(true, 'Coverage: «حدد موقعي» → nearest served district (النرجس)');
+	await p.waitForSelector('.leaflet-popup .zt-pop'); const pop = await p.textContent('.leaflet-popup .zt-pop'); ok(/النرجس/.test(pop) && /تنظيف مكيفات/.test(pop) && /نحو 35 دقيقة/.test(pop), 'Coverage: popup has name, services, ETA');
+	ok(await p.locator('.zt-hoods li.is-hit').count() === 1, 'Coverage: nearest district highlighted in the list');
+	ok(errs.length === 0, 'Coverage: no console/page errors ' + errs.join('|')); const cls = await p.evaluate(() => window.__cls); ok(cls < 0.05, 'Coverage: CLS ' + cls.toFixed(4));
+	await p.screenshot({ path: '/tmp/zt-cov.png', fullPage: false });
+	const nj = await browser.newContext({ javaScriptEnabled: false }); const q2 = await nj.newPage(); await q2.goto(base + '/t/coverage/');
+	ok(await q2.locator('.zt-hoods li').count() === 4 && !(await q2.locator('.zt-cov-tools').isVisible()), 'Coverage: no-JS keeps the full list; JS-only controls hidden'); await nj.close(); await ctx.close();
+}
 /* -------- weight -------- */
-for (const f of ['zt-core.js', 'ac-size.js', 'after-spray.js', 'tank.js']) { const kb = readFileSync(root + '/assets/js/' + f).length / 1024; ok(kb < 30, f + ' ' + kb.toFixed(1) + ' KB (<30)'); }
+for (const f of ['zt-core.js', 'ac-size.js', 'after-spray.js', 'tank.js', 'ac-power.js', 'moving.js', 'plan.js', 'coverage.js']) { const kb = readFileSync(root + '/assets/js/' + f).length / 1024; ok(kb < 30, f + ' ' + kb.toFixed(1) + ' KB (<30)'); }
 await browser.close(); server.close();
 console.log(fail ? `\n${fail} of ${n} FAILED` : `e2e: all ${n} passed`); process.exit(fail ? 1 : 0);

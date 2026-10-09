@@ -243,6 +243,11 @@ add_action( 'wp_head', function () {
 	echo '<script type="application/ld+json">' . wp_json_encode( array( '@context' => 'https://schema.org', '@graph' => zt_schema_nodes( $ctx ) ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) . "</script>\n";
 }, 21 );
 
+/** Tell the CSS that JavaScript runs, before the first paint (JS-only controls are in the markup but hidden until then → no layout shift). */
+add_action( 'wp_head', function () {
+	if ( is_singular( 'page' ) && zt_is_tool_page() ) { echo "<script>document.documentElement.className+=' zt-js'</script>\n"; }
+}, 1 );
+
 /** noindex helper for utility pages (tracking / verification, Phase 1) and for a tool that is not approved yet. */
 add_filter( 'wp_robots', function ( $r ) {
 	if ( is_singular( 'page' ) && zt_is_tool_page() ) {

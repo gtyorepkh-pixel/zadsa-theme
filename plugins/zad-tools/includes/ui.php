@@ -46,6 +46,19 @@ function zt_result_html( $v, $env = array() ) {
 		}
 		$h .= '</tbody></table></div>';
 	}
+	if ( ! empty( $v['cal'] ) ) {
+		$h .= '<ol class="zt-cal">';
+		foreach ( $v['cal'] as $c ) {
+			$h .= '<li class="zt-cal__m"><strong>' . zt_esc( $c['m'] ) . '</strong>';
+			if ( $c['items'] ) {
+				$h .= '<ul>';
+				foreach ( $c['items'] as $it ) { $h .= '<li>' . ( '' !== $it[1] ? '<a href="' . zt_esc( $it[1] ) . '">' . zt_esc( $it[0] ) . '</a>' : zt_esc( $it[0] ) ) . '</li>'; }
+				$h .= '</ul>';
+			} else { $h .= '<span class="zt-cal__none">—</span>'; }
+			$h .= '</li>';
+		}
+		$h .= '</ol>';
+	}
 	foreach ( (array) ( $v['notes'] ?? array() ) as $n ) { $h .= '<p class="zt-noteline">' . zt_esc( $n ) . '</p>'; }
 	$acts = '';
 	$wa   = ! empty( $v['wa'] ) ? zt_wa_url( $env['wa'] ?? '', $v['wa'] ) : '';
@@ -53,14 +66,17 @@ function zt_result_html( $v, $env = array() ) {
 	foreach ( (array) ( $v['links'] ?? array() ) as $l ) {
 		$acts .= '<a class="btn btn--ghost" href="' . zt_esc( $l['href'] ) . '"' . ( ! empty( $l['event'] ) ? ' data-zt-event="' . zt_esc( $l['event'] ) . '"' : '' ) . '>' . zt_esc( $l['label'] ) . '</a>';
 	}
-	if ( '' !== $acts ) { $h .= '<div class="zt-actions">' . $acts . '</div>'; }
+	// share + print only work with JS: printed by the server too (hidden by CSS until the page's JS class is set) so nothing shifts when JS starts
+	$acts .= '<button type="button" class="btn btn--ghost zt-jsonly" data-zt-share>شارك النتيجة</button><button type="button" class="btn btn--ghost zt-jsonly" data-zt-print>اطبع</button>';
+	$h .= '<div class="zt-actions">' . $acts . '</div>';
 	if ( ! empty( $v['optin'] ) ) { $h .= zt_optin_html( $v['optin'], $env ); }
 	return $h . '</div>';
 }
 
 /** The reminder opt-in. Hidden until JS shows it (posting needs the cache-safe token), unchecked consent, honeypot. */
 function zt_optin_html( $o, $env = array() ) {
-	$h  = '<form class="zt-optin zt-form" data-zt-optin data-date="' . zt_esc( $o['date'] ) . '" data-service="' . zt_esc( $o['service'] ) . '" hidden novalidate>';
+	$items = ! empty( $o['items'] ) ? ' data-items="' . zt_esc( wp_json_encode( $o['items'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) ) . '"' : '';
+	$h  = '<form class="zt-optin zt-form zt-jsonly" data-zt-optin data-date="' . zt_esc( $o['date'] ?? '' ) . '" data-service="' . zt_esc( $o['service'] ?? '' ) . '"' . $items . ' novalidate>';
 	$h .= '<h3 class="zt-h3">' . zt_esc( $o['title'] ?? 'ذكّرني بالموعد' ) . '</h3>';
 	$h .= '<div class="zt-row"><label class="fld"><span>اسمك الأول</span><input name="first_name" autocomplete="given-name" maxlength="60"></label>';
 	$h .= '<label class="fld"><span>رقم الجوال</span><input name="phone" type="tel" inputmode="tel" dir="ltr" autocomplete="tel" placeholder="05xxxxxxxx"></label></div>';
@@ -71,6 +87,9 @@ function zt_optin_html( $o, $env = array() ) {
 	$h .= '<button class="btn btn--accent" type="submit">فعّل التذكير</button><p class="zt-optin__msg" role="status" aria-live="polite"></p></form>';
 	return $h;
 }
+
+/** «Send to myself»: wa.me without a number opens the chooser; same bytes as ZT.waSelf(). */
+function zt_wa_self_url( $text ) { return 'https://wa.me/?text=' . rawurlencode( (string) $text ); }
 
 /** Digits only helper for query values typed with Arabic numerals (GET fallback). */
 function zt_req( $key, $default = '' ) {
@@ -93,6 +112,15 @@ function zt_ar_count( $n, $one, $two, $few, $many, $one_alone = null ) {
 	$s = zt_fmt( $n );
 	if ( $n >= 3 && $n <= 10 && floor( $n ) === $n ) { return $s . ' ' . $few; }
 	return $s . ' ' . $many;
+}
+
+/** 4.0 → 4, 4.5 stays (JSON-friendly numbers for the settings → JS config). */
+function zt_pow_intval( $n ) { return $n == (int) $n ? (int) $n : $n; }
+
+/** «أبريل 2027» */
+function zt_ar_month( $y, $m ) {
+	static $mn = array( 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر' );
+	return $mn[ (int) $m - 1 ] . ' ' . sprintf( '%04d', (int) $y );
 }
 
 /** Signed percent for tables: +10% / −5% / 0% */
@@ -131,23 +159,30 @@ function zt_ar_date( $ymd ) {
 
 function zt_ics_escape( $s ) { return str_replace( array( '\\', ';', ',', "\r\n", "\n", "\r" ), array( '\\\\', '\;', '\,', '\n', '\n', '\n' ), (string) $s ); }
 
-/** One all-day VEVENT with a reminder the day before at 09:00. $stamp = 'YYYYMMDDTHHMMSSZ' (injected so tests are exact). */
-function zt_ics_build( $date, $title, $desc, $stamp, $host = 'zadksa.com' ) {
-	if ( ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', (string) $date ) ) { return ''; }
-	$d0   = str_replace( '-', '', $date );
-	$next = zt_add_days_str( $date, 1 );
-	if ( '' === $next ) { return ''; }
-	$lines = array(
-		'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Zad//zad-tools//AR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
-		'BEGIN:VEVENT', 'UID:' . md5( $date . '|' . $title ) . '@' . $host, 'DTSTAMP:' . $stamp,
-		'DTSTART;VALUE=DATE:' . $d0, 'DTEND;VALUE=DATE:' . str_replace( '-', '', $next ),
-		'SUMMARY:' . zt_ics_escape( $title ),
-	);
-	if ( '' !== (string) $desc ) { $lines[] = 'DESCRIPTION:' . zt_ics_escape( $desc ); }
-	$lines = array_merge( $lines, array( 'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' . zt_ics_escape( $title ), 'TRIGGER:-PT15H', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR' ) );
+/** All-day events (array of array( 'YYYY-MM-DD', 'title' )), each with a reminder the day before at 09:00. $stamp = 'YYYYMMDDTHHMMSSZ' (injected so tests are exact). */
+function zt_ics_build_multi( $events, $desc, $stamp, $host = 'zadksa.com' ) {
+	$ev = array();
+	foreach ( (array) $events as $e ) {
+		if ( ! is_array( $e ) || count( $e ) < 2 ) { continue; }
+		$next = zt_add_days_str( $e[0], 1 );
+		if ( '' === $next || '' === trim( (string) $e[1] ) ) { continue; }
+		$ev[] = array( $e[0], $next, trim( (string) $e[1] ) );
+	}
+	if ( ! $ev ) { return ''; }
+	$lines = array( 'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Zad//zad-tools//AR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH' );
+	foreach ( $ev as $e ) {
+		$lines = array_merge( $lines, array( 'BEGIN:VEVENT', 'UID:' . md5( $e[0] . '|' . $e[2] ) . '@' . $host, 'DTSTAMP:' . $stamp, 'DTSTART;VALUE=DATE:' . str_replace( '-', '', $e[0] ), 'DTEND;VALUE=DATE:' . str_replace( '-', '', $e[1] ), 'SUMMARY:' . zt_ics_escape( $e[2] ) ) );
+		if ( '' !== (string) $desc ) { $lines[] = 'DESCRIPTION:' . zt_ics_escape( $desc ); }
+		$lines = array_merge( $lines, array( 'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' . zt_ics_escape( $e[2] ), 'TRIGGER:-PT15H', 'END:VALARM', 'END:VEVENT' ) );
+	}
+	$lines[] = 'END:VCALENDAR';
 	$out = array();
 	foreach ( $lines as $l ) { $out[] = zt_ics_fold( $l ); } // RFC 5545: lines folded at 75 octets
 	return implode( "\r\n", $out ) . "\r\n";
+}
+function zt_ics_build( $date, $title, $desc, $stamp, $host = 'zadksa.com' ) {
+	if ( ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', (string) $date ) ) { return ''; }
+	return zt_ics_build_multi( array( array( $date, $title ) ), $desc, $stamp, $host );
 }
 function zt_ics_fold( $line ) {
 	if ( strlen( $line ) <= 75 ) { return $line; }
@@ -167,15 +202,35 @@ function zt_add_days_str( $ymd, $n ) {
 	return sprintf( '%04d-%02d-%02d', $y, $mo, $d );
 }
 
-/** The public download. Cache-safe (no-store), nothing personal, the title is cut at 80 characters. */
+/** The public download. Cache-safe (no-store), nothing personal, a title is cut at 80 characters, at most 60 events. */
 function zt_ics_url( $date, $title ) {
 	return home_url( '/' ) . '?' . zt_qs_string( array( 'd' => $date, 't' => $title, 'zad_ics' => '1' ) );
 }
+/** Many events in one file: ev = "YYYY-MM-DD|title~YYYY-MM-DD|title…" (same bytes as ZT.icsUrlMulti). */
+function zt_ics_ev_string( $events ) {
+	$p = array();
+	foreach ( $events as $e ) { $p[] = $e[0] . '|' . str_replace( array( '~', '|' ), ' ', $e[1] ); }
+	return implode( '~', $p );
+}
+function zt_ics_url_multi( $base, $events ) { return $base ? $base . '?' . zt_qs_string( array( 'ev' => zt_ics_ev_string( $events ), 'zad_ics' => '1' ) ) : ''; }
+function zt_ics_parse_ev( $ev ) {
+	$out = array();
+	foreach ( array_slice( explode( '~', (string) $ev ), 0, 60 ) as $row ) {
+		$x = explode( '|', $row, 2 );
+		if ( 2 === count( $x ) && '' !== zt_add_months_str( $x[0], 0 ) ) { $out[] = array( $x[0], mb_substr( trim( $x[1] ), 0, 80 ) ); }
+	}
+	return $out;
+}
 add_action( 'template_redirect', function () {
 	if ( ! isset( $_GET['zad_ics'] ) ) { return; }
-	$d = isset( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : '';
-	$t = isset( $_GET['t'] ) ? mb_substr( sanitize_text_field( wp_unslash( $_GET['t'] ) ), 0, 80 ) : '';
-	$ics = '' !== $t ? zt_ics_build( $d, $t, zt_brand(), gmdate( 'Ymd\THis\Z' ), wp_parse_url( home_url(), PHP_URL_HOST ) ?: 'zadksa.com' ) : '';
+	$host = wp_parse_url( home_url(), PHP_URL_HOST ) ?: 'zadksa.com';
+	if ( isset( $_GET['ev'] ) ) { $events = zt_ics_parse_ev( sanitize_text_field( wp_unslash( $_GET['ev'] ) ) ); }
+	else {
+		$d = isset( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : '';
+		$t = isset( $_GET['t'] ) ? mb_substr( sanitize_text_field( wp_unslash( $_GET['t'] ) ), 0, 80 ) : '';
+		$events = array( array( $d, $t ) );
+	}
+	$ics = zt_ics_build_multi( $events, zt_brand(), gmdate( 'Ymd\THis\Z' ), $host );
 	if ( '' === $ics ) { status_header( 400 ); exit; }
 	nocache_headers();
 	header( 'X-LiteSpeed-Cache-Control: no-cache' );

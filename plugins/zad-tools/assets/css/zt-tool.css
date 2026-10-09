@@ -37,3 +37,18 @@
 .zt-optin{margin-top:1.25rem;padding-top:1rem;border-top:1px dashed var(--zt-line)}
 .zt-optin__msg{margin:0;min-height:1.4em;font-weight:700}.zt-optin__msg.is-ok{color:#0a6b3d}.zt-optin__msg.is-err{color:#b32d2e}
 .btn--ghost{background:transparent}
+.zt-page [hidden]{display:none!important}
+/* controls that only work with JavaScript: in the server markup, shown only when the tiny inline script set .zt-js before first paint (so nothing shifts) */
+.zt-page .zt-jsonly{display:none!important}
+.zt-js .zt-page .zt-jsonly,.zt-js .zt-page .btn.zt-jsonly{display:inline-block!important}
+.zt-js .zt-page form.zt-jsonly{display:grid!important}
+.zt-js .zt-page .zt-actions.zt-jsonly,.zt-js .zt-page .zt-cov-tools.zt-jsonly{display:flex!important}
+.zt-form summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700}
+.zt-acrow{margin-bottom:8px}
+.zt-cal{list-style:none;margin:1rem 0;padding:0;display:grid;gap:10px}
+.zt-cal__m{padding:10px 14px;border:1px solid var(--zt-line);border-radius:var(--zt-r);background:var(--surface,#fff)}
+.zt-cal__m strong{display:block;margin-bottom:4px}.zt-cal__m ul{margin:0;padding-inline-start:1.1rem}.zt-cal__none{color:var(--muted,#56656f)}
+.zt-checklist{list-style:none;margin:0 0 .75rem;padding:0}.zt-checklist li label{display:flex;gap:10px;align-items:center;min-height:44px;cursor:pointer}.zt-checklist input{width:22px;height:22px;flex:none}
+.zt-check{margin-top:1.5rem;padding-top:1rem;border-top:1px dashed var(--zt-line)}
+@media (min-width:720px){.zt-cal{grid-template-columns:repeat(4,1fr)}}   /* calendar on a computer, list on a phone */
+@media print{.zt-cal{grid-template-columns:repeat(3,1fr)}}

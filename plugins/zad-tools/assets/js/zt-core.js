@@ -53,7 +53,8 @@
 	function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
 
 	function optinHtml(o, env) {
-		var h = '<form class="zt-optin zt-form" data-zt-optin data-date="' + esc(o.date) + '" data-service="' + esc(o.service) + '" hidden novalidate>';
+		var items = o.items && o.items.length ? ' data-items="' + esc(JSON.stringify(o.items)) + '"' : '';
+		var h = '<form class="zt-optin zt-form zt-jsonly" data-zt-optin data-date="' + esc(o.date || '') + '" data-service="' + esc(o.service || '') + '"' + items + ' novalidate>';
 		h += '<h3 class="zt-h3">' + esc(o.title || 'ذكّرني بالموعد') + '</h3>';
 		h += '<div class="zt-row"><label class="fld"><span>اسمك الأول</span><input name="first_name" autocomplete="given-name" maxlength="60"></label>';
 		h += '<label class="fld"><span>رقم الجوال</span><input name="phone" type="tel" inputmode="tel" dir="ltr" autocomplete="tel" placeholder="05xxxxxxxx"></label></div>';
@@ -77,11 +78,17 @@
 				t.head.map(function (c) { return '<th scope="col">' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
 				t.rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return i === 0 ? '<th scope="row">' + esc(c) + '</th>' : '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
 		}
+		if (v.cal && v.cal.length) {
+			h += '<ol class="zt-cal">' + v.cal.map(function (c) {
+				return '<li class="zt-cal__m"><strong>' + esc(c.m) + '</strong>' + (c.items.length ? '<ul>' + c.items.map(function (it) { return '<li>' + (it[1] ? '<a href="' + esc(it[1]) + '">' + esc(it[0]) + '</a>' : esc(it[0])) + '</li>'; }).join('') + '</ul>' : '<span class="zt-cal__none">—</span>') + '</li>';
+			}).join('') + '</ol>';
+		}
 		(v.notes || []).forEach(function (n) { h += '<p class="zt-noteline">' + esc(n) + '</p>'; });
 		var acts = '', wa = v.wa ? waLink(env.wa, v.wa) : '';
 		if (wa) { acts += '<a class="btn btn--wa" target="_blank" rel="noopener" data-zt-event="tool_whatsapp_click" href="' + esc(wa) + '">أرسل النتيجة على واتساب</a>'; }
 		(v.links || []).forEach(function (l) { acts += '<a class="btn btn--ghost" href="' + esc(l.href) + '"' + (l.event ? ' data-zt-event="' + esc(l.event) + '"' : '') + '>' + esc(l.label) + '</a>'; });
-		if (acts) { h += '<div class="zt-actions">' + acts + '</div>'; }
+		acts += '<button type="button" class="btn btn--ghost zt-jsonly" data-zt-share>شارك النتيجة</button><button type="button" class="btn btn--ghost zt-jsonly" data-zt-print>اطبع</button>';
+		h += '<div class="zt-actions">' + acts + '</div>';
 		if (v.optin) { h += optinHtml(v.optin, env); }
 		return h + '</div>';
 	}
@@ -118,8 +125,13 @@
 		while (d > dim(y, mo)) { d -= dim(y, mo); mo++; if (mo > 12) { mo = 1; y++; } }
 		return pad(y, 4) + '-' + pad(mo, 2) + '-' + pad(d, 2);
 	}
+	function arMonth(y, m) { return MN[m - 1] + ' ' + pad(y, 4); }
 	function arDate(s) { var p = parseYmd(s); return p ? p[2] + ' ' + MN[p[1] - 1] + ' ' + pad(p[0], 4) : ''; }
 	function icsUrl(base, date, title) { return base ? base + '?' + qsString({ d: date, t: title, zad_ics: '1' }) : ''; }
+	/** Many events in one .ics: ev = "YYYY-MM-DD|title~…" (PHP twin: zt_ics_url_multi). */
+	function icsUrlMulti(base, events) { return base ? base + '?' + qsString({ ev: events.map(function (e) { return e[0] + '|' + String(e[1]).replace(/[~|]/g, ' '); }).join('~'), zad_ics: '1' }) : ''; }
+	/** «Send to myself»: wa.me without a number opens the chooser (PHP twin: zt_wa_self_url). */
+	function waSelf(text) { return 'https://wa.me/?text=' + rawenc(String(text)); }
 
 	/** GA4 parameters without anything personal (no name / phone / email / free text). */
 	function cleanParams(p) {
@@ -129,7 +141,7 @@
 	}
 
 	var ZT = { digits: digits, num: num, fmt: fmt, qsString: qsString, qsParse: qsParse, waMessage: waMessage, waLink: waLink, cleanParams: cleanParams, esc: esc, resultHtml: resultHtml, arCount: arCount, pctLabel: pctLabel,
-		addMonths: addMonths, addDays: addDays, arDate: arDate, parseYmd: parseYmd, icsUrl: icsUrl, cfg: {} };
+		addMonths: addMonths, addDays: addDays, arDate: arDate, arMonth: arMonth, parseYmd: parseYmd, icsUrl: icsUrl, icsUrlMulti: icsUrlMulti, waSelf: waSelf, rawenc: rawenc, cfg: {} };
 
 	if (typeof module === 'object' && module.exports) { module.exports = ZT; return; }
 
@@ -182,19 +194,7 @@
 	};
 	ZT.env = function () { return { wa: ZT.cfg.wa, privacy: ZT.cfg.privacy }; };
 
-	/** After every render: JS-only buttons (share + print) and the reminder opt-in form (hidden in the server markup until we can post). */
-	ZT.enhance = function (box) {
-		if (!box) { return; }
-		var acts = box.querySelector('.zt-actions');
-		if (!acts && box.querySelector('.zt-card')) { acts = document.createElement('div'); acts.className = 'zt-actions'; box.querySelector('.zt-card').appendChild(acts); }
-		if (acts && !acts.querySelector('[data-zt-share]')) {
-			var sh = document.createElement('button'); sh.type = 'button'; sh.className = 'btn btn--ghost'; sh.setAttribute('data-zt-share', ''); sh.textContent = 'شارك النتيجة';
-			var pr = document.createElement('button'); pr.type = 'button'; pr.className = 'btn btn--ghost'; pr.setAttribute('data-zt-print', ''); pr.textContent = 'اطبع';
-			acts.appendChild(sh); acts.appendChild(pr);
-		}
-		var f = box.querySelector('form[data-zt-optin]');
-		if (f && f.hidden) { f.hidden = false; }
-	};
+	ZT.enhance = function () {}; // kept for tools that call it: share / print / opt-in are in the markup now and shown by CSS (.zt-js .zt-jsonly)
 
 	/**
 	 * Wire a tool form. o = { calc(cfg, input, today) → view, read(form) → input, params(input) → {k:v}, fill(form, query), ga(view) → {…} }.
@@ -234,10 +234,19 @@
 		msg.textContent = ''; msg.className = 'zt-optin__msg';
 		if (!v.consent) { msg.textContent = 'يلزم الموافقة على استلام التذكير.'; msg.classList.add('is-err'); return; }
 		btn.disabled = true;
-		ZT.postReminder({ first_name: v.first_name, phone: ZT.digits(v.phone), email: v.email, service: f.getAttribute('data-service'), due_date: f.getAttribute('data-date'), hood: (document.querySelector('#zt-tool [name="hood"]') || {}).value || '', consent: true, website: v.website })
-			.then(function (r) { msg.textContent = r.ok ? 'تم تفعيل التذكير. هنراسلك في الموعد، وفي كل رسالة رابط لإيقافه.' : ((r.body && r.body.message) || 'تعذر التفعيل، حاول مرة أخرى.'); msg.classList.add(r.ok ? 'is-ok' : 'is-err'); if (r.ok) { f.querySelectorAll('input').forEach(function (i) { i.disabled = true; }); } else { btn.disabled = false; } })
+		var base = { first_name: v.first_name, phone: ZT.digits(v.phone), email: v.email, hood: (document.querySelector('#zt-tool [name="hood"]') || {}).value || '', consent: true, website: v.website }, items = null;
+		try { items = JSON.parse(f.getAttribute('data-items') || 'null'); } catch (x) {}
+		var req = items ? ZT.postRemindersBatch(Object.assign(base, { items: items })) : ZT.postReminder(Object.assign(base, { service: f.getAttribute('data-service'), due_date: f.getAttribute('data-date') }));
+		req
+			.then(function (r) { msg.textContent = r.ok ? (r.body && r.body.added > 1 ? 'تم تفعيل ' + r.body.added + ' تذكيرات' + (r.body.skipped ? ' (وتعذّر ' + r.body.skipped + ' بسبب الحد الأقصى)' : '') + '. في كل رسالة رابط لإيقافها.' : 'تم تفعيل التذكير. هنراسلك في الموعد، وفي كل رسالة رابط لإيقافه.') : ((r.body && r.body.message) || 'تعذر التفعيل، حاول مرة أخرى.'); msg.classList.add(r.ok ? 'is-ok' : 'is-err'); if (r.ok) { f.querySelectorAll('input').forEach(function (i) { i.disabled = true; }); } else { btn.disabled = false; } })
 			.catch(function () { msg.textContent = 'تعذر الاتصال، حاول مرة أخرى.'; msg.classList.add('is-err'); btn.disabled = false; });
 	});
+
+	/** One consent, one token, many due dates (the maintenance plan). */
+	ZT.postRemindersBatch = function (data) {
+		data.tool = ZT.cfg.tool;
+		return ZT.post('reminders/batch', data).then(function (res) { if (res.ok) { ZT.ev('reminder_optin', { count: (data.items || []).length }); } return res; });
+	};
 
 	function boot() {
 		var box = document.getElementById('zt-tool'), started = false;

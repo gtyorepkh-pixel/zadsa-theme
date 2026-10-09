@@ -1,0 +1,56 @@
+{
+  "_note": "Synthetic numbers for testing the formulas only — none of these are shipped defaults or real tariffs/prices.",
+  "power": {
+    "cfg": {"types":[{"k":"split","l":"سبليت"},{"k":"window","l":"شباك"}],"ages":[{"k":"new","l":"جديد"},{"k":"old","l":"قديم"}],
+      "kw":{"split|new":1.2,"split|old":1.7,"window|new":1.5},
+      "cleans":[{"k":"lt3","l":"أقل من 3 شهور"},{"k":"gt12","l":"أكثر من سنة"},{"k":"unknown","l":"مش عارف"}],"dirt":{"gt12":15,"lt3":0},
+      "tiers":[{"from":1,"to":2000,"rate":10},{"from":2001,"to":null,"rate":20}],"season":5,"cleanFrom":50,
+      "tariff":{"label":"تعرفة تجريبية","src":"https://example.test/t","updated":"2026-01-01"}},
+    "cfg2": {"types":[{"k":"split","l":"سبليت"}],"ages":[{"k":"new","l":"جديد"}],"kw":{"split|new":1},"cleans":[{"k":"lt3","l":"أقل من 3 شهور"}],"dirt":{},"tiers":[],"season":null,"cleanFrom":null,"tariff":{"label":"","src":"","updated":""}},
+    "inputs": [
+      {"acs":[{"t":2,"q":1,"ty":"split","ag":"new"}],"h":10,"d":30,"cl":"lt3"},
+      {"acs":[{"t":2,"q":3,"ty":"split","ag":"old"},{"t":1.5,"q":1,"ty":"window","ag":"new"}],"h":8,"d":30,"cl":"gt12","o":1500,"hood":"النرجس"},
+      {"acs":[{"t":2,"q":1,"ty":"split","ag":"new"}],"h":24,"d":31,"cl":"unknown"},
+      {"acs":[{"t":3,"q":2,"ty":"window","ag":"old"}],"h":10,"d":30,"cl":"gt12"},
+      {"acs":[{"t":"","q":""},{"t":0,"q":2}],"h":10,"d":30},
+      {"acs":[{"t":2,"q":1,"ty":"split","ag":"new"}],"h":0,"d":30},
+      {"acs":[{"t":2,"q":1,"ty":"split","ag":"new"}],"h":10,"d":40},
+      {"acs":[{"t":2.5,"q":2.9,"ty":"split","ag":"new"}],"h":12.5,"d":20,"cl":"gt12","o":5000}
+    ]
+  },
+  "moving": {
+    "cfg": {"cities":[{"k":"r","l":"الرياض"},{"k":"j","l":"جدة"}],"rooms":[{"max":2,"trucks":1,"workers":2,"price":[300,400]},{"max":4,"trucks":2,"workers":4,"price":[600,800]},{"max":6,"trucks":3,"workers":6,"price":null}],
+      "routes":[{"a":"r","b":"j","price":[900,900]}],"floor":[20,30],"appliance":null,"acInstall":[50,50],"furniture":null,"packing":[40,60],"storage":[100,100]},
+    "cfg2": {"cities":[{"k":"r","l":"الرياض"}],"rooms":[{"max":null,"trucks":1,"workers":2,"price":null}],"routes":[],"floor":null,"appliance":null,"acInstall":null,"furniture":null,"packing":null,"storage":null},
+    "inputs": [
+      {"ty":"in","fc":"r","r":2,"ef":true,"et":true},
+      {"ty":"inter","fc":"r","tc":"j","r":3,"fr":1,"wm":1,"ac":2,"ff":3,"ef":false,"ft":0,"et":false,"fu":true,"pk":true,"st":2,"hood":"الملقا"},
+      {"ty":"inter","fc":"j","tc":"r","r":4,"ff":1,"ft":2},
+      {"ty":"inter","fc":"r","tc":"r","r":2},
+      {"ty":"in","fc":"r","r":9},
+      {"ty":"in","fc":"r","r":0},
+      {"ty":"in","fc":"r","r":1,"st":1,"ac":1,"fr":3,"wm":1}
+    ]
+  },
+  "plan": {
+    "today": "2026-10-09",
+    "cfg": {"housing":[{"k":"apartment","l":"شقة"},{"k":"villa","l":"فيلا"}],"cities":[{"k":"riyadh","l":"الرياض"}],"ics":"https://zadksa.com/",
+      "tasks":[{"k":"ac","l":"تنظيف المكيفات","every":6,"month":4,"when":["ac"],"per":"ac","url":"https://zadksa.com/ac/","price":50},
+               {"k":"tg","l":"تنظيف الخزان الأرضي","every":6,"month":null,"when":["tank_ground"],"per":"visit","url":"","price":null},
+               {"k":"tr","l":"تنظيف الخزان العلوي","every":4,"month":null,"when":["tank_roof"],"per":"visit","url":"https://zadksa.com/tank/","price":120},
+               {"k":"sofa","l":"تنظيف الكنب","every":12,"month":9,"when":["sofa"],"per":"sofa","url":"https://zadksa.com/sofa/","price":30},
+               {"k":"pest","l":"رش وقائي","every":3,"month":null,"when":["pest","h_villa"],"per":"visit","url":"","price":80},
+               {"k":"typo","l":"مهمة خطأ إملائي","every":1,"month":null,"when":["alwayz"],"per":"visit","url":"","price":10}],
+      "plans":[{"l":"باقة الفلل","when":["h_villa"]},{"l":"باقة عامة","when":["always"]}]},
+    "cfg2": {"housing":[{"k":"apartment","l":"شقة"}],"cities":[{"k":"riyadh","l":"الرياض"}],"ics":"","tasks":[{"k":"ac","l":"تنظيف المكيفات","every":6,"month":null,"when":["ac"],"per":"ac","url":"","price":null}],"plans":[]},
+    "inputs": [
+      {"hs":"apartment","ct":"riyadh","tk":"ground","acn":3,"last":{}},
+      {"hs":"villa","ct":"riyadh","tk":"both","acn":5,"sf":4,"pe":true,"last":{"ac":"2026-03-01","tg":"2026-09-20"},"hood":"النرجس"},
+      {"hs":"apartment","ct":"riyadh","tk":"roof","acn":0,"last":{"tr":"2026-01-31"}},
+      {"hs":"apartment","ct":"riyadh","tk":"none","acn":2,"sm":"2027-01","last":{}},
+      {"hs":"apartment","ct":"riyadh","tk":"none","acn":0,"last":{}},
+      {"hs":"villa","ct":"riyadh","tk":"ground","acn":1,"sf":2,"last":{"sofa":"2025-06-15","ac":"2030-01-01"}},
+      {"hs":"apartment","ct":"riyadh","tk":"x","acn":2,"sm":"bad","last":{"ac":"2024-01-01"}}
+    ]
+  }
+}
