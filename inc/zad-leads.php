@@ -216,6 +216,11 @@ function zad_handle_quote() {
 		if ( '' !== $section ) { update_post_meta( $lead_id, '_lead_section', $section ); }
 		update_post_meta( $lead_id, '_lead_ip', $ip );
 		update_post_meta( $lead_id, '_lead_status', 'new' );
+		/** A new quote request / booking was stored. Plugins (zad-tools) listen here; the form's own behaviour is unchanged. */
+		do_action( 'zad_lead_created', (int) $lead_id, array(
+			'name' => $name, 'phone' => $phone, 'service_id' => $service ? (int) $service->ID : 0, 'service' => $svc_title, 'section' => $section, 'city' => $area,
+			'hood' => $hood, 'date' => $date, 'time' => $time, 'message' => $message, 'source' => $source, 'page_id' => $pg ? (int) $pg->ID : 0, 'wizard' => $wiz,
+		) );
 	}
 
 	$to = zad_opt( 'memopt_lead_email', zad_opt( 'memopt_mail', get_option( 'admin_email' ) ) );

@@ -27,6 +27,7 @@ function zt_reminders_install() {
 		consent_ver varchar(20) NOT NULL DEFAULT '',
 		status varchar(12) NOT NULL DEFAULT 'pending',
 		token char(32) NOT NULL DEFAULT '',
+		ref varchar(40) NOT NULL DEFAULT '',
 		created_at datetime NOT NULL,
 		sent_at datetime DEFAULT NULL,
 		PRIMARY KEY  (id),
@@ -47,7 +48,8 @@ function zt_reminder_add( $d ) {
 	$tool  = preg_replace( '/[^a-z0-9\-]/', '', strtolower( (string) ( $d['tool'] ?? '' ) ) );
 	$hood  = mb_substr( sanitize_text_field( (string) ( $d['hood'] ?? '' ) ), 0, 120 );
 	$due   = (string) ( $d['due_date'] ?? '' );
-	if ( empty( $d['consent'] ) ) { return new WP_Error( 'consent', 'يلزم الموافقة على استلام التذكير.' ); }
+	$trans = ! empty( $d['transactional'] ); // a follow-up to a service the person ordered (the single review request): needs no marketing consent
+	if ( ! $trans && empty( $d['consent'] ) ) { return new WP_Error( 'consent', 'يلزم الموافقة على استلام التذكير.' ); }
 	if ( mb_strlen( $name ) < 2 ) { return new WP_Error( 'name', 'اكتب اسمك الأول.' ); }
 	if ( '' === $phone ) { return new WP_Error( 'phone', 'رقم الجوال غير صحيح.' ); }
 	if ( '' !== $mail && ! is_email( $mail ) ) { $mail = ''; }
@@ -61,7 +63,7 @@ function zt_reminder_add( $d ) {
 	if ( $dup ) { return $dup; } // already set: confirm, never a second row
 	$ok = $wpdb->insert( $t, array(
 		'first_name' => $name, 'phone' => $phone, 'email' => $mail, 'service' => $svc, 'due_date' => $due, 'source_tool' => $tool, 'hood' => $hood,
-		'consent_at' => current_time( 'mysql' ), 'consent_ver' => 'v1', 'status' => 'pending', 'token' => bin2hex( random_bytes( 16 ) ), 'created_at' => current_time( 'mysql' ),
+		'consent_at' => $trans ? null : current_time( 'mysql' ), 'consent_ver' => $trans ? 'service' : 'v1', 'ref' => preg_replace( '/[^a-f0-9]/', '', strtolower( (string) ( $d['ref'] ?? '' ) ) ), 'status' => 'pending', 'token' => bin2hex( random_bytes( 16 ) ), 'created_at' => current_time( 'mysql' ),
 	) );
 	return $ok ? (int) $wpdb->insert_id : new WP_Error( 'db', 'تعذر الحفظ، حاول لاحقاً.' );
 }
@@ -70,9 +72,14 @@ function zt_unsub_url( $token ) { return add_query_arg( 'zad_unsub', $token, hom
 
 /** Message text from the template setting. */
 function zt_reminder_message( $r, $template = null ) {
-	$tpl = null === $template ? (string) zt_opt( 'reminders.msg_template' ) : $template;
-	return strtr( $tpl, array(
+	if ( null === $template ) {
+		$src = isset( $r->source_tool ) ? $r->source_tool : '';
+		$template = 'orders-review' === $src ? (string) zt_opt( 'orders.review_msg' ) : ( 'orders-warranty' === $src ? (string) zt_opt( 'orders.warranty_msg' ) : (string) zt_opt( 'reminders.msg_template' ) );
+	}
+	$ref = isset( $r->ref ) ? (string) $r->ref : '';
+	return strtr( $template, array(
 		'{الاسم}' => $r->first_name, '{الخدمة}' => $r->service, '{المنشأة}' => zt_brand(), '{الحي}' => $r->hood, '{رابط_الإيقاف}' => zt_unsub_url( $r->token ),
+		'{رابط_التتبع}' => ( '' !== $ref && function_exists( 'zt_track_url' ) ) ? zt_track_url( $ref ) : '', '{رابط_التقييم}' => function_exists( 'zt_review_url' ) ? zt_review_url() : '',
 	) );
 }
 
@@ -265,4 +272,9 @@ add_filter( 'wp_privacy_personal_data_erasers', function ( $e ) {
 		return array( 'items_removed' => $n > 0, 'items_retained' => false, 'messages' => array(), 'done' => true );
 	} );
 	return $e;
+} );
+
+/** After an update of the plugin files: bring the table up to date (dbDelta only adds). */
+add_action( 'plugins_loaded', function () {
+	if ( get_option( 'zad_tools_version' ) !== ZT_VERSION ) { zt_reminders_install(); update_option( 'zad_tools_version', ZT_VERSION, false ); }
 } );

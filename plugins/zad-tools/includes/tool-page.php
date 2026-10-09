@@ -186,7 +186,7 @@ function zt_privacy_url() {
 	$id = (int) zt_opt( 'general.privacy_page_id' );
 	if ( $id && 'publish' === get_post_status( $id ) ) { return get_permalink( $id ); }
 	if ( function_exists( 'zad_legal_items' ) ) { foreach ( zad_legal_items() as $it ) { if ( false !== mb_strpos( $it[0], 'الخصوصية' ) ) { return $it[1]; } } }
-	return get_privacy_policy_url();
+	return function_exists( 'get_privacy_policy_url' ) ? get_privacy_policy_url() : '';
 }
 
 /* ---------------------------------------------- SEO: canonical, breadcrumbs, schema ---------------------------------------------- */

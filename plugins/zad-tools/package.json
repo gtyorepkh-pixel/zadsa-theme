@@ -1,1 +1,1 @@
-{ "name": "zad-tools", "private": true, "scripts": { "test": "node --test tests/core.test.mjs tests/parity.test.mjs && php tests/phase0.php" } }
+{ "name": "zad-tools", "private": true, "scripts": { "test": "node --test tests/core.test.mjs tests/parity.test.mjs && php tests/phase0.php && php tests/orders.php" } }

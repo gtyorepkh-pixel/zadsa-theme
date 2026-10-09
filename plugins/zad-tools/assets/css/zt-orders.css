@@ -1,0 +1,9 @@
+.zt-steps{list-style:none;margin:1rem 0;padding:0;display:grid;gap:8px}
+.zt-steps li{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;border:1px solid var(--line,#e4e1d6);border-radius:var(--r-sm,8px);color:var(--muted,#56656f);background:var(--surface,#fff)}
+.zt-steps li small{opacity:.8}
+.zt-steps li.is-done{color:var(--ink,#000);border-color:var(--ok,#0d7f70);background:var(--mint,#e3f5f1)}
+.zt-steps li.is-cur{outline:3px solid var(--accent,#f2b134);font-weight:700}
+.zt-tech{display:flex;gap:14px;align-items:center;margin-top:12px}
+.zt-tech img{border-radius:50%;object-fit:cover;width:72px;height:72px}
+.zt-track .zt-card,.zt-verify .zt-card{margin-top:14px}
+.zt-msg{margin:.5rem 0 0;min-height:1.5em}

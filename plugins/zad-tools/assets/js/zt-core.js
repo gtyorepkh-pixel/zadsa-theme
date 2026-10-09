@@ -88,13 +88,17 @@
 		if (navigator.clipboard) { return navigator.clipboard.writeText(url); }
 	};
 
-	/** Token + POST for the reminder form (cache-safe: the token is fetched fresh, never printed in the cached page). */
-	ZT.postReminder = function (data) {
+	/** Token + POST (cache-safe: the token is fetched fresh, never printed in the cached page). Resolves { ok, body }. */
+	ZT.post = function (path, data) {
 		var base = ZT.cfg.rest || '/wp-json/zad/v1/';
 		return fetch(base + 'token', { cache: 'no-store', credentials: 'omit' }).then(function (r) { return r.json(); }).then(function (j) {
-			data.t = j.t; data.tool = ZT.cfg.tool;
-			return fetch(base + 'reminders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data), credentials: 'omit' });
-		}).then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); }).then(function (res) { if (res.ok) { ZT.ev('reminder_optin', {}); } return res; });
+			data.t = j.t;
+			return fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data), credentials: 'omit' });
+		}).then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); });
+	};
+	ZT.postReminder = function (data) {
+		data.tool = ZT.cfg.tool;
+		return ZT.post('reminders', data).then(function (res) { if (res.ok) { ZT.ev('reminder_optin', {}); } return res; });
 	};
 
 	function boot() {
