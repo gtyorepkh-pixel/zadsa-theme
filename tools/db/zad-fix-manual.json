@@ -1,0 +1,6 @@
+[
+  {"id": 25526, "field": "_yoast_wpseo_metadesc", "find": "بضمان يصل إلى 10 سنوات حسب العقد", "replace": "بضمان مكتوب 15 عاماً"},
+  {"id": 25526, "field": "_yoast_wpseo_metadesc", "find": "بضمان 3 أو 6 أشهر", "replace": "بضمان مكتوب 3 أو 6 أشهر حسب الاتفاق"},
+  {"id": 26846, "field": "_yoast_wpseo_metadesc", "find": "بضمان حتى 15 سنة", "replace": "بضمان مكتوب 15 عاماً"},
+  {"id": 25857, "field": "post_content", "find": "حقن تربة + ضمان 5 سنوات", "replace": "حقن تربة + ضمان مكتوب 15 عاماً"}
+]

@@ -85,6 +85,11 @@ function zf_re() {
 /** Text without tags (a space instead of each tag, so table cells do not run together). */
 function zf_plain( $s ) { return trim( preg_replace( '/[\s\x{00A0}]+/u', ' ', html_entity_decode( preg_replace( '/<[^>]*>/', ' ', (string) $s ), ENT_QUOTES, 'UTF-8' ) ) ); }
 
+/** Readable context of a hit at byte offset $off (for the REVIEW / MIXED rows of the CSV). */
+function zf_ctx( $text, $off, $len ) {
+	return mb_substr( zf_plain( mb_strcut( $text, max( 0, $off - 420 ), min( 420, $off ), 'UTF-8' ) ), -130 ) . ' ⟦' . zf_plain( mb_strcut( $text, $off, $len, 'UTF-8' ) ) . '⟧ ' . mb_substr( zf_plain( mb_strcut( $text, $off + $len, 420, 'UTF-8' ) ), 0, 130 );
+}
+
 /** The phrase to print for a match: accusative / «الضمان» / plain forms. */
 function zf_phrase( $m, $k ) {
 	$P = zf_policy();
@@ -108,19 +113,20 @@ function zf_warranty_pass( $text, $key, $do_hub = false, $which = 'main' ) {
 		list( $str, $off ) = $hit;
 		$m = array( 0 => $str );
 		foreach ( $names as $g ) { $m[ $g ] = $mm[ $g ][ $i ][0]; }
-		if ( 'main' === $which && preg_match( '/لل$/u', $m['pre'] ) ) { $log[] = array( 'REVIEW', 'definite-prefix', $str, '' ); continue; } // «للضمان 10 سنوات»: needs a human sentence
+		if ( 'main' === $which && preg_match( '/لل$/u', $m['pre'] ) ) { $log[] = array( 'REVIEW', 'definite-prefix', $str, zf_ctx( $text, $off, strlen( $str ) ) ); continue; } // «للضمان 10 سنوات»: needs a human sentence
 		$before = mb_substr( zf_plain( mb_strcut( $text, max( 0, $off - 320 ), min( 320, $off ), 'UTF-8' ) ), -80 );
 		$after  = mb_substr( zf_plain( mb_strcut( $text, $off + strlen( $str ), 160, 'UTF-8' ) ), 0, 40 );
 		if ( $key ) {
 			$ks = zf_keys_in( $before . ' ' . $after );
-			if ( array_diff( $ks, array( $key ) ) || preg_match( $other, $before . ' ' . $after ) ) { $log[] = array( 'MIXED', 'warranty:' . $key, $str, '' ); continue; }
+			if ( array_diff( $ks, array( $key ) ) || preg_match( $other, $before . ' ' . $after ) ) { $log[] = array( 'MIXED', 'warranty:' . $key, $str, zf_ctx( $text, $off, strlen( $str ) ) ); continue; }
 			$k = $key; $kind = 'AUTO';
 		} else {
 			if ( ! zf_keys_in( $before ) ) { continue; }                                 // some other service's warranty: never touched
 			$before = preg_replace( '/^.*[.؟!؛\n]/su', '', $before );                    // the sentence of the warranty only
 			$ks = zf_keys_in( $before );
-			if ( ! $ks ) { $log[] = array( 'REVIEW', 'hub-other-sentence', $str, '' ); continue; }
-			if ( 1 !== count( $ks ) || preg_match( $other, $before ) ) { $log[] = array( 'REVIEW', 'hub-mixed', $before . ' ⟦' . $str . '⟧', '' ); continue; }
+			if ( ! $ks ) { $log[] = array( 'REVIEW', 'hub-other-sentence', $str, zf_ctx( $text, $off, strlen( $str ) ) ); continue; }
+			if ( 1 !== count( $ks ) || preg_match( $other, $before ) ) { $log[] = array( 'REVIEW', 'hub-mixed', $before . ' ⟦' . $str . '⟧', zf_ctx( $text, $off, strlen( $str ) ) ); continue; }
+			if ( preg_match( '/ضمان/u', $before ) ) { $log[] = array( 'REVIEW', 'hub-second-warranty', $str, zf_ctx( $text, $off, strlen( $str ) ) ); continue; } // the sentence already has a warranty of its own: this one may belong to another service
 			$k = $ks[0]; $kind = 'HUB';
 		}
 		$new = 'main' === $which ? zf_phrase( $m, $k ) : $m['lead'] . zf_policy()[ $k ]['dur'];
@@ -203,8 +209,12 @@ function zf_review_hits( $text ) {
 	$R = zf_re(); $P = zf_policy(); $o = array();
 	$plain = zf_plain( preg_replace( '#<th\b.*?</th>#isu', ' ', (string) $text ) ); // header cells («مدة الضمان») are not statements
 	foreach ( $P as $p ) { $plain = str_replace( array( $p['acc'], $p['nom'], 'الضمان: ' . $p['bare'], $p['bare'] ), ' ', $plain ); } // the approved phrases are not leftovers
-	if ( preg_match_all( $R['review'], $plain, $m ) ) {
-		foreach ( array_unique( $m[0] ) as $h ) { if ( ! preg_match( '/متابعة/u', $h ) ) { $o[] = mb_substr( $h, 0, 140 ); } } // the free follow-up is not a warranty
+	if ( preg_match_all( $R['review'], $plain, $m, PREG_OFFSET_CAPTURE ) ) {
+		$seen = array();
+		foreach ( $m[0] as $hit ) {
+			if ( preg_match( '/متابعة/u', $hit[0] ) || isset( $seen[ $hit[0] ] ) ) { continue; } // the free follow-up is not a warranty
+			$seen[ $hit[0] ] = 1; $o[] = array( mb_substr( $hit[0], 0, 140 ), zf_ctx( $plain, $hit[1], strlen( $hit[0] ) ) );
+		}
 	}
 	return $o;
 }
@@ -268,13 +278,28 @@ function zf_fix_value( $v, $key, $hubs, $meta_key, $path = '' ) {
 	$s = $v;
 	if ( $key && '_zad_warranty' === $meta_key && '' === $path ) { // the short warranty field of a policy page = the policy
 		$P = zf_policy();
-		if ( trim( $s ) !== $P[ $key ]['nom'] ) { $log[] = array( 'AUTO', 'field:_zad_warranty', $s, $P[ $key ]['nom'] ); }
-		return array( $P[ $key ]['nom'], $log );
+		$new = $P[ $key ]['nom'];
+		if ( preg_match( '/(?:جلسة|زيارة)[\s\x{00A0}]+(?:المتابعة|متابعة)[^|،,\n]*|متابعة[\s\x{00A0}]+مجانية[^|،,\n]*|إعادة[\s\x{00A0}]+المعالجة[^|،,\n]*/u', $s, $fm ) ) { $new .= ' مع ' . trim( preg_replace( '/^مع[\s\x{00A0}]+/u', '', $fm[0] ) ); } // the free follow-up stays, as part of the service
+		if ( trim( $s ) !== $new ) { $log[] = array( 'AUTO', 'field:_zad_warranty', $s, $new ); }
+		return array( $new, $log );
 	}
 	if ( '_zad_spec' === $meta_key ) { list( $s, $l ) = zf_fix_spec( $s, $key ); foreach ( $l as $e ) { $log[] = $e; } }
 	if ( in_array( $meta_key, array( '_zad_packages', '_zad_prices', '_zad_sc_offers' ), true ) ) { list( $s, $l ) = zf_fix_cells( $s, $key ); foreach ( $l as $e ) { $log[] = $e; } }
 	list( $s, $l ) = zf_fix_text( $s, $key, $hubs ); foreach ( $l as $e ) { $log[] = $e; }
 	return array( $s, $log );
+}
+
+/** Hand-written replacements (zad-fix-manual.json: [{"id":25793,"field":"post_content","find":"…","replace":"…"}]); exact text, per page. */
+function zf_manual( $v, $rules, $field, &$hit, $path = '' ) {
+	$log = array();
+	if ( is_array( $v ) ) { foreach ( $v as $k => $x ) { list( $nv, $l ) = zf_manual( $x, $rules, $field, $hit, $path . '/' . $k ); $v[ $k ] = $nv; foreach ( $l as $e ) { $log[] = $e; } } return array( $v, $log ); }
+	if ( ! is_string( $v ) || '' === $v ) { return array( $v, $log ); }
+	foreach ( $rules as $i => $r ) {
+		if ( '' !== (string) ( $r['field'] ?? '' ) && false === strpos( $field, $r['field'] ) ) { continue; }
+		$n = substr_count( $v, $r['find'] );
+		if ( $n ) { $v = str_replace( $r['find'], $r['replace'], $v ); $hit[ $i ] = ( $hit[ $i ] ?? 0 ) + $n; for ( $q = 0; $q < $n; $q++ ) { $log[] = array( 'MANUAL', 'manual', $r['find'], $r['replace'] ); } }
+	}
+	return array( $v, $log );
 }
 
 if ( defined( 'ZADFIX_LIB' ) ) { return; }
@@ -305,6 +330,12 @@ function zf_reset_yoast( $id ) { // Yoast keeps its own copy of title/descriptio
 	if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $t ) ) === $t ) { $wpdb->delete( $t, array( 'object_id' => $id, 'object_type' => 'post' ) ); }
 }
 
+$MAN = array(); $man_file = getenv( 'ZAD_MANUAL' ) ?: __DIR__ . '/zad-fix-manual.json'; $man_all = array(); $man_hit = array();
+if ( is_readable( $man_file ) ) {
+	$mj = json_decode( (string) file_get_contents( $man_file ), true );
+	foreach ( (array) $mj as $i => $r ) { if ( ! empty( $r['id'] ) && isset( $r['find'], $r['replace'] ) && '' !== $r['find'] ) { $MAN[ (int) $r['id'] ][ $i ] = $r; $man_all[ $i ] = $r; } }
+	echo 'manual replacements loaded: ' . count( $man_all ) . " ($man_file)\n";
+}
 $skip_types = array( 'revision', 'attachment', 'nav_menu_item', 'customize_changeset', 'oembed_cache', 'wp_global_styles', 'wp_template', 'wp_template_part', 'wp_navigation', 'zad_lead', 'user_request' );
 $ph = implode( ',', array_fill( 0, count( $skip_types ), '%s' ) );
 $posts = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_type, post_status, post_name, post_title, post_excerpt, post_content FROM {$wpdb->posts} WHERE post_status IN ('publish','draft','pending','future') AND post_type NOT IN ($ph) ORDER BY ID", $skip_types ) );
@@ -322,19 +353,23 @@ foreach ( $posts as $p ) {
 	$key = zf_page_key( $p->post_title, $p->post_name );
 	$upd = array();
 	foreach ( array( 'post_title', 'post_excerpt', 'post_content' ) as $col ) {
-		list( $new, $log ) = zf_fix_value( $p->$col, $key, $hubs, $col );
-		foreach ( $log as $e ) { if ( in_array( $e[0], array( 'MIXED', 'REVIEW' ), true ) ) { $review[] = array( $e[0], $e[1], $p->post_type, $p->ID, $p->post_status, rawurldecode( $p->post_name ), $col, $e[2], '' ); } else { $rec( $e[0], $e[1], $p, $col, $e[2], $e[3] ); } }
+		$src = $p->$col; $log0 = array();
+		if ( ! empty( $MAN[ (int) $p->ID ] ) ) { list( $src, $log0 ) = zf_manual( $src, $MAN[ (int) $p->ID ], $col, $man_hit ); }
+		list( $new, $log ) = zf_fix_value( $src, $key, $hubs, $col ); $log = array_merge( $log0, $log );
+		foreach ( $log as $e ) { if ( in_array( $e[0], array( 'MIXED', 'REVIEW' ), true ) ) { $review[] = array( $e[0], $e[1], $p->post_type, $p->ID, $p->post_status, rawurldecode( $p->post_name ), $col, $e[2], $e[3] ); } else { $rec( $e[0], $e[1], $p, $col, $e[2], $e[3] ); } }
 		if ( $new !== $p->$col ) { $upd[ $col ] = $new; }
-		foreach ( zf_review_hits( $new ) as $h ) { if ( ! $key ) { continue; } $review[] = array( 'REVIEW', 'leftover', $p->post_type, $p->ID, $p->post_status, rawurldecode( $p->post_name ), $col, $h, '' ); }
+		foreach ( zf_review_hits( $new ) as $h ) { if ( ! $key ) { continue; } $review[] = array( 'REVIEW', 'leftover', $p->post_type, $p->ID, $p->post_status, rawurldecode( $p->post_name ), $col, $h[0], $h[1] ); }
 	}
 	if ( $upd ) { $undo_posts[ $p->ID ] = array_intersect_key( array( 'post_title' => $p->post_title, 'post_excerpt' => $p->post_excerpt, 'post_content' => $p->post_content ), $upd ); }
 	$mupd = array();
 	foreach ( (array) ( $by_post[ (int) $p->ID ] ?? array() ) as $mr ) {
 		$orig = $mr->meta_value; $val = maybe_unserialize( $orig );
-		list( $nv, $log ) = zf_fix_value( $val, $key, $hubs, $mr->meta_key );
-		foreach ( $log as $e ) { if ( in_array( $e[0], array( 'MIXED', 'REVIEW' ), true ) ) { $review[] = array( $e[0], $e[1], $p->post_type, $p->ID, $p->post_status, rawurldecode( $p->post_name ), $mr->meta_key, $e[2], '' ); } else { $rec( $e[0], $e[1], $p, $mr->meta_key, $e[2], $e[3] ); } }
+		$log0 = array();
+		if ( ! empty( $MAN[ (int) $p->ID ] ) ) { list( $val, $log0 ) = zf_manual( $val, $MAN[ (int) $p->ID ], $mr->meta_key, $man_hit ); }
+		list( $nv, $log ) = zf_fix_value( $val, $key, $hubs, $mr->meta_key ); $log = array_merge( $log0, $log );
+		foreach ( $log as $e ) { if ( in_array( $e[0], array( 'MIXED', 'REVIEW' ), true ) ) { $review[] = array( $e[0], $e[1], $p->post_type, $p->ID, $p->post_status, rawurldecode( $p->post_name ), $mr->meta_key, $e[2], $e[3] ); } else { $rec( $e[0], $e[1], $p, $mr->meta_key, $e[2], $e[3] ); } }
 		$flat = is_string( $nv ) ? $nv : wp_json_encode( $nv, JSON_UNESCAPED_UNICODE );
-		foreach ( zf_review_hits( $flat ) as $h ) { if ( ! $key ) { continue; } $review[] = array( 'REVIEW', 'leftover', $p->post_type, $p->ID, $p->post_status, rawurldecode( $p->post_name ), $mr->meta_key, $h, '' ); }
+		foreach ( zf_review_hits( $flat ) as $h ) { if ( ! $key ) { continue; } $review[] = array( 'REVIEW', 'leftover', $p->post_type, $p->ID, $p->post_status, rawurldecode( $p->post_name ), $mr->meta_key, $h[0], $h[1] ); }
 		$new_raw = is_string( $nv ) ? $nv : maybe_serialize( $nv );
 		if ( $new_raw !== $orig ) { $mupd[ (int) $mr->meta_id ] = $new_raw; $undo_meta[ (int) $mr->meta_id ] = $orig; }
 	}
@@ -367,10 +402,11 @@ if ( $apply ) {
 /* ---------- report ---------- */
 $csv = "$dir/fix-" . ( $apply ? 'APPLIED' : 'dryrun' ) . "-$stamp.csv";
 $fh  = fopen( $csv, 'w' ); fwrite( $fh, "\xEF\xBB\xBF" );
-fputcsv( $fh, array( 'kind', 'rule', 'object_type', 'object_id', 'status', 'slug', 'field', 'before', 'after' ) );
+fputcsv( $fh, array( 'kind', 'rule', 'object_type', 'object_id', 'status', 'slug', 'field', 'before', 'after (or context for REVIEW/MIXED)' ) );
 foreach ( array_merge( $changes, $review ) as $r ) { fputcsv( $fh, $r ); }
 fclose( $fh );
 
+foreach ( $man_all as $i => $r ) { if ( empty( $man_hit[ $i ] ) ) { echo "!! manual replacement NOT FOUND (page #{$r['id']}): " . mb_substr( $r['find'], 0, 60 ) . "\n"; } }
 $ctr = array();
 foreach ( $changes as $c ) { $ctr[ $c[0] ][ $c[1] ] = ( $ctr[ $c[0] ][ $c[1] ] ?? 0 ) + 1; }
 $rev = array();
