@@ -66,3 +66,5 @@
 .zt-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:0 0 1.25rem}.zt-facts div{padding:10px 14px;border:1px solid var(--zt-line);border-radius:var(--zt-r);background:var(--surface,#fff)}.zt-facts dt{font-size:.85rem;color:var(--muted,#56656f)}.zt-facts dd{margin:0;font-weight:700}
 .zt-chart{margin:1rem 0;overflow-x:auto}.zt-chart svg{width:100%;min-width:560px;height:auto;border:1px solid var(--zt-line);border-radius:var(--zt-r)}
 .zt-report h2{margin-top:1.75rem}
+.zt-img{margin-top:1.5rem;padding-top:1rem;border-top:1px dashed var(--zt-line)}
+.zt-img__msg{margin:0;min-height:1.4em;font-weight:700}.zt-img__msg.is-err{color:#b32d2e}

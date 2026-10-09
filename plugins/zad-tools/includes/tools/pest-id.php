@@ -97,6 +97,7 @@ function zt_pid_render( $ctx ) {
 	}
 	echo '<label class="fld"><span>الحي (اختياري)</span><input type="text" name="hood" maxlength="60" value="' . zt_esc( $q['hood'] ) . '" autocomplete="off"></label>';
 	echo '<div class="zt-actions"><button class="btn btn--accent" type="submit">اعرف الحشرة</button></div></form>';
+	if ( function_exists( 'zt_img_section_html' ) ) { echo zt_img_section_html(); } // locked: prints nothing unless unlocked // phpcs:ignore WordPress.Security.EscapeOutput -- escaped inside
 }
 
 function zt_pid_result( $ctx ) {

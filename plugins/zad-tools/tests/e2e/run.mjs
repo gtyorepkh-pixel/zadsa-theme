@@ -9,7 +9,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const posted = [], batch = [];
+const posted = [], batch = [], images = [];
 // per-tool setting overrides (the moving tool stays closed until the owner fills the rooms table)
 const SET = { moving: { 'moving.rooms': '2 | 1 | 2 | 300-400\n4 | 2 | 4 | 600-800', 'moving.routes': 'riyadh | jeddah | 900', 'moving.floor_price': '20-30', 'moving.packing_price': '40-60' } };
 const server = http.createServer((req, res) => {
@@ -21,6 +21,7 @@ const server = http.createServer((req, res) => {
 	if (u.pathname === '/wp-json/zad/v1/token') { return send(200, 'application/json', JSON.stringify({ t: 'tok.123' })); }
 	if (u.pathname === '/wp-json/zad/v1/reminders' && req.method === 'POST') { let b = ''; req.on('data', (c) => b += c); req.on('end', () => { const j = JSON.parse(b); posted.push(j); send(j.consent ? 200 : 400, 'application/json', JSON.stringify(j.consent ? { ok: true } : { message: 'يلزم الموافقة' })); }); return; }
 	if (u.pathname === '/wp-json/zad/v1/reminders/batch' && req.method === 'POST') { let b = ''; req.on('data', (c) => b += c); req.on('end', () => { const j = JSON.parse(b); batch.push(j); send(j.consent ? 200 : 400, 'application/json', JSON.stringify(j.consent ? { ok: true, added: j.items.length, skipped: 0 } : { message: 'يلزم الموافقة' })); }); return; }
+	if (u.pathname === '/wp-json/zad/v1/pest-image' && req.method === 'POST') { const ch = []; req.on('data', (c) => ch.push(c)); req.on('end', () => { const b = Buffer.concat(ch); const t = b.toString('latin1'); images.push({ len: b.length, photo: /name="photo"/.test(t), type: (/name="photo"[^]*?Content-Type: ([\w\/]+)/.exec(t) || [])[1], consent: /name="consent_analyze"/.test(t), keep: /name="keep"/.test(t), tok: /name="t"\r\n\r\ntok\.123/.test(t) }); send(200, 'application/json', JSON.stringify({ ok: true, cards: [{ t: 'النمل الأبيض', u: '/pests/3/', p: 87, img: '', alt: '', svc: ['مكافحة النمل الأبيض', '/termite/'] }] })); }); return; }
 	if (u.pathname === '/favicon.ico') { res.writeHead(204); return res.end(); }
 	const f = path.join(root, u.pathname.replace(/^\/p\//, '/'));
 	if (f.startsWith(root + '/assets') && existsSync(f)) { return send(200, f.endsWith('.css') ? 'text/css' : 'application/javascript', readFileSync(f)); }
@@ -210,7 +211,30 @@ async function noJs(url, label, expect) {
 	ok(await p.locator('.zt-tblwrap table').count() >= 4, 'Report: data tables next to the charts (readable data)'); ok(errs.length === 0, 'Report: no console errors ' + errs.join('|'));
 	const scroll = await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1); ok(scroll, 'Report: no horizontal page scroll on a phone'); await p.screenshot({ path: '/tmp/zt-report.png', fullPage: true }); await ctx.close();
 }
+
+/* -------- image identification (locked feature, unlocked here with a mock provider) -------- */
+{
+	const OFF = base + '/t/pest-id/', ON = base + '/t/pest-id/?__set=' + encodeURIComponent(JSON.stringify({ 'pest-image.enabled': 1, 'pest-image.provider': 'e2e' }));
+	const c0 = await browser.newContext(); const p0 = await c0.newPage(); await p0.goto(OFF); ok(await p0.locator('[data-zt-image]').count() === 0 && !(await p0.content()).includes('ارفع صورة'), 'Image: locked → the page prints nothing about images'); await c0.close();
+	const nj = await browser.newContext({ javaScriptEnabled: false }); const pj = await nj.newPage(); await pj.goto(ON); ok(!(await pj.locator('[data-zt-image]').isVisible()), 'Image: JS-only section hidden without JS'); await nj.close();
+	const ctx = await browser.newContext({ viewport: { width: 390, height: 800 } }); const p = await ctx.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(String(e))); p.on('console', (m) => { if (m.type() === 'error') { errs.push(m.text()); } });
+	await p.addInitScript(() => { const a = FormData.prototype.append; window.__up = []; FormData.prototype.append = function (k, v, n) { if (v instanceof Blob) { window.__up.push({ k, type: v.type, size: v.size, name: n }); createImageBitmap(v).then((b) => { window.__up[window.__up.length - 1].w = b.width; window.__up[window.__up.length - 1].h = b.height; }).catch(() => {}); } return a.apply(this, arguments); }; });
+	await p.goto(ON); await p.waitForFunction(() => window.ZT && document.querySelector('[data-zt-image]'));
+	ok(await p.locator('[data-zt-image]').isVisible(), 'Image: unlocked → section visible with JS'); ok(!(await p.isChecked('[data-zt-image] [name=consent_analyze]')) && !(await p.isChecked('[data-zt-image] [name=keep]')), 'Image: both consents unchecked');
+	ok(/خدمة تحليل خارجية/.test(await p.textContent('[data-zt-image]')), 'Image: tells the visitor the photo goes to an external analysis service');
+	// a big photo made in the browser (3000×2000 noisy PNG)
+	const big = await p.evaluate(() => { const c = document.createElement('canvas'); c.width = 3000; c.height = 2000; const g = c.getContext('2d'); const d = g.createImageData(3000, 2000); for (let i = 0; i < d.data.length; i += 4) { d.data[i] = (i * 7) % 255; d.data[i + 1] = (i * 13) % 251; d.data[i + 2] = (i * 29) % 247; d.data[i + 3] = 255; } g.putImageData(d, 0, 0); return c.toDataURL('image/png').split(',')[1]; });
+	const buf = Buffer.from(big, 'base64'); ok(buf.length > 1048576, 'Image: test photo is big (' + (buf.length / 1048576).toFixed(1) + ' MB)');
+	await p.setInputFiles('[data-zt-image] [name=photo]', { name: 'bug.png', mimeType: 'image/png', buffer: buf });
+	await p.click('[data-zt-image] button[type=submit]');await p.waitForSelector('[data-zt-image] .is-err'); ok(/يلزم الموافقة/.test(await p.textContent('.zt-img__msg')) && images.length === 0, 'Image: nothing is uploaded without consent');
+	await p.check('[data-zt-image] [name=consent_analyze]'); await p.click('[data-zt-image] button[type=submit]'); await p.waitForSelector('#zt-result .zt-cards__i');
+	ok(images.length === 1 && images[0].photo && images[0].consent && !images[0].keep && images[0].tok && images[0].type === 'image/jpeg', 'Image: one multipart upload — jpeg, token, consent, NO keep flag ' + JSON.stringify(images[0]));
+	ok(images[0].len < buf.length / 4, 'Image: shrunk in the browser before upload (' + (buf.length / 1048576).toFixed(1) + ' MB → ' + (images[0].len / 1024).toFixed(0) + ' KB)');
+	const up = await p.evaluate(() => window.__up[0]); ok(up && up.type === 'image/jpeg' && Math.max(up.w, up.h) <= 1600 && up.w / up.h > 1.45 && up.w / up.h < 1.55, 'Image: ≤1600px on the long side, aspect ratio kept (' + (up && up.w) + '×' + (up && up.h) + ')');
+	const t = await p.textContent('#zt-result'); ok(/يبدو أقرب إلى: النمل الأبيض/.test(t) && /نسبة التطابق: 87%/.test(t) && /تقريبي/.test(t), 'Image: result shown as approximate with the matched pest'); ok(await p.locator('#zt-result a.btn--wa').count() === 1 && await p.locator('#zt-result a.btn[href="/termite/"]').count() === 1, 'Image: WhatsApp-to-technician + service button');
+	ok(errs.length === 0, 'Image: no console errors ' + errs.join('|')); await ctx.close();
+}
 /* -------- weight -------- */
-for (const f of ['zt-core.js', 'ac-size.js', 'after-spray.js', 'tank.js', 'ac-power.js', 'moving.js', 'plan.js', 'coverage.js', 'pest-id.js']) { const kb = readFileSync(root + '/assets/js/' + f).length / 1024; ok(kb < 30, f + ' ' + kb.toFixed(1) + ' KB (<30)'); }
+for (const f of ['zt-core.js', 'ac-size.js', 'after-spray.js', 'tank.js', 'ac-power.js', 'moving.js', 'plan.js', 'coverage.js', 'pest-id.js', 'pest-image.js']) { const kb = readFileSync(root + '/assets/js/' + f).length / 1024; ok(kb < 30, f + ' ' + kb.toFixed(1) + ' KB (<30)'); }
 await browser.close(); server.close();
 console.log(fail ? `\n${fail} of ${n} FAILED` : `e2e: all ${n} passed`); process.exit(fail ? 1 : 0);

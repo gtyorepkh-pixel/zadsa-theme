@@ -121,13 +121,7 @@ class ZT_Channel_Email implements ZT_Reminder_Channel {
 		return wp_mail( $r->email, $subject, $m, array( 'Content-Type: text/plain; charset=UTF-8' ) ) ? true : new WP_Error( 'mail', 'فشل إرسال الإيميل.' );
 	}
 }
-/** WhatsApp Business API: an interface only. Automatic sending needs approved message templates and the customer's consent; no provider is wired. */
-class ZT_Channel_WABA implements ZT_Reminder_Channel {
-	public function id() { return 'waba'; }
-	public function label() { return 'WhatsApp Business API (غير مربوط)'; }
-	public function enabled() { return false; }
-	public function send( $r, $m ) { return new WP_Error( 'not_configured', 'لم يُربط مزود WhatsApp Business API بعد.' ); }
-}
+/* ZT_Channel_WABA (WhatsApp Business API) lives in includes/waba.php: locked by a setting, needs a provider registered by filter and approved templates. */
 function zt_channels() { return apply_filters( 'zad_tools_channels', array( new ZT_Channel_Queue(), new ZT_Channel_Email(), new ZT_Channel_WABA() ) ); }
 
 /* ---------------------------------------- daily job ---------------------------------------- */
@@ -136,18 +130,24 @@ add_action( 'init', function () {
 	if ( ! wp_next_scheduled( 'zad_tools_daily' ) ) { wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'zad_tools_daily' ); }
 } );
 
-add_action( 'zad_tools_daily', function () {
+/** Automatic channels (email, WhatsApp Business API when unlocked): returns how many reminders were delivered by an adapter. The queue is manual and is skipped. */
+function zt_reminders_send_auto() {
 	global $wpdb;
-	$t = zt_reminders_table(); $sent = 0; $anon = 0;
-	foreach ( zt_channels() as $ch ) { // automatic channels only (the queue is manual)
+	$t = zt_reminders_table(); $sent = 0;
+	foreach ( zt_channels() as $ch ) {
 		if ( 'queue' === $ch->id() || ! $ch->enabled() ) { continue; }
-		foreach ( zt_reminders_due( 100 ) as $r ) {
+		foreach ( zt_reminders_due( 'waba' === $ch->id() ? max( 1, (int) zt_opt( 'waba.max_per_run' ) ) : 100 ) as $r ) {
 			if ( 'email' === $ch->id() && '' === $r->email ) { continue; }
 			if ( true === $ch->send( $r, zt_reminder_message( $r ) ) ) {
 				$wpdb->update( $t, array( 'status' => 'sent', 'sent_at' => current_time( 'mysql' ) ), array( 'id' => (int) $r->id ) ); $sent++;
 			}
 		}
 	}
+	return $sent;
+}
+
+add_action( 'zad_tools_daily', function () {
+	$sent = zt_reminders_send_auto();
 	$anon = zt_reminders_retention();
 	update_option( 'zad_tools_last_cron', array( 'at' => time(), 'sent' => $sent, 'anonymised' => $anon ), false );
 } );

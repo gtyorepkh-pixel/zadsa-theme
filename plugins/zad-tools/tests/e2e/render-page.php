@@ -6,8 +6,10 @@ function get_privacy_policy_url() { return '/privacy/'; }
 function zad_whatsapp( $x = 0 ) { return '966555000111'; }
 function zad_min_price( $rows ) { return $rows ? min( $rows ) : null; } function zad_price_rows() { return array(); }
 require ZT_DIR . 'includes/core.php'; require ZT_DIR . 'includes/ui.php'; require ZT_DIR . 'includes/settings.php'; require ZT_DIR . 'includes/reminders.php'; require ZT_DIR . 'includes/tool-page.php';
-require ZT_DIR . 'includes/tools/ac-size.php'; require ZT_DIR . 'includes/tools/after-spray.php'; require ZT_DIR . 'includes/tools/tank.php'; require ZT_DIR . 'includes/tools/ac-power.php'; require ZT_DIR . 'includes/tools/moving.php'; require ZT_DIR . 'includes/tools/plan.php'; require ZT_DIR . 'includes/tools/coverage.php'; require ZT_DIR . 'includes/pests.php'; require ZT_DIR . 'includes/tools/pest-id.php'; require ZT_DIR . 'includes/report.php';
+require ZT_DIR . 'includes/tools/ac-size.php'; require ZT_DIR . 'includes/tools/after-spray.php'; require ZT_DIR . 'includes/tools/tank.php'; require ZT_DIR . 'includes/tools/ac-power.php'; require ZT_DIR . 'includes/tools/moving.php'; require ZT_DIR . 'includes/tools/plan.php'; require ZT_DIR . 'includes/tools/coverage.php'; require ZT_DIR . 'includes/pests.php'; require ZT_DIR . 'includes/tools/pest-id.php'; require ZT_DIR . 'includes/report.php'; require ZT_DIR . 'includes/image-id.php';
 date_default_timezone_set( 'Asia/Riyadh' ); // the site timezone (the JS side uses Asia/Riyadh too)
+class E2EVision implements ZT_Vision_Provider { function id() { return 'e2e'; } function label() { return 'e2e'; } function key_constant() { return 'ZAD_E2E_KEY'; } function supports( $m ) { return true; } function identify( $b, $m, $c ) { return array(); } }
+define( 'ZAD_E2E_KEY', 'k' ); add_filter( 'zt_vision_providers', function ( $p ) { $p[] = new E2EVision(); return $p; } );
 $slug = $argv[1]; $GLOBALS['SLUG'] = $slug; parse_str( $argv[2] ?? '', $_GET );
 $a = array(); foreach ( zt_settings_registry() as $tab => $t ) { foreach ( $t['fields'] as $k => $f ) { if ( ! empty( $f['approval'] ) ) { $a[ $tab . '.' . $k ] = array( 'by' => 1 ); } } } update_option( 'zad_tools_approved', $a );
 if ( isset( $argv[4] ) && $argv[4] ) { update_option( 'zad_tools_opts', json_decode( $argv[4], true ) ); } // setting overrides for a test
@@ -47,4 +49,4 @@ echo '<link rel="stylesheet" href="/assets/css/zt-tool.css">' . ( ! empty( $def[
 echo '<script>document.documentElement.className+=" zt-js"</script><script>window.dataLayer=[];window.__cls=0;try{new PerformanceObserver(function(l){l.getEntries().forEach(function(e){if(!e.hadRecentInput){window.__cls+=e.value}})}).observe({type:"layout-shift",buffered:true})}catch(e){}</script></head><body><main class="zt-page">';
 echo '<section class="sec zt-hero"><div class="wrap wrap--narrow"><h1>' . zt_esc( $title ) . '</h1><p class="zt-lead">' . zt_esc( $ctx['intro'] ) . '</p></div></section>';
 zt_render_body( $ctx );
-echo '</main><script>var ZT_CFG=' . json_encode( $cfg, JSON_UNESCAPED_UNICODE ) . ';</script><script src="/assets/js/zt-core.js" defer></script><script src="/assets/js/' . $slug . '.js" defer></script></body></html>';
+echo '</main><script>var ZT_CFG=' . json_encode( $cfg, JSON_UNESCAPED_UNICODE ) . ';</script><script src="/assets/js/zt-core.js" defer></script><script src="/assets/js/' . $slug . '.js" defer></script>' . ( function_exists( 'zt_img_available' ) && 'pest-id' === $slug && zt_img_available() ? '<script src="/assets/js/pest-image.js" defer></script>' : '' ) . '</body></html>';

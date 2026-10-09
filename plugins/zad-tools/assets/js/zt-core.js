@@ -190,6 +190,14 @@
 			return fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data), credentials: 'omit' });
 		}).then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); });
 	};
+	/** Multipart upload with the cache-safe token (the browser sets the boundary). Resolves { ok, body }. */
+	ZT.postForm = function (path, fd) {
+		var base = ZT.cfg.rest || '/wp-json/zad/v1/';
+		return fetch(base + 'token', { cache: 'no-store', credentials: 'omit' }).then(function (r) { return r.json(); }).then(function (j) {
+			fd.append('t', j.t);
+			return fetch(base + path, { method: 'POST', body: fd, credentials: 'omit' });
+		}).then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); });
+	};
 	ZT.postReminder = function (data) {
 		data.tool = ZT.cfg.tool;
 		return ZT.post('reminders', data).then(function (res) { if (res.ok) { ZT.ev('reminder_optin', {}); } return res; });
