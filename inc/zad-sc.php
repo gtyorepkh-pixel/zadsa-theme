@@ -48,7 +48,7 @@ function zsc_defaults() {
 			'same_as'       => array( 'https://www.facebook.com/zadksa2', 'https://x.com/zadksa2', 'https://www.instagram.com/zadksa2/', 'https://www.youtube.com/channel/UC5jWpqhaDYs9MO7CMTx-bFA' ),
 			'area_served'   => array( array( 'City', 'الرياض' ), array( 'City', 'جدة' ), array( 'City', 'الدمام' ), array( 'City', 'القطيف' ), array( 'AdministrativeArea', 'القصيم' ), array( 'City', 'نجران' ) ),
 			'hours'         => array(
-				array( array( 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday' ), '08:00', '22:00' ),
+				array( array( 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday' ), '08:00', '23:00' ),
 			),
 			'knows_about'   => array( 'مكافحة الحشرات', 'تنظيف الخزانات', 'تنظيف وصيانة المكيفات', 'تنظيف الكنب والمفروشات', 'تنظيف المنازل', 'نقل الأثاث', 'تخزين الأثاث', 'جلي البلاط والرخام', 'تسليك المجاري' ),
 		),
@@ -100,7 +100,8 @@ function zsc_settings() {
 	if ( is_array( $logo ) && ! empty( $logo['url'] ) ) { $b['logo'] = $logo['url']; }
 	$ph = zad_intl_number( zad_opt( 'memopt_phone' ) );
 	if ( $ph ) { $b['telephone'] = '+' . $ph; }
-	$b['email']       = zad_opt( 'memopt_mail', $b['email'] );
+	$mail             = zad_opt( 'memopt_mail', $b['email'] );
+	if ( ! preg_match( '/@[^@]*\.(?:local|test|localhost|invalid)$/i', (string) $mail ) ) { $b['email'] = $mail; } // a development address (info@zadksa.local) never reaches the schema
 	$pr = zad_opt( 'zad_price_range', '' );
 	$b['price_range'] = ( '' !== trim( (string) $pr ) && '100–500 ر.س' !== $pr ) ? trim( (string) $pr ) : ''; // only what is written; the old theme default is not real data, and «$$» is gone
 	$b['wikidata']    = trim( (string) zad_opt( 'zad_wikidata', '' ) );
@@ -131,7 +132,7 @@ function zsc_settings() {
 
 	$hours = array();
 	$hs = zad_opt( 'zad_hours_spec', '' );
-	if ( false !== strpos( $hs, 'Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday | 08:00 | 22:00' ) && 1 === count( zad_lines( $hs ) ) ) { $hs = ''; } // old theme default
+	if ( false !== strpos( $hs, 'Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday | 08:00 | 22:00' ) && 1 === count( zad_lines( $hs ) ) ) { $hs = ''; } // previous theme default (08:00–22:00) → the current one (08:00–23:00)
 	foreach ( zad_lines( $hs ) as $l ) {
 		$c = array_map( 'trim', explode( '|', $l ) );
 		if ( count( $c ) >= 3 ) { $hours[] = array( array_values( array_filter( array_map( 'trim', explode( ',', $c[0] ) ) ) ), $c[1], $c[2] ); }
@@ -502,6 +503,12 @@ function zsc_service_nodes( $post ) {
 	if ( $image ) { $service['image'] = $image; }
 	$spec = array(); // «البطاقة الفنية»: the visible rows, nothing else
 	foreach ( zad_spec_rows( $post->ID ) as $r ) { $spec[] = array( '@type' => 'PropertyValue', 'name' => $r[0], 'value' => $r[1] ); }
+	$wfix = zad_warranty_fixed( $post->ID ); // fixed warranty policy: always stated as a property, even when the page has no spec row for it
+	if ( '' !== $wfix ) {
+		$has = false;
+		foreach ( $spec as $i => $sp ) { if ( preg_match( '/^(مدة\s+)?الضمان/u', $sp['name'] ) ) { $has = true; $spec[ $i ]['value'] = $wfix; } } // the visible row says «مكتوب 15 عاماً»; the schema says the whole phrase
+		if ( ! $has ) { $spec[] = array( '@type' => 'PropertyValue', 'name' => 'الضمان', 'value' => $wfix ); }
+	}
 	if ( $spec ) { $service['additionalProperty'] = $spec; }
 	$aud = trim( (string) get_post_meta( $post->ID, '_zad_audience', true ) );
 	if ( '' !== $aud ) { $service['audience'] = array( '@type' => 'Audience', 'audienceType' => $aud ); }

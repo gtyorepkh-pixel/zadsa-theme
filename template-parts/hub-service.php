@@ -22,7 +22,7 @@ foreach ( $svcs as $sv ) {
 		'tag'  => get_post_meta( $sv->ID, '_zad_tagline', true ) ?: wp_trim_words( get_the_excerpt( $sv ), 22 ),
 		'min'  => $min,
 		'dur'  => get_post_meta( $sv->ID, '_zad_duration', true ),
-		'war'  => get_post_meta( $sv->ID, '_zad_warranty', true ),
+		'war'  => zad_warranty_text( $sv->ID ),
 		'icon' => get_post_meta( $sv->ID, '_zad_icon', true ) ?: 'sparkle',
 	);
 	foreach ( (array) get_the_terms( $sv->ID, 'service_area' ) as $t ) {

@@ -42,7 +42,7 @@ while ( have_posts() ) :
 	$phone    = zad_phone( $id );
 	$wa       = zad_wa_link( 'مرحباً، أرغب بطلب خدمة: ' . $title, $id );
 	$facts    = array_filter( array(
-		array( 'shield', $m( 'warranty' ) ),
+		array( 'shield', zad_warranty_text( $id ) ),
 		array( 'clock', $m( 'duration' ) ),
 		array( 'bolt', $m( 'response' ) ),
 		array( 'check', $features ? $features[0] : '' ),
@@ -292,9 +292,10 @@ while ( have_posts() ) :
 	<?php $ctx( 0 ); ?>
 
 	<!-- 11e. Warranty -->
-	<?php if ( $wrows ) : ?>
+	<?php $wfix = zad_warranty_fixed( $id ); if ( $wrows || '' !== $wfix ) : ?>
 	<section class="sec sec--cream"><div class="wrap wrap--narrow">
 		<?php echo zad_sec_head( $id, 'warranty', 'badge' ); // phpcs:ignore ?>
+		<?php if ( '' !== $wfix ) : ?><p class="wlead"><?php echo zad_icon( 'shield', 20 ); // phpcs:ignore ?> <b><?php echo esc_html( $wfix ); ?></b></p><?php endif; ?>
 		<div class="wrows"><?php foreach ( $wrows as $w ) : ?><div class="wrow"><span class="icard__ic"><?php echo zad_icon( 'shield', 24 ); // phpcs:ignore ?></span><div><h3><?php echo esc_html( $w['t'] ); ?></h3><p><?php echo esc_html( $w['d'] ); ?></p></div></div><?php endforeach; ?></div>
 	</div></section>
 	<?php endif; ?>

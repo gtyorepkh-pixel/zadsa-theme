@@ -8,7 +8,7 @@ $unit  = get_post_meta( $id, '_zad_price_unit', true ) ?: 'ريال';
 $badge = get_post_meta( $id, '_zad_badge', true );
 $icon  = get_post_meta( $id, '_zad_icon', true ) ?: 'sparkle';
 $rate  = get_post_meta( $id, '_zad_rating', true );
-$warr  = get_post_meta( $id, '_zad_warranty', true );
+$warr  = zad_warranty_text( $id );
 $terms = get_the_terms( $id, 'service_cat' );
 $wa    = zad_wa_link( 'مرحباً، أرغب بطلب خدمة: ' . zad_card_title( $id ), $id );
 ?>

@@ -67,7 +67,7 @@ function zad_pk_catalog( $id ) {
 		if ( '' !== $p['cat'] ) { $o['category'] = $p['cat']; } // only when the 9th column is filled
 		$o += zad_price_offer( $p, zad_pk_is_monthly( $p['unit'] ) ); // number / range / «من X» / nothing for a quote
 		if ( ! empty( $city['name'] ) && 'default' !== $city['source'] ) { $o['areaServed'] = array( '@type' => 'City', 'name' => $city['name'] ); }
-		$w = zad_pk_warranty( $p['warranty'] );
+		$w = zad_warranty_pkg_promise( $p['warranty'], $id );
 		if ( $w ) { $o['warranty'] = array( '@type' => 'WarrantyPromise', 'durationOfWarranty' => array( '@type' => 'QuantitativeValue', 'value' => $w[0], 'unitCode' => $w[1] ) ); }
 		$items[] = $o;
 	}
@@ -116,7 +116,8 @@ function zad_pk_html( $id ) {
 		$o  .= '<h3>' . esc_html( $p['name'] ) . '</h3>';
 		if ( '' !== $p['desc'] ) { $o .= '<p class="pkgx__d">' . esc_html( $p['desc'] ) . '</p>'; }
 		$o  .= zad_pk_price_html( $p );
-		if ( '' !== $p['warranty'] ) { $o .= '<div class="pkgx__w">' . ( 'pest' === $style ? zad_icon( 'shield', 16 ) . ' ' : '' ) . 'ضمان: ' . esc_html( $p['warranty'] ) . '</div>'; }
+		$pw = zad_warranty_pkg( $p['warranty'], $id );
+		if ( '' !== $pw ) { $o .= '<div class="pkgx__w">' . ( 'pest' === $style ? zad_icon( 'shield', 16 ) . ' ' : '' ) . 'ضمان: ' . esc_html( $pw ) . '</div>'; }
 		if ( $p['feat'] ) { $o .= '<ul class="pkgx__f">'; foreach ( $p['feat'] as $f ) { $o .= '<li>' . zad_icon( 'check', 16 ) . '<span>' . esc_html( $f ) . '</span></li>'; } $o .= '</ul>'; }
 		$msg = 'السلام عليكم، أبغى باقة ' . $p['name'] . ' — ' . $svc . ( ( '' !== $city && false === mb_strpos( $svc, $city ) ) ? ' — ' . $city : '' ); // the city only when the service name does not already say it
 		$at  = zad_wa_attrs( $msg, $id );

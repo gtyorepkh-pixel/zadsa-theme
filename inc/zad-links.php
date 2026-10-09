@@ -75,6 +75,14 @@ function zad_spec_rows( $id ) {
 		$c = array_map( 'trim', explode( '|', $l, 2 ) );
 		if ( 2 === count( $c ) && '' !== $c[0] && '' !== $c[1] ) { $rows[] = array( $c[0], $c[1] ); }
 	}
+	$fixed = zad_warranty_bare( $id ); // a service with a fixed warranty policy: its «الضمان» row always shows the policy (without the repeated word «ضمان»)
+	if ( '' !== $fixed ) {
+		$done = false;
+		foreach ( $rows as $i => $r ) {
+			if ( preg_match( '/^(مدة\s+)?الضمان/u', $r[0] ) ) { $rows[ $i ][1] = $fixed; $done = true; }
+		}
+		if ( ! $done && $rows ) { $rows[] = array( 'الضمان', $fixed ); }
+	}
 	return $rows;
 }
 

@@ -388,7 +388,7 @@ function zad_hood_render( $id ) {
 			</div>
 			<?php if ( $parent ) : ?><p class="hd-up"><a href="<?php echo esc_url( get_permalink( $parent ) ); ?>">← العودة إلى <?php echo esc_html( get_the_title( $parent ) ); ?></a></p><?php endif; ?>
 		</div>
-		<?php echo zad_quote_form( array( 'service_id' => $id, 'id' => 'fq', 'title' => 'اترك بياناتك ونتصل بك', 'sub' => 'رد خلال دقائق', 'area' => $D['hood'] ) ); // phpcs:ignore ?>
+		<?php echo zad_quote_form( array( 'service_id' => $id, 'id' => 'fq', 'title' => 'اترك بياناتك ونتصل بك', 'sub' => 'رد خلال دقائق', 'area' => $D['city'], 'hood' => $D['hood'] ) ); // phpcs:ignore ?>
 	</div></section>
 </main>
 	<?php

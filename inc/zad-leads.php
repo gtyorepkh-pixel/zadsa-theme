@@ -11,8 +11,16 @@ function zad_quote_form( $args = array() ) {
 		'sub'        => 'نرد عليك خلال دقائق',
 		'id'         => 'q' . wp_rand( 100, 999 ),
 		'compact'    => false,
+		'hood'       => '', // neighbourhood pages: the district name, sent as its own field (the «area» select stays the city)
 	) );
-	$services = get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 100, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
+	// On a service / neighbourhood page the form is bound to THIS page: the service field is read-only (+ hidden ID), never a list.
+	$locked = null;
+	if ( $a['service_id'] ) {
+		$lp = get_post( (int) $a['service_id'] );
+		if ( $lp && 'publish' === $lp->post_status && ( in_array( $lp->post_type, zad_service_types(), true ) || ( function_exists( 'zad_hood_active' ) && zad_hood_active( $lp->ID ) ) ) ) { $locked = $lp; }
+	}
+	$services = $locked ? array() : get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 100, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
+	$page_id  = is_singular() ? (int) get_queried_object_id() : 0;
 	$areas    = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
 	$sel_area = $a['area'];
 	$status   = isset( $_GET['zad_sent'] ) ? sanitize_key( wp_unslash( $_GET['zad_sent'] ) ) : ''; // phpcs:ignore
@@ -26,13 +34,20 @@ function zad_quote_form( $args = array() ) {
 		<?php if ( 'ok' === $status ) : ?><div class="qform__msg is-ok" role="status">وصلنا طلبك، سنتواصل معك قريباً.</div><?php endif; ?>
 		<?php if ( 'err' === $status ) : ?><div class="qform__msg is-err" role="alert">تعذر إرسال الطلب، راجع البيانات وحاول مرة أخرى.</div><?php endif; ?>
 		<input type="hidden" name="action" value="zad_quote">
-		<input type="hidden" name="source" value="<?php echo esc_url( home_url( add_query_arg( null, null ) ) ); ?>">
+		<input type="hidden" name="source" value="<?php echo esc_url( $page_id ? get_permalink( $page_id ) : home_url( add_query_arg( null, null ) ) ); ?>">
+		<?php if ( $page_id ) : ?><input type="hidden" name="page_id" value="<?php echo (int) $page_id; ?>"><?php endif; ?>
+		<?php if ( '' !== (string) $a['hood'] ) : ?><input type="hidden" name="hood" value="<?php echo esc_attr( $a['hood'] ); ?>"><?php endif; ?>
 		<div class="qform__hp" aria-hidden="true"><label>لا تملأ هذا الحقل<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
 
 		<label class="fld" for="<?php echo $id; ?>-name"><span>الاسم</span>
 			<input id="<?php echo $id; ?>-name" name="name" type="text" required autocomplete="name" placeholder="اسمك الكريم"></label>
 		<label class="fld" for="<?php echo $id; ?>-phone"><span>رقم الجوال</span>
 			<input id="<?php echo $id; ?>-phone" name="phone" type="tel" inputmode="tel" required autocomplete="tel" placeholder="05xxxxxxxx" dir="ltr"></label>
+		<?php if ( $locked ) : ?>
+			<label class="fld fld--lock" for="<?php echo $id; ?>-service"><span>الخدمة</span>
+				<input id="<?php echo $id; ?>-service" type="text" value="<?php echo esc_attr( zad_card_title( $locked->ID ) ); ?>" readonly aria-readonly="true"></label>
+			<input type="hidden" name="service" value="<?php echo (int) $locked->ID; ?>">
+		<?php else : ?>
 		<label class="fld" for="<?php echo $id; ?>-service"><span>الخدمة</span>
 			<select id="<?php echo $id; ?>-service" name="service" required>
 				<option value="">اختر الخدمة</option>
@@ -40,6 +55,7 @@ function zad_quote_form( $args = array() ) {
 					<option value="<?php echo (int) $s->ID; ?>" <?php selected( (int) $a['service_id'], $s->ID ); ?>><?php echo esc_html( $s->post_title ); ?></option>
 				<?php endforeach; ?>
 			</select></label>
+		<?php endif; ?>
 		<?php if ( $areas && ! is_wp_error( $areas ) ) : ?>
 			<label class="fld" for="<?php echo $id; ?>-area"><span>المدينة</span>
 				<select id="<?php echo $id; ?>-area" name="area">
@@ -133,6 +149,12 @@ function zad_handle_quote() {
 	$wiz     = ! empty( $_POST['wiz'] ); // the booking sheet: section (not a page) + city, name optional
 	$label   = isset( $_POST['svc_label'] ) ? sanitize_text_field( wp_unslash( $_POST['svc_label'] ) ) : '';
 	$source  = isset( $_POST['source'] ) ? rawurldecode( esc_url_raw( wp_unslash( $_POST['source'] ) ) ) : ''; // decoded: readable in the admin (Arabic slugs)
+	$hood    = isset( $_POST['hood'] ) ? sanitize_text_field( wp_unslash( $_POST['hood'] ) ) : '';
+	$pid     = isset( $_POST['page_id'] ) ? absint( $_POST['page_id'] ) : 0;
+	$pg      = $pid ? get_post( $pid ) : null;
+	if ( $pg && 'publish' !== $pg->post_status ) { $pg = null; }
+	$pg_title = $pg ? wp_strip_all_tags( $pg->post_title ) : '';
+	if ( $pg ) { $source = rawurldecode( get_permalink( $pg ) ); } // the page the form sat on (not whatever the browser posted)
 
 	if ( $wiz && mb_strlen( $name ) < 2 ) { $name = 'عميل'; }
 	if ( mb_strlen( $name ) < 2 ) {
@@ -142,7 +164,7 @@ function zad_handle_quote() {
 		$fail( 'رقم الجوال غير صحيح.' );
 	}
 	$service = $sid ? get_post( $sid ) : null;
-	if ( $service && ! in_array( $service->post_type, zad_service_types(), true ) ) { $service = null; }
+	if ( $service && ! in_array( $service->post_type, zad_service_types(), true ) && ! ( function_exists( 'zad_hood_active' ) && zad_hood_active( $service->ID ) ) ) { $service = null; }
 	if ( ! $service && ! $wiz ) {
 		$fail( 'اختر الخدمة المطلوبة.' );
 	}
@@ -170,6 +192,8 @@ function zad_handle_quote() {
 		update_post_meta( $lead_id, '_lead_area', $area );
 		update_post_meta( $lead_id, '_lead_message', trim( $message . ( $date || $time ? "\nالموعد المفضّل: $date $time" : '' ) . ( $addr ? "\nالعنوان: $addr" : '' ) . ( $map ? "\nالموقع: $map" : '' ) ) );
 		update_post_meta( $lead_id, '_lead_source', $source );
+		if ( '' !== $hood ) { update_post_meta( $lead_id, '_lead_hood', $hood ); }
+		if ( $pg ) { update_post_meta( $lead_id, '_lead_page_id', $pg->ID ); update_post_meta( $lead_id, '_lead_page_title', $pg_title ); }
 		update_post_meta( $lead_id, '_lead_ip', $ip );
 		update_post_meta( $lead_id, '_lead_status', 'new' );
 	}
@@ -177,7 +201,7 @@ function zad_handle_quote() {
 	$to = zad_opt( 'memopt_lead_email', zad_opt( 'memopt_mail', get_option( 'admin_email' ) ) );
 	if ( is_email( $to ) ) {
 		$body  = "طلب جديد من الموقع\n\n";
-		$body .= "الاسم: $name\nالجوال: $phone\nالخدمة: {$svc_title}\nالمنطقة: $area\nالتفاصيل: $message\nالموعد المفضّل: $date $time\nالعنوان: $addr\nالموقع: $map\nالصفحة: $source\n";
+		$body .= "الاسم: $name\nالجوال: $phone\nالخدمة: {$svc_title}\nالمنطقة: $area\nالتفاصيل: $message\nالموعد المفضّل: $date $time\nالعنوان: $addr\nالموقع: $map\nالصفحة: {$pg_title}\nالرابط: $source\nالحي: $hood\n";
 		$body .= "واتساب: https://wa.me/" . zad_intl_number( $phone ) . "\n";
 		wp_mail( $to, 'طلب جديد: ' . $svc_title, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 	}

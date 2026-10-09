@@ -97,8 +97,11 @@
 			var cs = svcs.filter(function (x) { return String(x.id) === String(hidSvc.value); })[0];
 			if (cs && !cat) { cat = String(cs.cat); $$('[data-wiz-cats] .wiz__cat', wiz).forEach(function (x) { x.classList.toggle('is-on', x.getAttribute('data-cat') === cat); }); } setLabel();
 			fillServices();
-			var ar = wiz.getAttribute('data-area');
-			if (ar && form.elements.area && !form.elements.area.value) { $$('[data-wiz-city] button', wiz).forEach(function (b) { if (b.getAttribute('data-city') === ar) b.click(); }); }
+			/* neighbourhood page: data-city = the page's city (→ the city chip, field «area»), data-area = its district (→ step 2 «الحي أو العنوان», own field) */
+			var ct = wiz.getAttribute('data-city');
+			if (ct && form.elements.area && !form.elements.area.value) { $$('[data-wiz-city] button', wiz).forEach(function (b) { if (b.getAttribute('data-city') === ct) b.click(); }); }
+			var hd = wiz.getAttribute('data-area');
+			if (hd && form.elements.address && !form.elements.address.value) { form.elements.address.value = /^\s*حي\s/.test(hd) ? hd : 'حي ' + hd; }
 			go(cur);
 		}
 		function close() { wiz.classList.remove('is-open'); wiz.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }

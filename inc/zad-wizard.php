@@ -88,8 +88,17 @@ add_action( 'wp_footer', function () {
 	if ( ! $cats ) { $cats = zad_wiz_rename( $data['cats'] ); }
 	$cities = zad_lines( zad_opt( 'zad_wiz_cities', "الرياض\nجدة\nالدمام\nالقصيم\nنجران" ) );
 	$cur   = zad_is_service() ? get_the_ID() : 0;
+	$qid   = is_singular() ? (int) get_queried_object_id() : 0;
+	$hood  = ''; // a neighbourhood page: its district (and city) go into the sheet; every other page leaves both empty
+	$hcity = '';
+	if ( $qid && function_exists( 'zad_hood_active' ) && zad_hood_active( $qid ) ) {
+		$HD    = zad_hood_data( $qid );
+		$hood  = (string) $HD['hood'];
+		$hcity = (string) $HD['city'];
+		if ( ! $cur ) { $cur = $qid; } // a page-type neighbourhood page is still «the page's service»
+	}
 	?>
-<div class="wiz" id="zad-wizard" aria-hidden="true" data-current="<?php echo (int) $cur; ?>" data-area="" data-services="<?php echo esc_attr( wp_json_encode( array_values( $map ) ) ); ?>"><template id="zad-wizard-tpl">
+<div class="wiz" id="zad-wizard" aria-hidden="true" data-current="<?php echo (int) $cur; ?>" data-area="<?php echo esc_attr( $hood ); ?>" data-city="<?php echo esc_attr( $hcity ); ?>" data-services="<?php echo esc_attr( wp_json_encode( array_values( $map ) ) ); ?>"><template id="zad-wizard-tpl">
 	<div class="wiz__overlay" data-wiz-close></div>
 	<div class="wiz__panel wz" role="dialog" aria-modal="true" aria-labelledby="wiz-title">
 
@@ -117,6 +126,8 @@ add_action( 'wp_footer', function () {
 			<form class="wiz__form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" novalidate data-wiz-form>
 				<input type="hidden" name="action" value="zad_quote">
 				<input type="hidden" name="source" value="">
+				<?php if ( $qid ) : ?><input type="hidden" name="page_id" value="<?php echo (int) $qid; ?>"><?php endif; ?>
+				<?php if ( '' !== $hood ) : ?><input type="hidden" name="hood" value="<?php echo esc_attr( $hood ); ?>"><?php endif; ?>
 				<input type="hidden" name="lat" value=""><input type="hidden" name="lng" value="">
 				<input type="hidden" name="service" value="">
 				<input type="hidden" name="svc_label" value=""><input type="hidden" name="wiz" value="1">

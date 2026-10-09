@@ -396,7 +396,7 @@ add_action( 'manage_zad_lead_posts_custom_column', function ( $col, $id ) {
 
 function zad_lead_metabox( $post ) {
 	wp_nonce_field( 'zad_lead_save', 'zad_lead_nonce' );
-	$rows = array( 'phone' => 'الجوال', 'service' => 'الخدمة', 'area' => 'المنطقة', 'message' => 'التفاصيل', 'source' => 'الصفحة', 'ip' => 'IP' );
+	$rows = array( 'phone' => 'الجوال', 'service' => 'الخدمة', 'area' => 'المنطقة', 'message' => 'التفاصيل', 'page_title' => 'عنوان الصفحة', 'source' => 'رابط الصفحة', 'ip' => 'IP' );
 	echo '<table class="form-table">';
 	foreach ( $rows as $k => $label ) {
 		echo '<tr><th>' . esc_html( $label ) . '</th><td>' . nl2br( esc_html( get_post_meta( $post->ID, '_lead_' . $k, true ) ) ) . '</td></tr>';

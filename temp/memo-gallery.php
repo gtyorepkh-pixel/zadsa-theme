@@ -24,7 +24,7 @@ get_template_part( 'template-parts/page-hero', null, array(
 			<li><b><?php echo (int) count( $items ); ?>+</b><span>عمل موثّق</span></li>
 			<li><b><?php echo (int) count( $cats ); ?></b><span>نوع خدمة</span></li>
 			<?php if ( $cities ) : ?><li><b><?php echo (int) count( $cities ); ?></b><span>مدينة</span></li><?php endif; ?>
-			<li><b>100%</b><span>ضمان على التنفيذ</span></li>
+			<li><b>مكتوب</b><span>ضمان على التنفيذ</span></li>
 		</ul>
 
 		<?php if ( count( $cats ) > 1 ) : ?>
