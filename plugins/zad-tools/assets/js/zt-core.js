@@ -78,6 +78,12 @@
 				t.head.map(function (c) { return '<th scope="col">' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
 				t.rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return i === 0 ? '<th scope="row">' + esc(c) + '</th>' : '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
 		}
+		if (v.cards && v.cards.length) {
+			h += '<ul class="zt-cards">' + v.cards.map(function (c) {
+				return '<li class="zt-cards__i"><a class="zt-cards__a" href="' + esc(c.u) + '">' + (c.img ? '<img src="' + esc(c.img) + '" alt="' + esc(c.alt || '') + '" width="72" height="72" loading="lazy">' : '') +
+					'<span><strong>' + esc(c.t) + '</strong><em>نسبة التطابق: ' + esc(fmt(c.p)) + '%</em></span></a>' + (c.svc ? '<a class="btn btn--accent" href="' + esc(c.svc[1]) + '" data-zt-event="tool_cta">' + esc(c.svc[0]) + '</a>' : '') + '</li>';
+			}).join('') + '</ul>';
+		}
 		if (v.cal && v.cal.length) {
 			h += '<ol class="zt-cal">' + v.cal.map(function (c) {
 				return '<li class="zt-cal__m"><strong>' + esc(c.m) + '</strong>' + (c.items.length ? '<ul>' + c.items.map(function (it) { return '<li>' + (it[1] ? '<a href="' + esc(it[1]) + '">' + esc(it[0]) + '</a>' : esc(it[0])) + '</li>'; }).join('') + '</ul>' : '<span class="zt-cal__none">—</span>') + '</li>';
@@ -123,6 +129,7 @@
 		var p = parseYmd(s); if (!p) { return ''; }
 		var y = p[0], mo = p[1], d = p[2] + n;
 		while (d > dim(y, mo)) { d -= dim(y, mo); mo++; if (mo > 12) { mo = 1; y++; } }
+		while (d < 1) { mo--; if (mo < 1) { mo = 12; y--; } d += dim(y, mo); }
 		return pad(y, 4) + '-' + pad(mo, 2) + '-' + pad(d, 2);
 	}
 	function arMonth(y, m) { return MN[m - 1] + ' ' + pad(y, 4); }

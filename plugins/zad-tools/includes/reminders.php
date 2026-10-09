@@ -276,5 +276,5 @@ add_filter( 'wp_privacy_personal_data_erasers', function ( $e ) {
 
 /** After an update of the plugin files: bring the table up to date (dbDelta only adds). */
 add_action( 'plugins_loaded', function () {
-	if ( get_option( 'zad_tools_version' ) !== ZT_VERSION ) { zt_reminders_install(); update_option( 'zad_tools_version', ZT_VERSION, false ); }
+	if ( get_option( 'zad_tools_version' ) !== ZT_VERSION ) { zt_reminders_install(); if ( function_exists( 'zt_report_install' ) ) { zt_report_install(); } update_option( 'zad_tools_version', ZT_VERSION, false ); }
 } );

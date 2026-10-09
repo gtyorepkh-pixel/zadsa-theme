@@ -9,6 +9,7 @@
  *   zt_register_tool( 'ac-size', array(
  *     'title' => 'حاسبة حجم المكيف', 'desc' => '…', 'settings_tab' => 'ac-size',
  *     'render'   => callable( $ctx )  → prints the tool's HTML (with a no-JS fallback),
+ *     'ready_cb' => callable()        → extra readiness (e.g. «at least 2 published pests»); false keeps the page closed,
  *     'result'   => callable( $ctx )  → returns the answer's HTML for the current ?query (zt_result_html), printed inside #zt-result,
  *     'how'      => callable( $ctx )  → returns html (formula + parameters table),
  *     'examples' => callable( $ctx )  → returns html,
@@ -93,7 +94,7 @@ function zt_ctx( $id ) {
 		'intro' => (string) get_post_meta( $id, '_zt_intro', true ), 'faq' => $faq, 'services' => $svc,
 		'cta' => (string) get_post_meta( $id, '_zt_cta', true ),
 		// a tool that stores personal data (collects_data) also waits for the general privacy values (retention, limits) to be approved
-		'ready' => $tool && isset( $reg[ $tool ] ) ? ( zt_tool_ready( $reg[ $tool ]['settings_tab'] ?? $tool ) && ( empty( $reg[ $tool ]['collects_data'] ) || zt_tool_ready( 'general' ) ) ) : false,
+		'ready' => $tool && isset( $reg[ $tool ] ) ? ( zt_tool_ready( $reg[ $tool ]['settings_tab'] ?? $tool ) && ( empty( $reg[ $tool ]['collects_data'] ) || zt_tool_ready( 'general' ) ) && ( ! is_callable( $reg[ $tool ]['ready_cb'] ?? null ) || (bool) call_user_func( $reg[ $tool ]['ready_cb'] ) ) ) : false,
 	);
 }
 

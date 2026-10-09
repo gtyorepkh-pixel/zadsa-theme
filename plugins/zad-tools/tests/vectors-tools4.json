@@ -1,0 +1,47 @@
+{
+  "_note": "Synthetic pests for testing the matching formula only — not encyclopedia content.",
+  "pid": {
+    "cfg": {
+      "q": [
+        {"k":"place","p":"pl","l":"أين رأيتها؟","s":"المكان","o":[{"k":"kitchen","l":"مطبخ","i":"🍳"},{"k":"bath","l":"حمام","i":"🚿"},{"k":"wood","l":"خشب","i":"🪵"}]},
+        {"k":"size","p":"sz","l":"كم حجمها؟","s":"الحجم","o":[{"k":"tiny","l":"أقل من 3 مم","i":"·"},{"k":"small","l":"من 3 إلى 10 مم","i":"•"},{"k":"medium","l":"من 1 إلى 3 سم","i":"●"}]},
+        {"k":"color","p":"co","l":"ما لونها؟","s":"اللون","o":[{"k":"brown","l":"بني","i":"🟤"},{"k":"white","l":"أبيض","i":"⚪"}]},
+        {"k":"wings","p":"wg","l":"هل لها أجنحة؟","s":"الأجنحة","o":[{"k":"yes","l":"نعم","i":"🪽"},{"k":"no","l":"لا","i":"🚫"},{"k":"some","l":"أحيانًا","i":"🔁"}]},
+        {"k":"sign","p":"sg","l":"أوضح علامة؟","s":"العلامة","o":[{"k":"droppings","l":"فضلات","i":"🟫"},{"k":"sawdust","l":"نشارة خشب","i":"🪵"}]}
+      ],
+      "w": {"place":1,"size":1,"color":1,"wings":1,"sign":1},
+      "min": 60, "max": 3,
+      "pests": [
+        {"id":3,"n":"النمل الأبيض","u":"https://zadksa.com/pests/termite/","img":"https://zadksa.com/t.jpg","alt":"نمل أبيض","svc":["مكافحة النمل الأبيض","https://zadksa.com/termite/"],"a":{"place":["wood"],"size":["small"],"color":["white"],"sign":["sawdust","droppings"],"wings":"some"}},
+        {"id":1,"n":"الصراصير","u":"https://zadksa.com/pests/roach/","img":"","alt":"","svc":["مكافحة الصراصير","https://zadksa.com/roach/"],"a":{"place":["kitchen","bath"],"size":["medium"],"color":["brown"],"sign":["droppings"],"wings":"yes"}},
+        {"id":2,"n":"النمل","u":"https://zadksa.com/pests/ant/","img":"","alt":"","svc":null,"a":{"place":["kitchen"],"size":["tiny","small"],"color":["brown"],"sign":[],"wings":"no"}},
+        {"id":4,"n":"بق الفراش","u":"https://zadksa.com/pests/bedbug/","img":"","alt":"","svc":null,"a":{"place":[],"size":["small"],"color":["brown"],"sign":[],"wings":""}}
+      ]
+    },
+    "cfg2": {
+      "q": [{"k":"place","p":"pl","l":"أين؟","s":"المكان","o":[{"k":"kitchen","l":"مطبخ","i":"🍳"}]},{"k":"wings","p":"wg","l":"أجنحة؟","s":"الأجنحة","o":[{"k":"yes","l":"نعم","i":"🪽"},{"k":"no","l":"لا","i":"🚫"}]}],
+      "w": {"place":2,"wings":1}, "min": 50, "max": 1,
+      "pests": [{"id":9,"n":"حشرة تجريبية","u":"/p/","img":"","alt":"","svc":null,"a":{"place":["kitchen"],"wings":"yes"}},{"id":8,"n":"أخرى","u":"/o/","img":"","alt":"","svc":null,"a":{"place":["kitchen"],"wings":"no"}}]
+    },
+    "inputs": [
+      {"ans":{"place":"kitchen","size":"medium","color":"brown","wings":"yes","sign":"droppings"}},
+      {"ans":{"place":"wood","size":"small","color":"white","wings":"no","sign":"sawdust"},"hood":"النرجس"},
+      {"ans":{"place":"kitchen","size":"","color":"","wings":"","sign":""}},
+      {"ans":{"place":"bath","size":"tiny","color":"white","wings":"yes","sign":""}},
+      {"ans":{"place":"","size":"","color":"","wings":"","sign":""}},
+      {"ans":{"place":"nope","size":"small"}},
+      {"ans":{"wings":"some"}},
+      {"ans":{"color":"brown","sign":"sawdust"}}
+    ],
+    "inputs2": [
+      {"ans":{"place":"kitchen","wings":"yes"}},
+      {"ans":{"place":"kitchen","wings":"no"}},
+      {"ans":{"place":"kitchen"}}
+    ]
+  },
+  "report": {
+    "map": [["نمل أبيض","النمل الأبيض"],["صراصير","الصراصير"],["صرصور","الصراصير"],["نمل","النمل"]],
+    "cities": ["الرياض","جدة"],
+    "ym": "2026-10"
+  }
+}

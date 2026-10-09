@@ -1,3 +1,3 @@
 { "name": "zad-tools", "private": true, "scripts": {
-  "test": "node --test tests/core.test.mjs tests/parity.test.mjs tests/tools.test.mjs tests/tools-parity.test.mjs tests/tools3.test.mjs tests/tools3-parity.test.mjs && php tests/phase0.php && php tests/orders.php && php tests/tools.php && php tests/tools3.php",
+  "test": "node --test tests/core.test.mjs tests/parity.test.mjs tests/tools.test.mjs tests/tools-parity.test.mjs tests/tools3.test.mjs tests/tools3-parity.test.mjs tests/tools4.test.mjs tests/tools4-parity.test.mjs && php tests/phase0.php && php tests/orders.php && php tests/tools.php && php tests/tools3.php && php tests/tools4.php",
   "e2e": "node tests/e2e/run.mjs" } }

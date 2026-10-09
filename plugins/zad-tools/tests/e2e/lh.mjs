@@ -11,7 +11,7 @@ const server = http.createServer((rq, rs) => {
 });
 await new Promise((r) => server.listen(0, r)); const base = 'http://127.0.0.1:' + server.address().port;
 const chrome = await launch({ chromePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', chromeFlags: ['--headless=new', '--no-sandbox'] });
-for (const [tool, q] of [['ac-size', 'l=4&w=4&top=1'], ['after-spray', 'ps=general&md=spray&t=21:00'], ['tank', 'loc=ground&shape=rect&a=2&b=1&c=1&unit=m&last=2026-08-01'], ['ac-power', 't1=2&q1=1&ty1=split&ag1=new&h=10&d=30'], ['moving', 'ty=in&fc=riyadh&r=3'], ['plan', 'hs=apartment&ct=riyadh&tk=both&acn=3&sf=0'], ['coverage', '']]) {
+for (const [tool, q] of [['ac-size', 'l=4&w=4&top=1'], ['after-spray', 'ps=general&md=spray&t=21:00'], ['tank', 'loc=ground&shape=rect&a=2&b=1&c=1&unit=m&last=2026-08-01'], ['ac-power', 't1=2&q1=1&ty1=split&ag1=new&h=10&d=30'], ['moving', 'ty=in&fc=riyadh&r=3'], ['plan', 'hs=apartment&ct=riyadh&tk=both&acn=3&sf=0'], ['coverage', ''], ['pest-id', 'pl=wood&sz=small&co=white'], ['report', '']]) {
 	const r = await lighthouse(base + '/t/' + tool + '/?' + q, { port: chrome.port, output: 'json', logLevel: 'error', onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo'] });
 	const c = r.lhr.categories, a = r.lhr.audits;
 	console.log(tool, JSON.stringify(Object.fromEntries(Object.entries(c).map(([k, v]) => [k, Math.round(v.score * 100)]))), 'LCP', a['largest-contentful-paint'].displayValue, 'CLS', a['cumulative-layout-shift'].displayValue, 'TBT', a['total-blocking-time'].displayValue);

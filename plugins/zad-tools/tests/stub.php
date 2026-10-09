@@ -16,9 +16,9 @@ function wp_unslash( $s ) { return $s; } function absint( $n ) { return abs( (in
 function wp_date( $f, $ts = null ) { return date( $f, $ts ?? time() ); } function current_time( $t ) { return date( 'Y-m-d H:i:s' ); }
 function get_bloginfo() { return 'زاد'; } function home_url( $p = '' ) { return 'https://zadksa.com' . $p; } function add_query_arg( $k, $v, $u ) { return $u . '?' . $k . '=' . $v; }
 function esc_html( $s ) { return htmlspecialchars( (string) $s ); } function esc_attr( $s ) { return htmlspecialchars( (string) $s ); } function esc_url( $s ) { return htmlspecialchars( (string) $s ); } function wp_kses_post( $s ) { return $s; }
-function get_the_title( $i ) { return 'صفحة ' . $i; } function get_permalink( $i ) { return 'https://zadksa.com/page-' . $i . '/'; } function get_post_status() { return 'publish'; }
+function get_the_title( $i ) { return $GLOBALS['TITLE'][ $i ] ?? 'صفحة ' . $i; } function get_permalink( $i ) { return 'https://zadksa.com/page-' . $i . '/'; } function get_post_status() { return 'publish'; }
 function get_post_meta( $id, $k ) { return $GLOBALS['META'][ $id ][ $k ] ?? ''; } function current_user_can() { return false; } function admin_url( $p = '' ) { return '/wp-admin/' . $p; }
-function get_post_type() { return 'page'; } function get_page_template_slug() { return 'zt-tool-page.php'; } function has_shortcode() { return false; } function get_post_field() { return ''; }
+function get_post_type() { return 'page'; } function get_page_template_slug() { return 'zt-tool-page.php'; } function has_shortcode() { return false; } function get_post_field( $f = '', $id = 0 ) { return $GLOBALS['FIELD'][ $id ][ $f ] ?? ''; }
 function wp_json_encode( $v, $f = 0 ) { return json_encode( $v, $f ); }
 class FakeDB { public $prefix = 'wp_'; public $insert_id = 0;
 	function prepare( $q ) { return $q; } function get_var() { return array_shift( $GLOBALS['q'] ); }
@@ -34,3 +34,5 @@ function get_queried_object_id() { return 1; }
 function wp_dropdown_pages() {}
 function is_page() { return false; }
 function is_singular() { return false; }
+function delete_transient( $k ) { unset( $GLOBALS['T'][ $k ] ); }
+function wp_is_post_revision() { return false; }

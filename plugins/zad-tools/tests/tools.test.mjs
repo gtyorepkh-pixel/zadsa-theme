@@ -73,7 +73,7 @@ test('Tank: fallback "starts from" price only when there are no tiers', () => {
   assert.ok(TK.view({ ...tk, tiers: [], fromPrice: 120 }, { loc: 'g', shape: 'rect', a: 2, b: 1, c: 1, unit: 'm' }, TODAY).lines.includes('تكلفة التنظيف تبدأ من 120 ريال'));
   assert.ok(!TK.view(tk, { loc: 'g', shape: 'rect', a: 4, b: 3, c: 2, unit: 'm' }, TODAY).lines.some((l) => /تبدأ من/.test(l)));
 });
-test('dates: leap year and month end', () => { assert.equal(ZT.addMonths('2024-02-29', 12), '2025-02-28'); assert.equal(ZT.addMonths('2026-01-31', 1), '2026-02-28'); assert.equal(ZT.addDays('2026-12-30', 3), '2027-01-02'); assert.equal(ZT.addMonths('2026-02-30', 1), ''); });
+test('dates: leap year and month end', () => { assert.equal(ZT.addMonths('2024-02-29', 12), '2025-02-28'); assert.equal(ZT.addMonths('2026-01-31', 1), '2026-02-28'); assert.equal(ZT.addDays('2026-12-30', 3), '2027-01-02'); assert.equal(ZT.addMonths('2026-02-30', 1), ''); assert.equal(ZT.addDays('2026-11-01', -1), '2026-10-31'); assert.equal(ZT.addDays('2027-01-01', -1), '2026-12-31'); assert.equal(ZT.addDays('2024-03-01', -1), '2024-02-29'); });
 test('renderer: escapes everything it prints', () => {
   const h = ZT.resultHtml({ big: '<b>x</b>', lines: ['"q" & \'s\''], wa: 'a' }, { wa: '966' });
   assert.ok(!h.includes('<b>')); assert.ok(h.includes('&lt;b&gt;')); assert.ok(h.includes('&quot;q&quot; &amp; &#039;s&#039;'));

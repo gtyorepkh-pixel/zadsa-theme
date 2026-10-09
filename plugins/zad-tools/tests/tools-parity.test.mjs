@@ -27,6 +27,6 @@ test('Result HTML: ZT.resultHtml == zt_result_html (byte for byte)', () => {
 });
 test('dates: addMonths / arDate / addDays', () => v.dates.forEach((d, n) => {
   const m = ZT.addMonths(d[0], d[1]);
-  assert.deepEqual([m, ZT.arDate(m), ZT.addDays(d[0], 40)], php.dates[n], 'date #' + n);
+  assert.deepEqual([m, ZT.arDate(m), ZT.addDays(d[0], 40), ZT.addDays(d[0], -40)], php.dates[n], 'date #' + n);
 }));
 test('arCount / pctLabel', () => v.counts.forEach((c, n) => assert.deepEqual([ZT.arCount(c[0], 'ساعة', 'ساعتين', 'ساعات', 'ساعة'), ZT.pctLabel(c[0]), ZT.pctLabel(-c[0])], php.counts[n], 'count #' + n)));

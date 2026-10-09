@@ -46,6 +46,17 @@ function zt_result_html( $v, $env = array() ) {
 		}
 		$h .= '</tbody></table></div>';
 	}
+	if ( ! empty( $v['cards'] ) ) {
+		$h .= '<ul class="zt-cards">';
+		foreach ( $v['cards'] as $c ) {
+			$h .= '<li class="zt-cards__i"><a class="zt-cards__a" href="' . zt_esc( $c['u'] ) . '">';
+			if ( ! empty( $c['img'] ) ) { $h .= '<img src="' . zt_esc( $c['img'] ) . '" alt="' . zt_esc( $c['alt'] ?? '' ) . '" width="72" height="72" loading="lazy">'; }
+			$h .= '<span><strong>' . zt_esc( $c['t'] ) . '</strong><em>نسبة التطابق: ' . zt_esc( zt_fmt( $c['p'] ) ) . '%</em></span></a>';
+			if ( ! empty( $c['svc'] ) ) { $h .= '<a class="btn btn--accent" href="' . zt_esc( $c['svc'][1] ) . '" data-zt-event="tool_cta">' . zt_esc( $c['svc'][0] ) . '</a>'; }
+			$h .= '</li>';
+		}
+		$h .= '</ul>';
+	}
 	if ( ! empty( $v['cal'] ) ) {
 		$h .= '<ol class="zt-cal">';
 		foreach ( $v['cal'] as $c ) {
@@ -199,6 +210,7 @@ function zt_add_days_str( $ymd, $n ) {
 	preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', (string) $ymd, $m );
 	$y = (int) $m[1]; $mo = (int) $m[2]; $d = (int) $m[3] + (int) $n;
 	while ( $d > zt_days_in_month( $y, $mo ) ) { $d -= zt_days_in_month( $y, $mo ); $mo++; if ( $mo > 12 ) { $mo = 1; $y++; } }
+	while ( $d < 1 ) { $mo--; if ( $mo < 1 ) { $mo = 12; $y--; } $d += zt_days_in_month( $y, $mo ); }
 	return sprintf( '%04d-%02d-%02d', $y, $mo, $d );
 }
 

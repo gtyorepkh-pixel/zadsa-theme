@@ -1,15 +1,33 @@
 <?php
 // Renders one tool page the way the WordPress template does (stubbed WP). Usage: php render-page.php <tool> <query-string> <port>
 require __DIR__ . '/../stub.php';
+function get_posts() { return array(); }
 function get_privacy_policy_url() { return '/privacy/'; }
 function zad_whatsapp( $x = 0 ) { return '966555000111'; }
 function zad_min_price( $rows ) { return $rows ? min( $rows ) : null; } function zad_price_rows() { return array(); }
 require ZT_DIR . 'includes/core.php'; require ZT_DIR . 'includes/ui.php'; require ZT_DIR . 'includes/settings.php'; require ZT_DIR . 'includes/reminders.php'; require ZT_DIR . 'includes/tool-page.php';
-require ZT_DIR . 'includes/tools/ac-size.php'; require ZT_DIR . 'includes/tools/after-spray.php'; require ZT_DIR . 'includes/tools/tank.php'; require ZT_DIR . 'includes/tools/ac-power.php'; require ZT_DIR . 'includes/tools/moving.php'; require ZT_DIR . 'includes/tools/plan.php'; require ZT_DIR . 'includes/tools/coverage.php';
+require ZT_DIR . 'includes/tools/ac-size.php'; require ZT_DIR . 'includes/tools/after-spray.php'; require ZT_DIR . 'includes/tools/tank.php'; require ZT_DIR . 'includes/tools/ac-power.php'; require ZT_DIR . 'includes/tools/moving.php'; require ZT_DIR . 'includes/tools/plan.php'; require ZT_DIR . 'includes/tools/coverage.php'; require ZT_DIR . 'includes/pests.php'; require ZT_DIR . 'includes/tools/pest-id.php'; require ZT_DIR . 'includes/report.php';
 date_default_timezone_set( 'Asia/Riyadh' ); // the site timezone (the JS side uses Asia/Riyadh too)
 $slug = $argv[1]; $GLOBALS['SLUG'] = $slug; parse_str( $argv[2] ?? '', $_GET );
 $a = array(); foreach ( zt_settings_registry() as $tab => $t ) { foreach ( $t['fields'] as $k => $f ) { if ( ! empty( $f['approval'] ) ) { $a[ $tab . '.' . $k ] = array( 'by' => 1 ); } } } update_option( 'zad_tools_approved', $a );
 if ( isset( $argv[4] ) && $argv[4] ) { update_option( 'zad_tools_opts', json_decode( $argv[4], true ) ); } // setting overrides for a test
+if ( 'pest-id' === $slug ) {
+	$P = function ( $id, $n, $a, $svc = null ) { return array( 'id' => $id, 'n' => $n, 'u' => '/pests/' . $id . '/', 'img' => '', 'alt' => '', 'svc' => $svc, 'a' => $a ); };
+	$pests = array(
+		$P( 1, 'الصراصير', array( 'place' => array( 'kitchen', 'bath' ), 'size' => array( 'medium' ), 'color' => array( 'brown' ), 'sign' => array( 'droppings' ), 'wings' => 'yes' ), array( 'مكافحة الصراصير', '/roach/' ) ),
+		$P( 2, 'النمل', array( 'place' => array( 'kitchen' ), 'size' => array( 'tiny', 'small' ), 'color' => array( 'brown' ), 'sign' => array(), 'wings' => 'no' ), array( 'مكافحة النمل', '/ant/' ) ),
+		$P( 3, 'النمل الأبيض', array( 'place' => array( 'wood' ), 'size' => array( 'small' ), 'color' => array( 'white' ), 'sign' => array( 'sawdust' ), 'wings' => 'some' ), array( 'مكافحة النمل الأبيض', '/termite/' ) ),
+	);
+	add_filter( 'zt_pest_dataset', function () use ( $pests ) { return $pests; } );
+}
+if ( 'report' === $slug ) { // the monthly report page (not a tool): the frozen numbers come from the post meta
+	$map = array( array( 'صراصير', 'الصراصير' ), array( 'نمل أبيض', 'النمل الأبيض' ), array( 'نمل', 'النمل' ) ); $rows = array();
+	foreach ( array( array( '2026-10-03', 'مكافحة صراصير', 'النرجس', 'الرياض', 9 ), array( '2026-10-10', 'مكافحة النمل الأبيض', 'النرجس', 'الرياض', 3 ), array( '2026-10-12', 'رش نمل', 'الملقا', 'الرياض', 2 ), array( '2026-10-20', 'مكافحة صراصير', 'الشاطئ', 'جدة', 6 ), array( '2026-09-02', 'مكافحة صراصير', 'النرجس', 'الرياض', 7 ) ) as $x ) { for ( $i = 0; $i < $x[4]; $i++ ) { $rows[] = array( 'd' => $x[0], 'svc' => $x[1], 'hood' => $x[2], 'city' => $x[3] ); } }
+	$d = zt_rep_aggregate( $rows, '2026-10', $map, 5, array( 'الرياض', 'جدة' ) ) + array( 'src' => array( 'orders' => 20, 'hist' => 0 ), 'generated' => '2026-11-01 09:00' );
+	$GLOBALS['META'][1] = array( '_zt_rep_data' => $d, '_zt_rep_summary' => zt_rep_summary( (string) zt_opt( 'report.summary_tpl' ), $d ), '_zt_rep_notes' => "ملاحظة المحرر الأولى.\n\nنصيحة للقارئ." ); $GLOBALS['TITLE'][1] = 'تقرير الحشرات — أكتوبر 2026';
+	echo '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>تقرير الحشرات — أكتوبر 2026</title><meta name="description" content="تقرير تجريبي"><link rel="stylesheet" href="/assets/css/zt-tool.css"><style>body{font-family:system-ui,sans-serif;margin:0}.wrap{max-width:760px;margin:0 auto;padding:0 16px}.sec{padding:24px 0}.btn{display:inline-block;padding:12px 18px;border-radius:10px;border:1px solid #ccc;text-decoration:none;color:#111}</style></head><body><main class="zt-page"><section class="sec zt-hero"><div class="wrap wrap--narrow"><h1>تقرير الحشرات — أكتوبر 2026</h1></div></section>';
+	zt_rep_body( 1 ); echo '</main></body></html>'; exit;
+}
 if ( 'coverage' === $slug ) {
 	$H = function ( $id, $n, $c, $s, $lat, $lng, $v, $eta ) { return array( 'id' => $id, 'n' => $n, 'c' => $c, 's' => $s, 'lat' => $lat, 'lng' => $lng, 'v' => $v, 'eta' => $eta ); };
 	$data = array( 'services' => array( 'تنظيف مكيفات', 'تنظيف خزانات', 'تنظيف كنب' ), 'hoods' => array(

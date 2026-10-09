@@ -184,7 +184,33 @@ async function noJs(url, label, expect) {
 	const nj = await browser.newContext({ javaScriptEnabled: false }); const q2 = await nj.newPage(); await q2.goto(base + '/t/coverage/');
 	ok(await q2.locator('.zt-hoods li').count() === 4 && !(await q2.locator('.zt-cov-tools').isVisible()), 'Coverage: no-JS keeps the full list; JS-only controls hidden'); await nj.close(); await ctx.close();
 }
+
+/* -------- pest identifier -------- */
+{
+	const r = await jsRun('pest-id', async (p) => { await p.check('[name=pl][value=wood]'); await p.check('[name=sz][value=small]'); await p.check('[name=co][value=white]'); await p.check('[name=wg][value=no]'); await p.check('[name=sg][value=sawdust]'); await p.fill('[name=hood]', 'النرجس'); }, 'PestID');
+	ok(/الأقرب: النمل الأبيض/.test(r.html) && /نسبة التطابق: 100%/.test(r.html), 'PestID: five answers → النمل الأبيض 100%'); ok(r.url.includes('pl=wood') && r.url.includes('sg=sawdust'), 'PestID: answers saved in the URL ' + r.url);
+	ok(await r.p.locator('#zt-result .zt-cards__i').count() === 2, 'PestID: only pests that match something are listed (2 here, never padded to 3)'); ok(await r.p.locator('#zt-result .zt-cards a.btn[href="/termite/"]').count() === 1, 'PestID: each card has its service button');
+	ok(decodeURIComponent((r.html.match(/wa\.me\/966555000111\?text=([^"]+)"/) || [])[1] || '').includes('بنسبة تطابق 100%'), 'PestID: WhatsApp text carries the result');
+	const s = await serverRun(r.url, 'PestID'); ok(norm(s.html) === norm(r.html), 'PestID: server HTML == JS HTML'); if (norm(s.html) !== norm(r.html)) { const a = norm(s.html), b = norm(r.html); let i = 0; while (a[i] === b[i]) { i++; } console.log('first difference at', i, '\nserver:', a.slice(i - 60, i + 140), '\njs    :', b.slice(i - 60, i + 140)); }
+	ok(await s.p.isChecked('[name=pl][value=wood]') && await s.p.isChecked('[name=wg][value=no]'), 'PestID: form refilled from the shared link'); await noJs(r.url, 'PestID', /الأقرب: النمل الأبيض/);
+	// weak match → no claim, asks for a photo
+	await r.p.check('[name=pl][value=bath]'); await r.p.check('[name=sz][value=tiny]'); await r.p.check('[name=co][value=white]'); await r.p.check('[name=wg][value=yes]'); await r.p.check('[name=sg][value=""]'); await r.p.click('button[type=submit]'); await r.p.waitForFunction(() => /لا يوجد تطابق قوي/.test(document.querySelector('#zt-result').textContent));
+	ok(/صورة/.test(await r.p.textContent('#zt-result')), 'PestID: weak match → never claims, asks for a photo');
+	ok(await r.p.locator('.zt-opt').count() >= 25 && (await r.p.locator('.zt-opt').first().evaluate((e) => e.getBoundingClientRect().height)) >= 44, 'PestID: option tiles are touch-sized');
+	await r.ctx.close(); await s.ctx.close();
+	const nj = await browser.newContext({ javaScriptEnabled: false }); const q = await nj.newPage(); await q.goto(base + '/t/pest-id/'); await q.check('[name=pl][value=wood]'); await q.click('button[type=submit]'); await q.waitForLoadState(); ok(/الأقرب|النمل الأبيض/.test(await q.$eval('#zt-result', (e) => e.textContent)), 'PestID: no-JS form submit → server answer'); await nj.close();
+}
+/* -------- seasonal report page -------- */
+{
+	const ctx = await browser.newContext({ viewport: { width: 390, height: 800 } }); const p = await ctx.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(String(e))); p.on('console', (m) => { if (m.type() === 'error') { errs.push(m.text()); } });
+	await p.goto(base + '/t/report/'); const t = await p.textContent('main');
+	ok(await p.locator('figure.zt-chart svg').count() === 2, 'Report: two server-generated SVG charts'); ok(await p.locator('figure.zt-chart svg title').first().evaluate((e) => e.textContent.length > 5), 'Report: charts have an accessible title');
+	ok(/ملاحظة المحرر الأولى/.test(t) && /نصيحة للقارئ/.test(t), 'Report: mandatory editor notes shown'); ok(/النرجس/.test(t) && /الشاطئ/.test(t) && !/الملقا/.test(t), 'Report: districts with ≥5 orders are named (النرجس 12, الشاطئ 6); الملقا (2) is not');
+	ok(await p.locator('a[href*="zt_rep_csv"]').count() === 1 && await p.locator('textarea[readonly]').count() === 2, 'Report: CSV link + two embed codes');
+	ok(await p.locator('.zt-tblwrap table').count() >= 4, 'Report: data tables next to the charts (readable data)'); ok(errs.length === 0, 'Report: no console errors ' + errs.join('|'));
+	const scroll = await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1); ok(scroll, 'Report: no horizontal page scroll on a phone'); await p.screenshot({ path: '/tmp/zt-report.png', fullPage: true }); await ctx.close();
+}
 /* -------- weight -------- */
-for (const f of ['zt-core.js', 'ac-size.js', 'after-spray.js', 'tank.js', 'ac-power.js', 'moving.js', 'plan.js', 'coverage.js']) { const kb = readFileSync(root + '/assets/js/' + f).length / 1024; ok(kb < 30, f + ' ' + kb.toFixed(1) + ' KB (<30)'); }
+for (const f of ['zt-core.js', 'ac-size.js', 'after-spray.js', 'tank.js', 'ac-power.js', 'moving.js', 'plan.js', 'coverage.js', 'pest-id.js']) { const kb = readFileSync(root + '/assets/js/' + f).length / 1024; ok(kb < 30, f + ' ' + kb.toFixed(1) + ' KB (<30)'); }
 await browser.close(); server.close();
 console.log(fail ? `\n${fail} of ${n} FAILED` : `e2e: all ${n} passed`); process.exit(fail ? 1 : 0);

@@ -33,3 +33,10 @@ zt_register_tool( 'ac-size', array( 'title' => '…', 'desc' => '…', 'collects
 - المحرك المشترك: `includes/ui.php` (`zt_result_html` ⇄ `ZT.resultHtml` يخرجان HTML متطابقاً بايت ببايت، `.ics`، تواريخ بأعداد صحيحة، `zt_ar_count`)، و`ZT.mount()` في `zt-core.js`.
 - الاختبارات: `npm test` (JS + PHP + تطابق JS/PHP) و`npm run e2e` (Chromium على صفحات مولّدة بـ stub). Lighthouse: `LH_DIR=<مجلد فيه lighthouse> node tests/e2e/lh.mjs`.
 - لإضافة أداة جديدة: `zt_register_tool( slug, [render, result, how, examples, related, js, collects_data] )` + `zt_register_settings()`.
+
+## المرحلة 4 — موسوعة الحشرات + معرّف الحشرات + تقرير الحشرات الموسمي (0.5.0)
+
+- `includes/pests.php`: CPT `zad_pest` على `/pests/{slug}/` (بلا أرشيف)، صندوق الحقول وخصائص التعريف، قالب الصفحة (`templates/pest-single.php`، يمكن للثيم تجاوزه بـ `zad-tools/pest-single.php`)، `[zad_pests]`، السكيما (Article + FAQPage)، زر «إنشاء المسودات».
+- `includes/tools/pest-id.php` + `assets/js/pest-id.js`: المعرّف بالأسئلة (دالة صافية + توأم PHP).
+- `includes/report.php`: جدول `zad_hist` (سجل مستورد بلا بيانات شخصية)، CPT `zad_report` على `/pest-report/YYYY-MM/`، التجميع والرسوم SVG وCSV، شاشة «توليد واستيراد»، حارس النشر، `[zad_pest_report]`، سكيما Dataset.
+- بعد رفع هذا الإصدار تُحدَّث قواعد الروابط تلقائياً مرة واحدة (أو: الإعدادات ← الروابط الدائمة ← حفظ).
