@@ -7,7 +7,7 @@
   --primary-50:color-mix(in srgb,var(--primary) 7%,#fff);
   --primary-100:color-mix(in srgb,var(--primary) 14%,#fff);
   --accent-700:color-mix(in srgb,var(--accent) 80%,#000);
-  --wa:#12803f;--accent-text:color-mix(in srgb,var(--accent) 58%,#000); --ink:#000000; --muted:#56656f; --line:#e4e1d6; --bg:#fff; --tint:#f6f4ee; --surface:#ffffff;
+  --wa:#12803f;--accent-text:color-mix(in srgb,var(--accent) 58%,#000); --ink:#000000; --muted:#111111; --line:#e4e1d6; --bg:#fff; --tint:#f6f4ee; --surface:#ffffff;
   --r-sm:8px; --r:14px; --r-lg:22px;
   --shadow:0 1px 2px rgba(16,36,42,.06),0 8px 24px rgba(16,36,42,.08);
   --shadow-lg:0 2px 4px rgba(16,36,42,.06),0 18px 48px rgba(16,36,42,.14);
@@ -665,7 +665,7 @@ tr.tabitem[hidden],.pricebox.tabitem[hidden]{display:none}
 .svcs__top{padding-block:22px;position:sticky;top:var(--hdr-h,72px);z-index:20;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .svcs__bar{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center}
 .svcs .chips--filter button,.work .chips--filter button{border:2px solid var(--line);background:var(--surface);color:var(--ink);font:700 .95rem var(--font);padding:9px 16px;border-radius:999px;cursor:pointer;min-height:44px}
-.svcs .chips--filter button small{opacity:.6;margin-inline-start:4px}
+.svcs .chips--filter button small{margin-inline-start:4px}
 .svcs .chips--filter button.is-on,.work .chips--filter button.is-on{background:var(--primary);border-color:var(--primary);color:#fff}
 .svcs__search{display:flex;align-items:center;gap:8px;border:2px solid var(--line);border-radius:999px;padding:0 14px;background:var(--surface);min-width:240px}
 .svcs__search input{border:0;background:transparent;font:inherit;padding:11px 0;width:100%;outline:0;color:var(--ink)}
@@ -1273,7 +1273,7 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .slayout--solo{grid-template-columns:minmax(0,860px);justify-content:center}
 button.iconbtn{border:0;padding:0;cursor:pointer;font:inherit}button.more{background:none;border:0;padding:0;font:inherit;font-weight:800;cursor:pointer;color:var(--primary);text-align:start}
 picture{display:contents}
-.eeat{margin:0 0 10px;font-size:.92rem;font-weight:700;opacity:.9}.eeat a{color:inherit}
+.eeat{margin:0 0 10px;font-size:.92rem;font-weight:700}.eeat a{color:inherit}
 
 /* ---- Core block rules (WordPress block CSS is not loaded on the front end; see inc/zad-corecss.php) ---- */
 .wp-block-image,.wp-block-embed,.wp-block-video,.wp-block-gallery,.wp-block-table,.wp-block-quote,.wp-block-pullquote,.wp-block-separator,.wp-block-buttons,.wp-block-columns{margin:1.4em 0}

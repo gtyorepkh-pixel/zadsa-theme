@@ -163,7 +163,7 @@ function zt_rep_svg_line( $pts, $title, $desc ) {
 	foreach ( $pts as $i => $p ) {
 		$s .= '<circle cx="' . $xy[ $i ][0] . '" cy="' . $xy[ $i ][1] . '" r="4" fill="#1f6f8b"/>';
 		$s .= '<text x="' . $xy[ $i ][0] . '" y="' . ( $xy[ $i ][1] - 9 ) . '" text-anchor="middle" font-size="12" font-weight="700" fill="#14262e">' . zt_svg_esc( zt_fmt( $p[1] ) ) . '</text>';
-		$s .= '<text x="' . $xy[ $i ][0] . '" y="' . ( $T + $ih + 20 ) . '" text-anchor="middle" font-size="11" fill="#43555e">' . zt_svg_esc( substr( $p[0], 5, 2 ) . '/' . substr( $p[0], 2, 2 ) ) . '</text>';
+		$s .= '<text x="' . $xy[ $i ][0] . '" y="' . ( $T + $ih + 20 ) . '" text-anchor="middle" font-size="11" fill="#111111">' . zt_svg_esc( substr( $p[0], 5, 2 ) . '/' . substr( $p[0], 2, 2 ) ) . '</text>';
 	}
 	return $s . '</svg>';
 }

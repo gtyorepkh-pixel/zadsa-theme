@@ -11,7 +11,9 @@ add_action( 'wp_head', function () {
 	$cta = strlen( $cta ) === 3 ? preg_replace( '/(.)/', '$1$1', $cta ) : $cta;
 	$lum = ( hexdec( substr( $cta, 0, 2 ) ) * 0.299 + hexdec( substr( $cta, 2, 2 ) ) * 0.587 + hexdec( substr( $cta, 4, 2 ) ) * 0.114 ) / 255;
 	$h  .= ';--hdr-cta-ink:' . ( $lum > 0.55 ? '#1a1200' : '#ffffff' );
-	echo '<style id="zad-vars">:root{--primary:' . $p . ';--accent:' . $a . ';' . $h . '}</style>' . "\n"; // phpcs:ignore
+	// small / secondary text (captions, dates, notes): deep black by default, the owner can recolour it in the options; text the editor coloured by hand keeps its own colour (inline styles win); dark mode keeps its own light value
+	$sm = $c( 'zad_color_small', '#111111' );
+	echo '<style id="zad-vars">:root{--primary:' . $p . ';--accent:' . $a . ';' . $h . '}:root:not([data-theme=dark]){--muted:' . $sm . '}</style>' . "\n"; // phpcs:ignore
 	echo '<meta name="theme-color" content="' . esc_attr( $p ) . '">' . "\n";
 }, 5 );
 

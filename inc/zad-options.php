@@ -8,6 +8,7 @@ CSF::createSection( $zad_prefix, array(
 	'fields' => array(
 		array( 'id' => 'zad_color_primary', 'type' => 'color', 'title' => 'اللون الأساسي', 'default' => '#0c687e' ),
 		array( 'id' => 'zad_color_accent', 'type' => 'color', 'title' => 'لون الأزرار (التمييز)', 'default' => '#f49400' ),
+		array( 'id' => 'zad_color_small', 'type' => 'color', 'title' => 'لون الخط الصغير (الشرح والتواريخ والملاحظات تحت العناوين)', 'default' => '#111111', 'desc' => 'أسود غامق افتراضياً لكل النص الصغير في الموقع. أي لون تحدده داخل المحرر لنص معيّن (من أدوات تلوين النص) يغلب هذا اللون في ذلك النص فقط. لا يؤثر على الوضع الداكن.' ),
 		array( 'type' => 'subheading', 'content' => 'الثقة والاستماع' ),
 		array( 'id' => 'zad_tts_provider', 'type' => 'select', 'title' => 'مصدر الصوت', 'options' => array( 'browser' => 'صوت المتصفح (مجاني، الجودة تختلف)', 'azure' => 'Azure Speech (أصوات سعودية طبيعية)', 'google' => 'Google Cloud Text-to-Speech' ), 'default' => 'browser', 'desc' => 'مع Azure أو Google يُولَّد ملف MP3 لكل صفحة مرة واحدة ويُعرض كمشغّل صوتي. المفتاح يبقى على الخادم فقط.' ),
 		array( 'id' => 'zad_tts_key', 'type' => 'text', 'title' => 'مفتاح الخدمة (API key)', 'attributes' => array( 'autocomplete' => 'off' ) ),
