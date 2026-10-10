@@ -45,7 +45,6 @@ while ( have_posts() ) :
 			<div class="prose entry-content"><?php echo zad_content_with_box( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 			<p class="meta-line">آخر تحديث: <?php echo esc_html( get_the_modified_date() ); ?></p>
 
-			<?php echo zad_link_button_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
 			<?php
 			$rq = array( 'post_type' => zad_faq_types(), 'posts_per_page' => 6, 'post__not_in' => array( $id ), 'no_found_rows' => true );

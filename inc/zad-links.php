@@ -160,6 +160,7 @@ function zad_content_with_box( $post_id ) {
 	ob_start();
 	the_content();
 	$html = ob_get_clean();
+	if ( 'zad_faq' === get_post_type( $post_id ) ) { return $html; } // question pages show the service once, in the card under the direct answer
 	$box  = zad_link_box_html( $post_id );
 	if ( '' === $box ) { return $html; }
 	if ( preg_match_all( '/<h2\b/i', $html, $m, PREG_OFFSET_CAPTURE ) && count( $m[0] ) >= 2 ) { $pos = $m[0][1][1]; }
