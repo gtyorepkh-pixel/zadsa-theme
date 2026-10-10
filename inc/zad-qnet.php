@@ -53,7 +53,7 @@ function zad_qnet_is_dup( $title, $own_tokens ) {
 
 /** array( 'items' => [ [id, title, url], … ], 'term' => [name, url]|null ) — cached 12h, cleared whenever a question/service is saved. */
 function zad_qnet_data( $id ) {
-	$key = 'zad_qnet_' . (int) get_option( 'zad_qnet_ver', 1 ) . '_' . (int) $id;
+	$key = 'zad_qnet_' . (int) get_option( 'zad_qnet_ver', 1 ) . '_' . (int) $id . ( function_exists( 'zad_city_key' ) ? '_' . zad_city_key( $id ) : '' ); // the page's city is part of the key
 	$hit = get_transient( $key );
 	if ( is_array( $hit ) ) { return $hit; }
 	$out = array( 'items' => array(), 'term' => null );
@@ -77,8 +77,10 @@ function zad_qnet_data( $id ) {
 		$kws  = zad_qnet_keywords( $id );
 		$city = function_exists( 'zad_current_city' ) ? zad_current_city( $id )['name'] : '';
 		$rank = array();
+		$csc = function_exists( 'zad_service_city_scope' ) ? zad_service_city_scope( $id ) : null;
 		foreach ( $cand as $i => $p ) {
 			if ( zad_qnet_is_dup( $p->post_title, $own ) ) { continue; }
+			if ( null !== $csc && zad_city_mentions_other( $p->post_title, $csc ) ) { continue; } // a question about another city never fills this page's list
 			$sc = 0;
 			foreach ( $kws as $re ) { if ( preg_match( $re, $p->post_title ) ) { $sc += 3; break; } }
 			if ( '' !== $city && false !== mb_strpos( $p->post_title, $city ) ) { $sc += 2; }
@@ -90,6 +92,7 @@ function zad_qnet_data( $id ) {
 	if ( count( $posts ) < 2 && function_exists( 'zad_service_faqs' ) ) { // questions explicitly linked to this service
 		$linked = zad_service_faqs( $id, 6 );
 		$posts  = $linked->posts;
+		if ( ! $ids && function_exists( 'zad_city_mentions_other' ) ) { $csc2 = zad_service_city_scope( $id ); $posts = array_values( array_filter( $posts, function ( $p ) use ( $csc2 ) { return ! zad_city_mentions_other( $p->post_title, $csc2 ); } ) ); }
 	}
 	foreach ( $posts as $p ) { $out['items'][] = array( (int) $p->ID, wp_strip_all_tags( get_the_title( $p ) ), get_permalink( $p ) ); }
 	if ( count( $out['items'] ) < 2 ) { $out['items'] = array(); }

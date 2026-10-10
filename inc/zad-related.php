@@ -15,6 +15,14 @@ function zad_related_label( $id ) {
 	return in_array( $pt, zad_service_types(), true ) ? 'خدمة' : 'مقال';
 }
 
+/** City of a picked service page; a warning when it is another city than the page being edited («all» and non-service pages: nothing). */
+function zad_related_city_note( $id, $page_id ) {
+	if ( ! function_exists( 'zad_service_city_scope' ) || ! in_array( get_post_type( $id ), zad_service_types(), true ) ) { return ''; }
+	$sc = zad_service_city_scope( $id ); $me = $page_id ? zad_service_city_scope( $page_id ) : '';
+	if ( '' === $sc || 'all' === $sc ) { return ''; }
+	return $sc === $me ? '<em class="zrel__city">' . esc_html( zad_city_label( $sc ) ) . '</em>' : '<em class="zrel__city" style="color:#b32d2e" title="مختارة يدوياً وستظهر كما هي، لكنها من مدينة غير مدينة هذه الصفحة">⚠ ' . esc_html( zad_city_label( $sc ) ) . ( $me ? ' ≠ ' . esc_html( zad_city_label( $me ) ) : '' ) . '</em>';
+}
+
 function zad_related_picker( $post_id, $ids ) {
 	$ids = array_values( array_filter( array_map( 'intval', (array) $ids ) ) );
 	wp_nonce_field( 'zad_rel', 'zad_rel_n' );
@@ -24,7 +32,7 @@ function zad_related_picker( $post_id, $ids ) {
 	echo '<ul class="zrel__sel">';
 	foreach ( $ids as $id ) {
 		if ( ! get_post( $id ) ) { continue; }
-		echo '<li draggable="true" data-id="' . (int) $id . '"><span class="zrel__h">⋮⋮</span><b>' . esc_html( get_the_title( $id ) ) . '</b><em>' . esc_html( zad_related_label( $id ) ) . '</em><button type="button" class="zrel__x" aria-label="إزالة">×</button></li>';
+		echo '<li draggable="true" data-id="' . (int) $id . '"><span class="zrel__h">⋮⋮</span><b>' . esc_html( get_the_title( $id ) ) . '</b><em>' . esc_html( zad_related_label( $id ) ) . '</em>' . zad_related_city_note( $id, $post_id ) . '<button type="button" class="zrel__x" aria-label="إزالة">×</button></li>';
 	}
 	echo '</ul><p class="description zrel__none"' . ( $ids ? ' hidden' : '' ) . '>لم تختر شيئاً: لن يظهر قسم «ذات صلة» في هذه الصفحة.</p></div>';
 	?>
@@ -59,7 +67,7 @@ add_action( 'wp_ajax_zad_rel_search', function () {
 	if ( mb_strlen( $q ) < 2 ) { wp_send_json_success( array() ); }
 	$posts = get_posts( array( 's' => $q, 'post_type' => zad_related_types(), 'post_status' => 'publish', 'numberposts' => 12, 'post__not_in' => array( $ex ), 'suppress_filters' => false, 'zad_all' => true ) );
 	$out = array();
-	foreach ( $posts as $p ) { $out[] = array( 'id' => $p->ID, 'title' => html_entity_decode( get_the_title( $p ), ENT_QUOTES, 'UTF-8' ), 'label' => zad_related_label( $p->ID ) ); }
+	foreach ( $posts as $p ) { $cn = ( function_exists( 'zad_service_city_scope' ) && in_array( $p->post_type, zad_service_types(), true ) ) ? zad_service_city_scope( $p->ID ) : ''; $out[] = array( 'id' => $p->ID, 'title' => html_entity_decode( get_the_title( $p ), ENT_QUOTES, 'UTF-8' ), 'label' => zad_related_label( $p->ID ) . ( '' !== $cn ? ' · ' . zad_city_label( $cn ) : '' ) ); }
 	wp_send_json_success( $out );
 } );
 

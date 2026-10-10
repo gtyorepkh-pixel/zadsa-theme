@@ -102,7 +102,7 @@ function zad_sbar_item( $p ) { return array( (int) $p->ID, get_permalink( $p ), 
  */
 function zad_services_sidebar_data( $current_id = 0 ) {
 	if ( ! $current_id ) { return array(); }
-	$key  = 'zad_sbar2_' . (int) get_option( 'zad_nav_ver', 1 ) . '_' . (int) $current_id;
+	$key  = 'zad_sbar2_' . (int) get_option( 'zad_nav_ver', 1 ) . '_' . (int) $current_id . ( function_exists( 'zad_city_key' ) ? '_' . zad_city_key( $current_id ) : '' ); // the page's city is part of the key
 	$data = get_transient( $key );
 	if ( is_array( $data ) ) { return $data; }
 	$data = array();
@@ -119,12 +119,16 @@ function zad_services_sidebar_data( $current_id = 0 ) {
 		if ( $cur->post_parent ) {
 			$parent = get_post( $cur->post_parent );
 			$items  = array();
-			if ( $parent && 'publish' === $parent->post_status ) { $items[] = zad_sbar_item( $parent ); }
-			foreach ( get_posts( array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $cur->post_parent, 'post__not_in' => array( (int) $current_id ), 'zad_all' => true, 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
+			if ( $parent && 'publish' === $parent->post_status && ( ! function_exists( 'zad_city_allowed' ) || zad_city_allowed( $parent->ID, zad_service_city_scope( $current_id ) ) ) ) { $items[] = zad_sbar_item( $parent ); }
+			$sq = array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $cur->post_parent, 'post__not_in' => array( (int) $current_id ), 'zad_all' => true, 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord );
+			if ( function_exists( 'zad_city_args_for' ) ) { $sq = zad_city_args_for( $sq, $current_id ); } // same city (or «all») only
+			foreach ( get_posts( $sq ) as $p ) { $items[] = zad_sbar_item( $p ); }
 			if ( $items ) { $data[] = array( 'name' => 'في هذا القسم', 'open' => true, 'items' => $items ); }
 		} else {
 			$items = array();
-			foreach ( get_posts( array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $current_id, 'zad_all' => true, 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
+			$sq = array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $current_id, 'zad_all' => true, 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord );
+			if ( function_exists( 'zad_city_args_for' ) ) { $sq = zad_city_args_for( $sq, $current_id, false ); } // a main page keeps listing its city pages (the city picker); a city page only its own city
+			foreach ( get_posts( $sq ) as $p ) { $items[] = zad_sbar_item( $p ); }
 			if ( $items ) { $data[] = array( 'name' => zad_card_title( $current_id ), 'open' => true, 'items' => $items ); }
 		}
 	}
@@ -139,7 +143,9 @@ function zad_services_sidebar_data( $current_id = 0 ) {
 				$tq = array( 'relation' => 'AND', array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) );
 				if ( $city ) { $tq[] = array( 'taxonomy' => 'service_area', 'terms' => $city, 'include_children' => true ); }
 				$items = array();
-				foreach ( get_posts( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => 30, 'no_found_rows' => true, 'zad_all' => true, 'post__not_in' => array( (int) $current_id ), 'tax_query' => $tq, 'orderby' => $ord ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
+				$cq = array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => 30, 'no_found_rows' => true, 'zad_all' => true, 'post__not_in' => array( (int) $current_id ), 'tax_query' => $tq, 'orderby' => $ord );
+				if ( function_exists( 'zad_city_args_for' ) ) { $cq = zad_city_args_for( $cq, $current_id ); }
+				foreach ( get_posts( $cq ) as $p ) { $items[] = zad_sbar_item( $p ); }
 				if ( $items ) { $data[] = array( 'name' => $c->name, 'open' => true, 'items' => $items ); }
 			}
 		}

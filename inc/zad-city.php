@@ -115,11 +115,11 @@ function zad_current_city( $post_id = 0 ) {
 	$found = null;
 	if ( $post_id ) {
 		$own = trim( (string) get_post_meta( $post_id, '_zad_city', true ) );
-		if ( '' !== $own ) { $found = $make( $own, 'meta' ); }
+		if ( '' !== $own && 'all' !== strtolower( $own ) ) { $found = $make( $own, 'meta' ); } // «all» (every city) is not a city name: discovery continues
 		if ( ! $found ) {
 			foreach ( (array) get_post_ancestors( $post_id ) as $aid ) { // nearest parent first
 				$m = trim( (string) get_post_meta( $aid, '_zad_city', true ) );
-				if ( '' !== $m ) { $found = $make( $m, 'ancestor' ); break; }
+				if ( '' !== $m && 'all' !== strtolower( $m ) ) { $found = $make( $m, 'ancestor' ); break; }
 				$p = get_post( $aid );
 				if ( $p && isset( $map[ $norm( $p->post_name ) ] ) ) { $found = $make( $p->post_name, 'ancestor' ); break; }
 			}

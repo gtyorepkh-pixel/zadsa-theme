@@ -32,18 +32,25 @@ function zad_bridges_html( $id ) {
 	if ( ! $rules ) { return ''; }
 	$from = zad_bridge_seg( $id );
 	if ( ! $from || empty( $rules[ $from ] ) ) { return ''; }
-	$key = 'zad_br_' . $id . '_' . (int) get_option( 'zad_hood_ver', 0 );
+	$sc  = function_exists( 'zad_service_city_scope' ) ? zad_service_city_scope( $id ) : '';
+	$key = 'zad_br_' . $id . '_' . (int) get_option( 'zad_hood_ver', 0 ) . ( function_exists( 'zad_city_key' ) ? '_' . zad_city_key( $id ) : '' ); // the page's city is part of the key
 	$c   = get_transient( $key );
 	if ( ! is_array( $c ) ) {
 		$targets = $rules[ $from ]; $c = array( 'same' => array(), 'main' => array() );
+		$ok = function ( $p ) use ( $sc ) { return ! function_exists( 'zad_city_allowed' ) || zad_city_allowed( $p->ID, $sc ); }; // same city (or «all») only
 		$hood = (int) get_post_meta( $id, '_zad_h_hood', true );
 		if ( $hood ) {
 			foreach ( get_posts( array( 'post_type' => zad_hood_types(), 'post_status' => 'publish', 'numberposts' => 40, 'post__not_in' => array( $id ), 'suppress_filters' => true, 'zad_all' => true, 'meta_query' => array( 'relation' => 'AND', array( 'key' => '_zad_h_hood', 'value' => $hood ), array( 'key' => '_zad_h_on', 'value' => '1' ) ) ) ) as $p ) {
-				if ( in_array( zad_bridge_seg( $p ), $targets, true ) ) { $c['same'][] = array( get_the_title( $p ), get_permalink( $p ) ); }
+				if ( in_array( zad_bridge_seg( $p ), $targets, true ) && $ok( $p ) ) { $c['same'][] = array( get_the_title( $p ), get_permalink( $p ) ); }
 			}
 		}
-		foreach ( get_posts( array( 'post_type' => zad_service_types(), 'post_parent' => 0, 'post_status' => 'publish', 'numberposts' => 200, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) ) as $p ) {
-			if ( in_array( zad_bridge_seg( $p ), $targets, true ) ) { $c['main'][] = array( get_the_title( $p ), get_permalink( $p ) ); }
+		// «خدماتنا الأخرى»: the main page of the SAME city in each target section (a city page, or a top-level page), never a page of another city
+		$mq = array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => 300, 'zad_all' => true, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) );
+		if ( function_exists( 'zad_city_filter_args' ) ) { $mq = zad_city_filter_args( $mq, $sc ); }
+		$cities = function_exists( 'zad_city_map' ) ? zad_city_map() : array();
+		foreach ( get_posts( $mq ) as $p ) {
+			if ( ! in_array( zad_bridge_seg( $p ), $targets, true ) ) { continue; }
+			if ( 0 === (int) $p->post_parent || isset( $cities[ strtolower( urldecode( $p->post_name ) ) ] ) ) { $c['main'][] = array( get_the_title( $p ), get_permalink( $p ) ); }
 		}
 		$c['same'] = array_slice( $c['same'], 0, 6 ); $c['main'] = array_slice( $c['main'], 0, 8 );
 		set_transient( $key, $c, 12 * HOUR_IN_SECONDS );
@@ -56,5 +63,6 @@ function zad_bridges_html( $id ) {
 		foreach ( $c[ $k ] as $r ) { $o .= '<li><a href="' . esc_url( $r[1] ) . '">' . esc_html( $r[0] ) . '</a></li>'; }
 		$o .= '</ul>';
 	}
+	if ( function_exists( 'zad_city_more_html' ) ) { $o .= zad_city_more_html( $id, count( $c['main'] ), 8 ); }
 	return $o . '</div></section>';
 }

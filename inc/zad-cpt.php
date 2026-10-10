@@ -482,6 +482,7 @@ function zad_related_services( $post_id, $limit = 3 ) {
 		return new WP_Query( array( 'post__in' => array( 0 ), 'no_found_rows' => true ) ); // nothing chosen = nothing shown
 	}
 	$args['post_type'] = zad_service_types();
+	if ( function_exists( 'zad_city_args_for' ) ) { $args = zad_city_args_for( $args, $post_id ); } // automatic list: the same city (or «all») only; the hand-picked list above is never filtered
 	$terms = wp_get_post_terms( $post_id, 'service_cat', array( 'fields' => 'ids' ) );
 	if ( $terms ) {
 		$args['tax_query'] = array( array( 'taxonomy' => 'service_cat', 'terms' => $terms ) );

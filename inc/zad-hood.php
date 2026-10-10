@@ -251,7 +251,8 @@ add_action( 'transition_post_status', function ( $n, $o, $post ) { if ( in_array
 /** Published district pages for the neighbouring districts of $hood, same service. */
 function zad_hood_neighbours( $id, $hood, $svc ) {
 	if ( ! $hood || ! $svc ) { return array(); }
-	$key = 'zad_hnb_' . $id . '_' . (int) get_option( 'zad_hood_ver', 0 );
+	$sc  = function_exists( 'zad_service_city_scope' ) ? zad_service_city_scope( $id ) : '';
+	$key = 'zad_hnb_' . $id . '_' . (int) get_option( 'zad_hood_ver', 0 ) . ( function_exists( 'zad_city_key' ) ? '_' . zad_city_key( $id ) : '' ); // the page's city is part of the key
 	$c   = get_transient( $key );
 	if ( is_array( $c ) ) { return $c; }
 	$nb  = array_map( 'intval', (array) get_post_meta( $hood, '_zad_hd_nbrs', true ) );
@@ -260,7 +261,7 @@ function zad_hood_neighbours( $id, $hood, $svc ) {
 		$q = get_posts( array( 'post_type' => zad_hood_types(), 'post_status' => 'publish', 'numberposts' => 40, 'post__not_in' => array( $id ), 'suppress_filters' => true, 'zad_all' => true,
 			'meta_query' => array( 'relation' => 'AND', array( 'key' => '_zad_h_hood', 'value' => $nb, 'compare' => 'IN' ), array( 'key' => '_zad_h_svc', 'value' => $svc ) ) ) );
 		foreach ( $q as $p ) {
-			if ( ! zad_hood_active( $p->ID ) ) { continue; }
+			if ( ! zad_hood_active( $p->ID ) || ( function_exists( 'zad_city_allowed' ) && ! zad_city_allowed( $p->ID, $sc ) ) ) { continue; } // a neighbour of another city is not listed
 			$out[] = array( get_the_title( (int) get_post_meta( $p->ID, '_zad_h_hood', true ) ), get_permalink( $p ) );
 		}
 	}
