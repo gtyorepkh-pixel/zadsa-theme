@@ -13,23 +13,35 @@ while ( have_posts() ) :
 <main id="main" class="sec">
 	<div class="wrap slayout">
 		<article class="slayout__main">
-			<?php if ( $short ) : ?><div class="answer"><span class="eyebrow" data-nosnippet>الإجابة المختصرة</span><p><?php echo esc_html( zad_clean_answer( $short ) ); ?></p></div><?php endif; ?>
+			<?php if ( $short ) : ?><div class="answer"><span class="eyebrow" data-nosnippet>الإجابة المباشرة</span><p><?php echo esc_html( zad_clean_answer( $short ) ); ?></p></div><?php endif; ?>
 			<?php
-			$more = trim( (string) get_post_meta( $id, '_zad_faq_more', true ) );
-			if ( $more ) : ?><div class="faq-more"><?php echo wp_kses_post( wpautop( esc_html( $more ) ) ); ?></div><?php endif;
-			$aid = (int) get_post_meta( $id, '_zad_faq_article', true );
-			$aid = ( $aid && get_post_status( $aid ) === 'publish' ) ? $aid : 0;
-			$albl = get_post_meta( $id, '_zad_faq_article_lbl', true ) ?: 'اقرأ الدليل كاملاً';
-			if ( $aid ) : ?>
-			<div class="fork fork--one">
+			$sid = zad_faq_service_for( $id );
+			$aid = zad_faq_article_for( $id );
+			if ( $sid || $aid ) :
+				$slbl = trim( (string) get_post_meta( $id, '_zad_faq_service_lbl', true ) ) ?: 'تعرّف على الخدمة';
+				$albl = trim( (string) get_post_meta( $id, '_zad_faq_article_lbl', true ) ) ?: 'اقرأ الدليل كاملاً';
+				$n    = 0; ?>
+			<div class="fork<?php echo ( $sid && $aid ) ? '' : ' fork--one'; ?>">
+				<?php if ( $sid ) : ?>
+				<a class="fork__t fork__t--svc" href="<?php echo esc_url( get_permalink( $sid ) ); ?>">
+					<span class="fork__n"><?php echo esc_html( sprintf( '%02d', ++$n ) ); ?></span>
+					<span class="fork__k">لحل المشكلة مع فريق متخصص</span>
+					<strong><?php echo esc_html( zad_card_title( $sid ) ); ?></strong>
+					<span class="fork__go"><?php echo esc_html( $slbl ); ?> <?php echo zad_icon( 'arrow', 16 ); // phpcs:ignore ?></span>
+				</a>
+				<?php endif; ?>
+				<?php if ( $aid ) : ?>
 				<a class="fork__t fork__t--art" href="<?php echo esc_url( get_permalink( $aid ) ); ?>">
-					<span class="fork__n">01</span>
+					<span class="fork__n"><?php echo esc_html( sprintf( '%02d', ++$n ) ); ?></span>
 					<span class="fork__k">لقراءة شرح أكثر · <?php echo esc_html( zad_reading_time( $aid ) ); ?></span>
 					<strong><?php echo esc_html( zad_card_title( $aid ) ); ?></strong>
 					<span class="fork__go"><?php echo esc_html( $albl ); ?> <?php echo zad_icon( 'arrow', 16 ); // phpcs:ignore ?></span>
 				</a>
+				<?php endif; ?>
 			</div>
-			<?php endif; ?>
+			<?php endif;
+			$more = trim( (string) get_post_meta( $id, '_zad_faq_more', true ) );
+			if ( $more ) : ?><div class="faq-more"><?php echo wp_kses_post( wpautop( esc_html( $more ) ) ); ?></div><?php endif; ?>
 			<div class="prose entry-content"><?php echo zad_content_with_box( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 			<p class="meta-line">آخر تحديث: <?php echo esc_html( get_the_modified_date() ); ?></p>
 

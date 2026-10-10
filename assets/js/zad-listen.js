@@ -33,7 +33,7 @@
 	function collect() {
 		blocks = []; chunks = [];
 		var h1 = document.querySelector('h1'); if (h1) { blocks.push(h1); }
-		[].forEach.call(document.querySelectorAll('.entry-content h2, .entry-content h3, .entry-content h4, .entry-content p, .entry-content li'), function (el) {
+		[].forEach.call(document.querySelectorAll('.answer p, .entry-content h2, .entry-content h3, .entry-content h4, .entry-content p, .entry-content li'), function (el) {
 			if (el.closest('.listen, .toc, nav, table, form, script, style, .ixw, .ixc, .faq-ext')) { return; }
 			if ((el.textContent || '').trim().length > 1) { blocks.push(el); }
 		});

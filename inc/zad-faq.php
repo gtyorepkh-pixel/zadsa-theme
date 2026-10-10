@@ -34,15 +34,16 @@ add_action( 'add_meta_boxes', function () {
 function zad_faq_metabox( $post ) {
 	wp_nonce_field( 'zad_faq_save', 'zad_faq_nonce' );
 	$sel = array_map( 'intval', (array) get_post_meta( $post->ID, '_zad_faq_services', true ) );
-	echo '<p>الإجابة المختصرة تُكتب في «المقتطف»، والشرح الكامل في المحتوى.</p><select name="zad_faq_services[]" multiple size="8" style="width:100%">';
+	echo '<p>الإجابة المباشرة تُكتب في صندوق «الإجابة المباشرة» أسفل المحرر، والشرح الكامل في المحتوى.</p><select name="zad_faq_services[]" multiple size="8" style="width:100%">';
 	foreach ( get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 200, 'orderby' => 'title', 'order' => 'ASC' ) ) as $s ) {
 		echo '<option value="' . (int) $s->ID . '"' . ( in_array( $s->ID, $sel, true ) ? ' selected' : '' ) . '>' . esc_html( $s->post_title ) . '</option>';
 	}
 	echo '</select>';
 	$more = (string) get_post_meta( $post->ID, '_zad_faq_more', true );
-	$art  = (int) get_post_meta( $post->ID, '_zad_faq_article', true );
-	$lbl  = (string) get_post_meta( $post->ID, '_zad_faq_article_lbl', true );
 	echo '<hr><p><b>فقرة توضيح تحت الإجابة</b> (اختياري، نص عادي)</p><textarea name="zad_faq_more" rows="5" style="width:100%">' . esc_textarea( $more ) . '</textarea>';
+	if ( 'zad_faq' === $post->post_type ) { return; } // the article link lives in the «الإجابة المباشرة» box below the editor
+	$art = (int) get_post_meta( $post->ID, '_zad_faq_article', true );
+	$lbl = (string) get_post_meta( $post->ID, '_zad_faq_article_lbl', true );
 	echo '<p><b>مقال للتعمّق</b> (اختياري)</p><select name="zad_faq_article" style="width:100%"><option value="0">— بدون —</option>';
 	foreach ( get_posts( array( 'post_type' => zad_article_types(), 'numberposts' => 300, 'orderby' => 'title', 'order' => 'ASC' ) ) as $a ) {
 		echo '<option value="' . (int) $a->ID . '"' . selected( $art, $a->ID, false ) . '>' . esc_html( $a->post_title ) . '</option>';
@@ -59,8 +60,125 @@ add_action( 'save_post', function ( $id ) {
 	$v = isset( $_POST['zad_faq_services'] ) ? array_map( 'strval', array_map( 'absint', (array) $_POST['zad_faq_services'] ) ) : array();
 	update_post_meta( $id, '_zad_faq_services', $v );
 	update_post_meta( $id, '_zad_faq_more', isset( $_POST['zad_faq_more'] ) ? sanitize_textarea_field( wp_unslash( $_POST['zad_faq_more'] ) ) : '' );
-	update_post_meta( $id, '_zad_faq_article', isset( $_POST['zad_faq_article'] ) ? absint( $_POST['zad_faq_article'] ) : 0 );
-	update_post_meta( $id, '_zad_faq_article_lbl', isset( $_POST['zad_faq_article_lbl'] ) ? sanitize_text_field( wp_unslash( $_POST['zad_faq_article_lbl'] ) ) : '' );
+	if ( isset( $_POST['zad_faq_article'] ) ) { // the field lives in the «الإجابة المباشرة» box; never reset it when that box is not on the screen
+		$a = absint( $_POST['zad_faq_article'] );
+		update_post_meta( $id, '_zad_faq_article', ( $a && in_array( get_post_type( $a ), zad_article_types(), true ) ) ? $a : 0 );
+		update_post_meta( $id, '_zad_faq_article_lbl', isset( $_POST['zad_faq_article_lbl'] ) ? sanitize_text_field( wp_unslash( $_POST['zad_faq_article_lbl'] ) ) : '' );
+	}
+} );
+
+/* ------------------------------------------------------------------ */
+/* «الإجابة المباشرة» box: the answer lives in post_excerpt itself      */
+/* ------------------------------------------------------------------ */
+
+/** The native «المقتطف» box / panel is replaced by the direct-answer box on zad_faq pages (post_excerpt stays the stored value). */
+add_action( 'init', function () {
+	if ( post_type_exists( 'zad_faq' ) ) { remove_post_type_support( 'zad_faq', 'excerpt' ); }
+}, 60 );
+
+add_action( 'add_meta_boxes_zad_faq', function () {
+	add_meta_box( 'zad_faq_answer', 'الإجابة المباشرة', 'zad_faq_answer_box', 'zad_faq', 'normal', 'high' );
+} );
+
+function zad_faq_words( $t ) {
+	$t = trim( (string) $t );
+	return '' === $t ? 0 : count( preg_split( '/\s+/u', $t ) );
+}
+
+/** Published/draft posts of the given types as [id => title] (a currently selected one is always kept). */
+function zad_faq_pick_list( $types, $selected = 0 ) {
+	$out = array();
+	foreach ( get_posts( array( 'post_type' => $types, 'post_status' => array( 'publish', 'draft', 'pending', 'future' ), 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC', 'suppress_filters' => true ) ) as $p ) {
+		$out[ $p->ID ] = $p->post_title . ( 'publish' === $p->post_status ? '' : ' (' . ( 'draft' === $p->post_status ? 'مسودة' : 'غير منشور' ) . ')' );
+	}
+	if ( $selected && ! isset( $out[ $selected ] ) && get_post( $selected ) ) { $out[ $selected ] = get_the_title( $selected ); }
+	return $out;
+}
+
+/** The service page a question card points to: its own link, else the first published service of «ربط السؤال بالخدمات». */
+function zad_faq_service_for( $id ) {
+	$sid = (int) get_post_meta( $id, '_zad_faq_service_link', true );
+	if ( $sid && 'publish' === get_post_status( $sid ) && in_array( get_post_type( $sid ), zad_service_types(), true ) ) { return $sid; }
+	return function_exists( 'zad_linked_service' ) ? (int) zad_linked_service( $id ) : 0;
+}
+
+/** The blog article card target (published, article type), else 0. */
+function zad_faq_article_for( $id ) {
+	$aid = (int) get_post_meta( $id, '_zad_faq_article', true );
+	return ( $aid && 'publish' === get_post_status( $aid ) && in_array( get_post_type( $aid ), zad_article_types(), true ) ) ? $aid : 0;
+}
+
+function zad_faq_pick_html( $name, $list, $selected, $search_ph ) {
+	$o = '<input type="search" class="zad-fa-find" data-for="' . esc_attr( $name ) . '" placeholder="' . esc_attr( $search_ph ) . '" autocomplete="off" style="width:100%;margin-bottom:4px">';
+	$o .= '<select name="' . esc_attr( $name ) . '" id="' . esc_attr( $name ) . '" size="6" style="width:100%;height:auto"><option value="0">— بدون —</option>';
+	foreach ( $list as $pid => $title ) { $o .= '<option value="' . (int) $pid . '"' . selected( $selected, $pid, false ) . '>' . esc_html( $title ) . '</option>'; }
+	return $o . '</select>';
+}
+
+function zad_faq_answer_box( $post ) {
+	wp_nonce_field( 'zad_faq_answer_save', 'zad_faq_ans_nonce' );
+	$ans = '' === trim( (string) $post->post_excerpt ) ? '' : (string) $post->post_excerpt;
+	$n   = zad_faq_words( $ans );
+	$sv  = (int) get_post_meta( $post->ID, '_zad_faq_service_link', true );
+	$art = (int) get_post_meta( $post->ID, '_zad_faq_article', true );
+	$eff = zad_faq_service_for( $post->ID );
+	echo '<div class="zad-fa">';
+	echo '<p><label for="zad-fa-text"><b>الإجابة المباشرة</b> — جملتان إلى ثلاث، نص عادي بلا HTML. تظهر في أول الصفحة وفي الـ Schema ووصف البحث وبطاقات الأسئلة.</label></p>';
+	echo '<textarea name="zad_faq_answer" id="zad-fa-text" rows="4" style="width:100%;line-height:1.9">' . esc_textarea( $ans ) . '</textarea>';
+	echo '<p class="zad-fa-meta"><span>عدد الكلمات: <b id="zad-fa-count">' . (int) $n . '</b> / 60</span> <span id="zad-fa-warn" style="color:#b32d2e;font-weight:600">' . ( 0 === $n ? 'الإجابة فارغة — ستظهر الصفحة بدون إجابة مباشرة.' : ( $n > 60 ? 'الإجابة أطول من 60 كلمة؛ الأفضل اختصارها (تحذير فقط، يمكنك الحفظ).' : '' ) ) . '</span></p>';
+	echo '<hr><div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">';
+	echo '<div><p><b>رابط الخدمة</b> (اختياري)</p>' . zad_faq_pick_html( 'zad_faq_service_link', zad_faq_pick_list( zad_service_types(), $sv ), $sv, 'ابحث في الخدمات…' );
+	echo '<p><input type="text" name="zad_faq_service_lbl" value="' . esc_attr( (string) get_post_meta( $post->ID, '_zad_faq_service_lbl', true ) ) . '" placeholder="عنوان الزر (افتراضي: تعرّف على الخدمة)" style="width:100%"></p>';
+	echo '<p class="description">إن تُرك فارغاً تُستخدم أول خدمة منشورة من «ربط السؤال بالخدمات»' . ( ! $sv && $eff ? ': <b>' . esc_html( get_the_title( $eff ) ) . '</b>' : '' ) . '.</p></div>';
+	echo '<div><p><b>رابط من المدونة</b> (اختياري)</p>' . zad_faq_pick_html( 'zad_faq_article', zad_faq_pick_list( zad_article_types(), $art ), $art, 'ابحث في المقالات…' );
+	echo '<p><input type="text" name="zad_faq_article_lbl" value="' . esc_attr( (string) get_post_meta( $post->ID, '_zad_faq_article_lbl', true ) ) . '" placeholder="عنوان الزر (افتراضي: اقرأ الدليل كاملاً)" style="width:100%"></p></div>';
+	echo '</div></div>';
+	?>
+<script>
+(function () {
+	var t = document.getElementById('zad-fa-text'), c = document.getElementById('zad-fa-count'), w = document.getElementById('zad-fa-warn');
+	function upd() {
+		var s = t.value.replace(/^\s+|\s+$/g, ''), n = s ? s.split(/\s+/).length : 0;
+		c.textContent = n;
+		w.textContent = n === 0 ? 'الإجابة فارغة — ستظهر الصفحة بدون إجابة مباشرة.' : (n > 60 ? 'الإجابة أطول من 60 كلمة؛ الأفضل اختصارها (تحذير فقط، يمكنك الحفظ).' : '');
+	}
+	if (t && c && w) { t.addEventListener('input', upd); upd(); }
+	[].forEach.call(document.querySelectorAll('.zad-fa-find'), function (inp) {
+		var sel = document.getElementById(inp.getAttribute('data-for')); if (!sel) { return; }
+		var all = [].map.call(sel.options, function (o) { return { v: o.value, t: o.text }; });
+		inp.addEventListener('input', function () {
+			var q = inp.value.trim().toLowerCase(), cur = sel.value;
+			sel.innerHTML = '';
+			all.forEach(function (o) {
+				if (o.v === '0' || o.v === cur || !q || o.t.toLowerCase().indexOf(q) !== -1) { var op = new Option(o.t, o.v); if (o.v === cur) { op.selected = true; } sel.add(op); }
+			});
+		});
+		inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); } });
+	});
+})();
+</script>
+	<?php
+}
+
+/** Saves the box: the direct answer goes into post_excerpt (plain text); the service link and its label are post meta. */
+add_filter( 'wp_insert_post_data', function ( $data, $postarr ) {
+	if ( 'zad_faq' !== ( $data['post_type'] ?? '' ) || ! isset( $_POST['zad_faq_answer'], $_POST['zad_faq_ans_nonce'] ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		return $data;
+	}
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['zad_faq_ans_nonce'] ) ), 'zad_faq_answer_save' ) ) { return $data; }
+	$pid = (int) ( $postarr['ID'] ?? 0 );
+	if ( $pid ? ! current_user_can( 'edit_post', $pid ) : ! current_user_can( get_post_type_object( 'zad_faq' )->cap->edit_posts ) ) { return $data; }
+	$data['post_excerpt'] = wp_slash( trim( preg_replace( '/[ \t]*\R[ \t]*/u', ' ', sanitize_textarea_field( wp_unslash( $_POST['zad_faq_answer'] ) ) ) ) );
+	return $data;
+}, 20, 2 );
+
+add_action( 'save_post_zad_faq', function ( $id ) {
+	if ( ! isset( $_POST['zad_faq_ans_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['zad_faq_ans_nonce'] ) ), 'zad_faq_answer_save' ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $id ) ) {
+		return;
+	}
+	$sv = isset( $_POST['zad_faq_service_link'] ) ? absint( $_POST['zad_faq_service_link'] ) : 0;
+	update_post_meta( $id, '_zad_faq_service_link', ( $sv && in_array( get_post_type( $sv ), zad_service_types(), true ) ) ? $sv : 0 );
+	update_post_meta( $id, '_zad_faq_service_lbl', isset( $_POST['zad_faq_service_lbl'] ) ? sanitize_text_field( wp_unslash( $_POST['zad_faq_service_lbl'] ) ) : '' );
 } );
 
 add_action( 'pre_get_posts', function ( $q ) {
@@ -203,7 +321,7 @@ function zad_faq_autolink( $faq_id, $force = false ) {
 }
 
 add_action( 'save_post', function ( $id ) {
-	if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! in_array( get_post_type( $id ), zad_faq_types(), true ) || 'publish' !== get_post_status( $id ) ) {
+	if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! empty( $GLOBALS['zad_fas_running'] ) || ! in_array( get_post_type( $id ), zad_faq_types(), true ) || 'publish' !== get_post_status( $id ) ) { // zad_fas_running: the «فصل الإجابة المباشرة» tool must not link questions as a side effect
 		return;
 	}
 	zad_faq_autolink( $id );

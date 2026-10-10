@@ -27,7 +27,12 @@ function zad_tts_text( $post ) {
 	$c    = preg_replace( '/[ \t]+/u', ' ', $c );
 	$c    = preg_replace( '/\.\s*\./u', '.', $c );
 	$c    = trim( preg_replace( "/\n\s*\n+/u", "\n", $c ) );
-	return trim( wp_strip_all_tags( get_the_title( $post ) ) ) . ".\n" . $c;
+	$ans = '';
+	if ( function_exists( 'zad_faq_answer_text' ) && in_array( $post->post_type, zad_faq_types(), true ) && has_excerpt( $post ) ) { // the direct answer is shown above the content, so it is read first (unless the content still opens with the same sentence)
+		$ans = zad_clean_answer( get_the_excerpt( $post ) );
+		if ( '' !== $ans && 0 === mb_strpos( zad_clean_answer( $c ), mb_substr( $ans, 0, 30 ) ) ) { $ans = ''; }
+	}
+	return trim( wp_strip_all_tags( get_the_title( $post ) ) ) . ".\n" . ( '' !== $ans ? $ans . ( preg_match( '/[.!؟?]$/u', $ans ) ? '' : '.' ) . "\n" : '' ) . $c;
 }
 
 function zad_tts_chunks( $text, $limit ) {
