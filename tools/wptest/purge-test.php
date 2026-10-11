@@ -44,8 +44,8 @@ ok( 6 === count( $inv['ids'] ), 'finds all 6 posts of both types (publish/draft/
 ok( $inv['revisions'] >= 2, 'counts revisions' ); ok( $inv['meta'] >= 4 && $inv['comments'] === 1 && $inv['rels'] >= 1, 'counts meta / comments / term links' );
 ok( array( $mi_bad ) === $inv['menu'], 'only the menu item that points at moving is listed' );
 ok( 4 === count( $inv['refs'] ) || 5 === count( $inv['refs'] ), 'refs in other pages: ' . count( $inv['refs'] ) );
-ok( 2 === count( $inv['redirects'] ), 'redirect rules from/to the old URLs: 2 (guide→sections rule is not touched): ' . count( $inv['redirects'] ) );
-ok( 3 === count( $inv['options'] ), 'options: slug list, hood services, bridges' ); ok( 3 === count( $inv['yoast'] ), 'yoast keys: 3' );
+ok( 2 === count( $inv['redirects'] ), 'redirect rules mentioning the old URLs are only REPORTED: ' . count( $inv['redirects'] ) );
+ok( 1 === count( $inv['options'] ) && isset( $inv['options']['zad_service_slugs'] ), 'options: only the type-slug list is touched' ); ok( 3 === count( $inv['yoast'] ), 'yoast keys: 3' );
 ok( array( $a_free ) === $inv['attach']['free'] && 2 === $inv['attach']['all'], 'attachments: 2, only the unused one is deletable' );
 ok( 1 === count( $inv['links'] ) && $inv['links'][0][0] === $keep, 'reports the page that links to /moving/' );
 
@@ -60,7 +60,7 @@ try { ob_start(); zad_pg_page(); ob_end_clean(); } catch ( \Throwable $e ) { ob_
 ok( $died && $before === $snap(), 'bad nonce → refused, nothing deleted' );
 $_POST = array(); $_REQUEST = array();
 $r = zad_pg_run( true );
-ok( 6 === $r['posts'], 'deleted 6 posts: ' . $r['posts'] ); ok( 1 === $r['attachments'], 'deleted only the free attachment' );
+ok( 6 === $r['posts'], 'deleted 6 posts: ' . $r['posts'] ); ok( 1 === $r['attachments'], 'deleted only the free attachment' ); ok( ! isset( $r['redirects'] ), 'run no longer touches redirects' );
 ok( ! get_post( $a_free ) && get_post( $a_used ), 'used attachment stays, free one gone' );
 foreach ( array( 'moving', 'drain_cleaning', 'drain-cleaning' ) as $t ) { ok( 0 === cnt( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = '$t'" ), "no rows left of $t" ); }
 ok( 0 === cnt( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'revision' AND post_parent IN (" . implode( ',', array( $m1, $d1 ) ) . ')' ), 'revisions gone' );
@@ -71,11 +71,11 @@ ok( (string) $c2 === (string) get_post_meta( $c1, '_zad_related', true ), 'unrel
 ok( (string) $c1 === (string) get_post_meta( $keep, '_zad_related', true ), 'related: only the removed ids stripped → "' . get_post_meta( $keep, '_zad_related', true ) . '"' );
 ok( array( $c2 ) === array_map( 'intval', (array) get_post_meta( $keep, '_zad_cities_svc', true ) ), 'array field cleaned' );
 ok( '' === (string) get_post_meta( $keep, '_zad_guides', true ) && ! metadata_exists( 'post', $keep, '_zad_guides' ) && ! metadata_exists( 'post', $keep, '_zad_wk_service' ), 'fields that became empty are deleted' );
-ok( 0 === cnt( "SELECT COUNT(*) FROM $RI WHERE url LIKE '/moving%' OR action_data LIKE '%drain-cleaning%'" ) && 1 === cnt( "SELECT COUNT(*) FROM $RI" ), 'redirect rules of the two types gone, the other rule kept' );
-$o = get_option( '_memo_theme_options' ); ok( 'pest-control,cleaning' === $o['zad_service_slugs'] && false === strpos( $o['zad_hood_services'], 'تسليك' ) && false === strpos( $o['zad_hood_services'], 'نقل' ) && false !== strpos( $o['zad_hood_services'], 'مكافحة حشرات' ) && false === strpos( $o['zad_bridges'], 'drain' ) && false !== strpos( $o['zad_bridges'], 'cleaning > pest-control' ), 'options cleaned, other lines kept' );
+ok( 3 === cnt( "SELECT COUNT(*) FROM $RI" ), 'ALL redirect rules kept (3)' );
+$o = get_option( '_memo_theme_options' ); ok( 'pest-control,cleaning' === $o['zad_service_slugs'] && "تنظيف مكيفات\nتسليك مجاري\nنقل أثاث\nمكافحة حشرات" === $o['zad_hood_services'] && "drain-cleaning > cleaning\ncleaning > pest-control" === $o['zad_bridges'], 'type-slug list cleaned; district-services text and smart-link rules untouched' );
 $y = get_option( 'wpseo_titles' ); ok( array( 'title-cleaning', 'title-page' ) === array_keys( $y ), 'only the two types\' yoast keys removed' );
 ok( get_post( $keep ) && get_post( $c1 ) && get_post( $c2 ), 'unrelated pages untouched' );
-$after = zad_pg_inventory(); ok( ! $after['ids'] && ! $after['redirects'] && ! $after['options'] && ! $after['yoast'] && ! $after['refs'] && ! $after['menu'], 'second inventory is empty' );
+$after = zad_pg_inventory(); ok( ! $after['ids'] && ! $after['options'] && ! $after['yoast'] && ! $after['refs'] && ! $after['menu'], 'second inventory is empty' );
 $r2 = zad_pg_run( true ); ok( 0 === $r2['posts'] && 0 === $r2['refs'], 'running again is a harmless no-op' );
 
 /* ---- 3) never comes back ---- */

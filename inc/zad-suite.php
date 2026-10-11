@@ -416,7 +416,7 @@ function zad_bc_hubs() {
 		'/pest-control/' => 'مكافحة الحشرات', '/guide/' => 'دليل التنظيف والصيانة', '/sections/' => 'قسم المدونة',
 		'/pests-library/' => 'مكتبة الآفات', '/cleaning-sections/tanks/' => 'دليل تنظيف الخزانات',
 		'/best-faqs/pest-control/' => 'أسئلة مكافحة الحشرات', '/best-faqs/tanks-cleaning/' => 'أسئلة تنظيف الخزانات',
-		'/cleaning/tile-polishing/' => 'جلي البلاط والرخام', '/faq/' => 'الأسئلة الشائعة',
+		'/drain-cleaning/' => 'تسليك المجاري', '/cleaning/tile-polishing/' => 'جلي البلاط والرخام', '/faq/' => 'الأسئلة الشائعة',
 	) );
 }
 

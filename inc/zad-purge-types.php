@@ -1,14 +1,13 @@
 <?php defined( 'ABSPATH' ) || exit;
 /**
- * الأدوات ← «حذف نوعَي النقل والتسليك نهائياً»: removes the two retired post types «نقل وتخزين الأثاث» (moving) and «تسليك المجاري» (drain_cleaning / drain-cleaning)
- * and EVERYTHING that belongs to them from the database. Irreversible: «تجربة» shows exactly what would go (nothing is changed); «حذف نهائي» needs a database backup,
- * the typed confirmation and runs once. Types that are no longer registered anywhere (mu-plugin / theme) cannot come back by themselves, but the theme's safety net
- * (inc/zad-legacy.php) re-registers any type that still has rows in the database — which is why the rows must be deleted, not just hidden.
+ * الأدوات ← «حذف نوعَي النقل والتسليك نهائياً»: removes ONLY the two retired custom post types «نقل وتخزين الأثاث» (moving) and «تسليك المجاري» (drain_cleaning / drain-cleaning)
+ * and the database rows that belong to those post types. Everything else about moving / drain cleaning (Redirection rules, texts, default lists, smart-link rules, tools, schema)
+ * is left alone on purpose: those services are re-added later under the zad_service type. Irreversible: «تجربة» shows what would go (nothing is changed); «حذف نهائي» needs a
+ * database backup + the typed confirmation. The theme's safety net (inc/zad-legacy.php) re-registers a type that still has rows, which is why the rows must be deleted.
  *
- * Deleted: the posts (every status, trash and auto-drafts) with their revisions, post meta, term links and comments; the menu items that point at them; the ids left in other
- * pages' fields (related / other-cities / guides / question links…); Redirection rules from or to /moving/ and /drain-cleaning/; Yoast settings of the two types; the words in
- * the theme's slug lists / smart-links rules / district-services list; terms of taxonomies that only these types used. Optionally the media attached to them (only files
- * nothing else uses). Reported, not changed: internal links to their old URLs inside other pages (nothing sensible to point them at).
+ * Deleted: the posts (every status) with revisions, post meta, term links and comments; the menu items that point at them; their ids left in other pages' fields (related /
+ * other-cities / guides / question links…); the type slugs in the «types» lists of the theme options; Yoast's settings of the two types; terms of taxonomies only these types used;
+ * optionally the media attached to them (only files nothing else uses). Reported, not changed: Redirection rules and internal links that mention their old URLs.
  */
 
 function zad_pg_types() { return array( 'moving', 'drain_cleaning', 'drain-cleaning' ); }
@@ -76,8 +75,6 @@ function zad_pg_inventory() {
 	$inv['options'] = array(); $o = get_option( '_memo_theme_options' );
 	if ( is_array( $o ) ) {
 		foreach ( zad_pg_slug_options() as $k ) { if ( isset( $o[ $k ] ) && is_string( $o[ $k ] ) && zad_pg_clean_slugs( $o[ $k ] ) !== $o[ $k ] ) { $inv['options'][ $k ] = array( $o[ $k ], zad_pg_clean_slugs( $o[ $k ] ) ); } }
-		if ( isset( $o['zad_bridges'] ) && is_string( $o['zad_bridges'] ) && zad_pg_clean_lines( $o['zad_bridges'], '/drain|moving/i' ) !== $o['zad_bridges'] ) { $inv['options']['zad_bridges'] = array( $o['zad_bridges'], zad_pg_clean_lines( $o['zad_bridges'], '/drain|moving/i' ) ); }
-		if ( isset( $o['zad_hood_services'] ) && is_string( $o['zad_hood_services'] ) && zad_pg_clean_lines( $o['zad_hood_services'], '/تسليك|نقل\s*(أثاث|اثاث|عفش)/u' ) !== $o['zad_hood_services'] ) { $inv['options']['zad_hood_services'] = array( $o['zad_hood_services'], zad_pg_clean_lines( $o['zad_hood_services'], '/تسليك|نقل\s*(أثاث|اثاث|عفش)/u' ) ); }
 	}
 	$inv['yoast'] = array(); $yt = get_option( 'wpseo_titles' );
 	if ( is_array( $yt ) ) { foreach ( $yt as $k => $v ) { if ( preg_match( '/(?:^|-)(?:moving|drain[_-]cleaning)(?:-|$)/', $k ) ) { $inv['yoast'][] = $k; } } }
@@ -87,10 +84,6 @@ function zad_pg_inventory() {
 function zad_pg_clean_slugs( $s ) {
 	$parts = array_filter( array_map( 'trim', explode( ',', (string) $s ) ), function ( $x ) { return '' !== $x && ! in_array( strtolower( $x ), array( 'moving', 'drain-cleaning', 'drain_cleaning' ), true ); } );
 	return implode( ',', $parts );
-}
-function zad_pg_clean_lines( $s, $re ) {
-	$out = array(); foreach ( preg_split( '/\r\n|\r|\n/', (string) $s ) as $l ) { if ( '' === trim( $l ) || ! preg_match( $re, $l ) ) { $out[] = $l; } }
-	return implode( "\n", $out );
 }
 
 /** Is this attachment used by anything that stays (featured image, a page content/meta)? */
@@ -112,7 +105,7 @@ function zad_pg_attachment_unused( $aid ) {
 /** Deletes it all. @return array counts */
 function zad_pg_run( $media ) {
 	global $wpdb;
-	$inv = zad_pg_inventory(); $ids = $inv['ids']; $n = array( 'posts' => 0, 'attachments' => 0, 'refs' => 0, 'menu' => 0, 'redirects' => 0, 'terms' => 0, 'options' => 0, 'yoast' => 0 );
+	$inv = zad_pg_inventory(); $ids = $inv['ids']; $n = array( 'posts' => 0, 'attachments' => 0, 'refs' => 0, 'menu' => 0, 'terms' => 0, 'options' => 0, 'yoast' => 0 );
 	$taxes = $inv['taxes'];
 	// 1) menu items that point at them
 	foreach ( $inv['menu'] as $mid ) { wp_delete_post( (int) $mid, true ); $n['menu']++; }
@@ -132,13 +125,7 @@ function zad_pg_run( $media ) {
 	// 5) loose rows of those ids (a post deleted by a plugin leaves none, but be sure)
 	$in = zad_pg_in( $ids );
 	$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE post_id IN ($in)" ); $wpdb->query( "DELETE FROM {$wpdb->term_relationships} WHERE object_id IN ($in)" ); // phpcs:ignore
-	// 6) Redirection rules from / to the old URLs
-	foreach ( $inv['redirects'] as $r ) {
-		$it = class_exists( 'Red_Item' ) ? Red_Item::get_by_id( (int) $r['id'] ) : false; // the plugin's own delete keeps its group counters right
-		if ( $it ) { $it->delete(); } else { $wpdb->delete( $wpdb->prefix . 'redirection_items', array( 'id' => (int) $r['id'] ) ); } // phpcs:ignore
-		$n['redirects']++;
-	}
-	// 7) terms of taxonomies that only these types used (no remaining post type, nothing linked)
+	// 6) terms of taxonomies that only these types used (no remaining post type, nothing linked)
 	foreach ( $taxes as $tx ) {
 		$obj = get_taxonomy( $tx );
 		if ( $obj && array_diff( (array) $obj->object_type, zad_pg_types() ) ) { continue; } // shared with other types: terms stay
@@ -150,12 +137,12 @@ function zad_pg_run( $media ) {
 			}
 		}
 	}
-	// 8) theme options + Yoast settings of the two types
+	// 7) the type slugs in the theme options + Yoast settings of the two types
 	$o = get_option( '_memo_theme_options' );
 	if ( is_array( $o ) && $inv['options'] ) { foreach ( $inv['options'] as $k => $pair ) { $o[ $k ] = $pair[1]; $n['options']++; } update_option( '_memo_theme_options', $o ); }
 	$yt = get_option( 'wpseo_titles' );
 	if ( is_array( $yt ) && $inv['yoast'] ) { foreach ( $inv['yoast'] as $k ) { unset( $yt[ $k ] ); $n['yoast']++; } update_option( 'wpseo_titles', $yt ); }
-	// 9) caches + permalinks
+	// 8) caches + permalinks
 	foreach ( array( 'zad_area_ids', 'zad_404_lists', 'zad_sitemap_html', 'zad_wiz_map3', 'zad_work_items' ) as $tr ) { delete_transient( $tr ); }
 	update_option( 'zad_nav_ver', time() ); update_option( 'zad_hood_ver', time() ); update_option( 'zad_qnet_ver', time() ); if ( function_exists( 'zad_city_bump' ) ) { zad_city_bump(); }
 	if ( class_exists( 'WPSEO_Sitemaps_Cache' ) && method_exists( 'WPSEO_Sitemaps_Cache', 'clear' ) ) { WPSEO_Sitemaps_Cache::clear(); }
@@ -177,17 +164,17 @@ function zad_pg_page() {
 		if ( 'احذف نهائياً' !== $word || empty( $_POST['zad_pg_backup'] ) ) { echo '<div class="notice notice-warning"><p>لم يُنفَّذ شيء: اكتب «احذف نهائياً» بالحرف وأكّد أنك أخذت نسخة احتياطية.</p></div>'; }
 		else {
 			$n = zad_pg_run( ! empty( $_POST['zad_pg_media'] ) );
-			echo '<div class="notice notice-success"><p><b>تم الحذف.</b> صفحات: ' . (int) $n['posts'] . ' · عناصر قوائم: ' . (int) $n['menu'] . ' · حقول نُظّفت في صفحات أخرى: ' . (int) $n['refs'] . ' · صور: ' . (int) $n['attachments'] . ' · قواعد تحويل: ' . (int) $n['redirects'] . ' · تصنيفات: ' . (int) $n['terms'] . ' · إعدادات القالب: ' . (int) $n['options'] . ' · إعدادات Yoast: ' . (int) $n['yoast'] . '. احفظ الروابط الدائمة وامسح كاش LiteSpeed.</p></div>';
+			echo '<div class="notice notice-success"><p><b>تم الحذف.</b> صفحات: ' . (int) $n['posts'] . ' · عناصر قوائم: ' . (int) $n['menu'] . ' · حقول نُظّفت في صفحات أخرى: ' . (int) $n['refs'] . ' · صور: ' . (int) $n['attachments'] . ' · تصنيفات: ' . (int) $n['terms'] . ' · إعدادات القالب: ' . (int) $n['options'] . ' · إعدادات Yoast: ' . (int) $n['yoast'] . '. احفظ الروابط الدائمة وامسح كاش LiteSpeed.</p></div>';
 		}
 	}
 	$inv = zad_pg_inventory();
 	echo '<h2>' . ( 'preview' === $do ? 'نتيجة التجربة (لم يتغير شيء)' : 'ما الموجود الآن' ) . '</h2>';
-	if ( ! $inv['ids'] && ! $inv['redirects'] && ! $inv['options'] && ! $inv['yoast'] && ! $inv['refs'] && ! $inv['menu'] ) { echo '<div class="notice notice-success inline"><p>لا توجد أي بيانات لهذين النوعين في قاعدة البيانات.</p></div>'; }
+	if ( ! $inv['ids'] && ! $inv['options'] && ! $inv['yoast'] && ! $inv['refs'] && ! $inv['menu'] ) { echo '<div class="notice notice-success inline"><p>لا توجد أي بيانات لهذين النوعين في قاعدة البيانات.</p></div>'; }
 	echo '<ul style="list-style:disc;margin-inline-start:22px">';
 	echo '<li>مسجَّل حالياً كنوع محتوى: <b>' . ( $inv['registered'] ? esc_html( implode( '، ', $inv['registered'] ) ) . '</b> — احذف تسجيله من ملف الـ mu-plugin على الموقع (انظر التقرير)' : 'لا' ) . '</li>';
 	foreach ( $inv['types'] as $t => $st ) { $a = array(); foreach ( $st as $k => $c ) { $a[] = $k . ': ' . $c; } echo '<li>النوع <code>' . esc_html( $t ) . '</code>: ' . esc_html( implode( ' · ', $a ) ) . '</li>'; }
 	echo '<li>نسخ المراجعات: <b>' . (int) $inv['revisions'] . '</b> · حقول الصفحات (meta): <b>' . (int) $inv['meta'] . '</b> · روابط تصنيفات: <b>' . (int) $inv['rels'] . '</b>' . ( $inv['taxes'] ? ' (' . esc_html( implode( '، ', $inv['taxes'] ) ) . ')' : '' ) . ' · تعليقات: <b>' . (int) $inv['comments'] . '</b></li>';
-	echo '<li>عناصر قوائم تشير إليها: <b>' . count( $inv['menu'] ) . '</b> · قيم في صفحات أخرى فيها أرقام صفحاتها: <b>' . count( $inv['refs'] ) . '</b> · قواعد Redirection من/إلى مساراتها: <b>' . count( $inv['redirects'] ) . '</b> · إعدادات Yoast: <b>' . count( $inv['yoast'] ) . '</b> · إعدادات القالب التي تذكرها: <b>' . count( $inv['options'] ) . '</b></li>';
+	echo '<li>عناصر قوائم تشير إليها: <b>' . count( $inv['menu'] ) . '</b> · قيم في صفحات أخرى فيها أرقام صفحاتها: <b>' . count( $inv['refs'] ) . '</b> · قواعد Redirection (لا تُحذف): <b>' . count( $inv['redirects'] ) . '</b> · إعدادات Yoast: <b>' . count( $inv['yoast'] ) . '</b> · قوائم أنواع في إعدادات القالب: <b>' . count( $inv['options'] ) . '</b></li>';
 	echo '<li>صور مرفوعة عليها: <b>' . (int) $inv['attach']['all'] . '</b> (منها غير مستعمل في أي مكان آخر: <b>' . count( $inv['attach']['free'] ) . '</b>)</li></ul>';
 	if ( $inv['samples'] ) { echo '<table class="widefat striped" style="max-width:900px"><thead><tr><th>#</th><th>النوع</th><th>الحالة</th><th>العنوان</th><th>slug</th></tr></thead><tbody>'; foreach ( $inv['samples'] as $s ) { echo '<tr><td>' . (int) $s['ID'] . '</td><td>' . esc_html( $s['post_type'] ) . '</td><td>' . esc_html( $s['post_status'] ) . '</td><td>' . esc_html( $s['post_title'] ) . '</td><td dir="ltr">' . esc_html( urldecode( $s['post_name'] ) ) . '</td></tr>'; } echo '</tbody></table>' . ( count( $inv['ids'] ) > 40 ? '<p>… وغيرها (أول 40 من ' . count( $inv['ids'] ) . ')</p>' : '' ); }
 	foreach ( $inv['options'] as $k => $pair ) { echo '<p><code>' . esc_html( $k ) . '</code>: «' . esc_html( mb_substr( $pair[0], 0, 80 ) ) . '» ← «' . esc_html( mb_substr( $pair[1], 0, 80 ) ) . '»</p>'; }
