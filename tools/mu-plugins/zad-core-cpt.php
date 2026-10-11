@@ -75,18 +75,6 @@ add_action( 'init', function() {
         'supports'            => array('title', 'thumbnail', 'editor')
     ));
 
-    // 6. الأدلة
-    register_post_type('guide', array(
-        'public'              => true,
-        'show_ui'             => true,
-        'menu_icon'           => 'dashicons-welcome-learn-more',
-        'has_archive'         => 'guide',
-        'rewrite'             => array('slug' => 'guide', 'with_front' => true),
-        'show_in_rest'        => true,
-        'labels'              => array('name' => 'الأدلة', 'menu_name' => 'الأدلة'),
-        'supports'            => array('title', 'thumbnail', 'editor', 'excerpt')
-    ));
-
     // --- تسجيل التصنيفات (Taxonomies) ---
 
     register_taxonomy('best_sections', array('sections'), array(
@@ -115,13 +103,6 @@ add_action( 'init', function() {
         'labels'       => array('name' => 'تصنيفات الأسئلة'),
         'show_in_rest' => true,
         'rewrite'      => array('slug' => 'best-faqs', 'with_front' => false),
-    ));
-
-    register_taxonomy('best_guide', array('guide'), array(
-        'hierarchical' => true,
-        'labels'       => array('name' => 'أفضل الأدلة'),
-        'show_in_rest' => true,
-        'rewrite'      => array('slug' => 'best-guide', 'with_front' => true),
     ));
 
     // ربط التصنيفات والوسوم العامة بالكاستم بوست
