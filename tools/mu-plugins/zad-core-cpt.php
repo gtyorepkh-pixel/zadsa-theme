@@ -31,7 +31,7 @@ add_action( 'init', function() {
         'show_in_rest'        => true,
         'rewrite'             => array('slug' => 'sections', 'with_front' => true),
         'labels'              => array('name' => 'الاقسام', 'all_items' => 'كل الاقسام'),
-        'supports'            => array('title', 'thumbnail', 'editor', 'comments')
+        'supports'            => array('title', 'thumbnail', 'editor', 'excerpt', 'comments') // + excerpt: the guides merged into this type had it
     ));
 
     // 3. صفحات الخدمات (التنظيف)

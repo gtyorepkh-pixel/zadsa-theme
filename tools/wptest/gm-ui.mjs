@@ -1,6 +1,23 @@
-// Opens the real tool page (Tools ← دمج الأدلة في الأقسام) and checks the report textarea. NODE_PATH=$(npm root -g) node tools/wptest/gm-ui.mjs
-import { createRequire } from 'node:module'; const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const BASE = process.env.WPX_URL || 'http://127.0.0.1:8099';
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] }); const p = await (await b.newContext()).newPage();
+// Real admin screen: Tools ← دمج الأدلة في الأقسام — «حدّد 3 للتجربة» → معاينة → تأكيد التنفيذ → تراجع عن الكل. NODE_PATH=$(npm root -g) node tools/wptest/gm-ui.mjs [shotdir]
+import { createRequire } from 'node:module'; import { execFileSync } from 'node:child_process';
+const require = createRequire(import.meta.url); const { chromium } = require('playwright');
+const WPX = process.env.WPX || '/tmp/wpsite', BASE = process.env.WPX_URL || 'http://127.0.0.1:8099', dir = process.argv[2] || '/tmp';
+const php = (c) => execFileSync('php', ['-r', `require "${WPX}/wp-load.php"; ${c}`], { encoding: 'utf8' }).replace(/^.*Deprecated.*$/gm, '').trim();
+let fail = 0, n = 0; const ok = (x, m) => { n++; if (!x) { fail++; console.log('FAIL:', m); } };
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
+const p = await (await b.newContext({ viewport: { width: 1500, height: 1000 } })).newPage(); const errs = []; p.on('pageerror', (e) => { if (!/Unexpected token '<'|wp is not defined|jQuery|\$ is not defined/.test(String(e))) errs.push(String(e)); }); p.on('dialog', (d) => d.accept());
 await p.goto(BASE + '/wp-login.php'); await p.fill('#user_login', 'admin'); await p.fill('#user_pass', 'pass1234'); await p.click('#wp-submit'); await p.waitForLoadState();
-await p.goto(BASE + '/wp-admin/tools.php?page=zad-guide-merge'); const t = await p.inputValue('#zad-gm-md'); await p.click('#zad-gm-copy');
-console.log('textarea chars:', t.length, '| has conflict row:', t.includes('shared-slug'), '| has terms table:', t.includes('مقابل'), '| button:', (await p.textContent('#zad-gm-copy')).trim()); await b.close();
+await p.goto(BASE + '/wp-admin/tools.php?page=zad-guide-merge'); await p.waitForSelector('#zad-gm-t');
+const rows = await p.$$eval('#zad-gm-t tbody tr', (r) => r.length); ok(rows === 9, 'table lists every guide (' + rows + ')');
+ok((await p.$$eval('select[name^="term"]', (s) => s.length)) === 4, 'term mapping: one select per best_guide term');
+await p.click('[data-gm=trial]'); const sel = await p.$$eval('#zad-gm-t tbody tr input[name$="[sel]"]:checked', (r) => r.length); ok(sel === 3, 'trial button ticks exactly 3 published guides (' + sel + ')');
+await p.screenshot({ path: dir + '/gm-table.png', fullPage: true });
+await p.click('button[value=preview]'); await p.waitForLoadState(); ok((await p.textContent('.notice-info')).includes('معاينة — لم يُنفَّذ شيء'), 'preview shown'); ok(php('echo count(get_posts(array("post_type"=>"sections","post_status"=>"any","numberposts"=>-1)));') === '2', 'preview changed nothing (2 sections posts)');
+const note = await p.textContent('.notice-info'); ok(/تحويلات 301 جديدة/.test(note) && /روابط داخلية ستُعدَّل/.test(note), 'preview shows redirects + links counts');
+await p.screenshot({ path: dir + '/gm-preview.png', fullPage: true });
+await p.click('button[value=run]'); await p.waitForLoadState();
+const txt = await p.textContent('.notice-success'); ok(/تم\./.test(txt), 'run reported success'); ok(Number(php('echo count(get_posts(array("post_type"=>"sections","post_status"=>"any","numberposts"=>-1)));')) === 4 || Number(php('echo count(get_posts(array("post_type"=>"sections","post_status"=>"any","numberposts"=>-1)));')) === 5, 'UI run moved the 2-3 ticked guides');
+await p.screenshot({ path: dir + '/gm-result.png', fullPage: true });
+await p.click('button[value=undo]'); await p.waitForLoadState(); ok((await p.textContent('.notice-success')).includes('تم التراجع'), 'undo reported');
+ok(php('echo count(get_posts(array("post_type"=>"sections","post_status"=>"any","numberposts"=>-1)));') === '2', 'undo: back to the 2 original sections posts');
+console.log(`${n} checks, ${fail} failed`, errs.length ? errs : ''); await b.close(); process.exit(fail ? 1 : 0);

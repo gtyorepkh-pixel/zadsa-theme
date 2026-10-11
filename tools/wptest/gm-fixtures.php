@@ -6,7 +6,7 @@ wp_set_current_user( 1 );
 global $wpdb;
 foreach ( get_posts( array( 'post_type' => array( 'guide', 'sections', 'page', 'post', 'nav_menu_item', 'zad_service', 'zad_faq' ), 'post_status' => 'any', 'numberposts' => -1, 'fields' => 'ids' ) ) as $i ) { wp_delete_post( $i, true ); }
 foreach ( array( 'best_guide', 'best_sections' ) as $tx ) { foreach ( (array) get_terms( array( 'taxonomy' => $tx, 'hide_empty' => false ) ) as $t ) { wp_delete_term( $t->term_id, $tx ); } }
-$wpdb->query( 'DELETE FROM ' . $wpdb->prefix . 'redirection_items' ); $wpdb->query( 'DELETE FROM ' . $wpdb->prefix . 'redirection_groups' );
+$wpdb->query( 'DELETE FROM ' . $wpdb->prefix . 'redirection_items' ); $wpdb->query( 'DELETE FROM ' . $wpdb->prefix . 'redirection_groups' ); foreach ( array( 'zad_gm_log', 'zad_test_opt_links' ) as $o ) { delete_option( $o ); }
 $mk = function ( $type, $title, $slug, $status = 'publish', $content = '<p>نص</p>', $ex = '' ) { return wp_insert_post( array( 'post_type' => $type, 'post_title' => $title, 'post_name' => $slug, 'post_status' => $status, 'post_content' => $content, 'post_excerpt' => $ex, 'post_date' => '2024-03-05 10:00:00', 'post_date_gmt' => '2024-03-05 10:00:00' ) ); };
 $t = function ( $name, $slug, $tax ) { $r = wp_insert_term( $name, $tax, array( 'slug' => $slug ) ); return (int) $r['term_id']; };
 $g_clean = $t( 'تنظيف المكيفات', 'ac-cleaning', 'best_guide' ); $g_pest = $t( 'مكافحة النمل الأبيض', 'termites', 'best_guide' ); $g_tank = $t( 'الخزانات', 'tanks', 'best_guide' ); $g_new = $t( 'السباكة', 'plumbing', 'best_guide' );
@@ -31,5 +31,13 @@ $m = wp_create_nav_menu( 'Main' ); wp_update_nav_menu_item( $m, 0, array( 'menu-
 wp_update_nav_menu_item( $m, 0, array( 'menu-item-title' => 'دليل المكيف', 'menu-item-object' => 'guide', 'menu-item-object-id' => $ids['g1'], 'menu-item-type' => 'post_type', 'menu-item-status' => 'publish' ) );
 update_option( 'zad_test_opt_links', array( 'a' => '<a href="/guide/">دليل</a>' ) );
 global $wpdb; $wpdb->insert( $wpdb->prefix . 'redirection_groups', array( 'name' => 'old', 'tracking' => 1, 'module_id' => 1, 'status' => 'enabled', 'position' => 0 ) );
+$ids['g8'] = $mk( 'guide', 'دليل بسلاج عربي', rawurldecode( '%d9%85%d9%83%d9%8a%d9%81-%d8%b3%d8%a8%d9%84%d8%aa' ), 'publish', '<p>محتوى عربي</p>' ); wp_set_object_terms( $ids['g8'], array( $g_clean ), 'best_guide' ); update_post_meta( $ids['g8'], '_yoast_wpseo_primary_best_guide', $g_clean );
+$ids['g9'] = $mk( 'guide', 'دليل مسودة بلا slug', '', 'draft', '<p>مسودة</p>' ); $wpdb->update( $wpdb->posts, array( 'post_name' => '' ), array( 'ID' => $ids['g9'] ) );
+$ids['page2'] = $mk( 'page', 'صفحة تربط بالأرشيف', 'archive-links', 'publish', '<a href="/guide/">كل الأدلة</a> <a href="' . home_url( '/best-guide/tanks/' ) . '">الخزانات</a> <a href="/guide/shared-slug/">مشترك</a> <img src="/wp-content/uploads/guide-photo.jpg">' );
+update_post_meta( $ids['page2'], '_zad_test_link', '<a href="/guide/ac-guide/">x</a>' );
+update_option( 'zad_test_opt_links', array( 'a' => '<a href="/guide/termites-guide/">دليل</a>' ) );
+$GI = $wpdb->prefix . 'redirection_items';
+$wpdb->insert( $GI, array( 'url' => '/old-ac/', 'match_url' => '/old-ac', 'regex' => 0, 'group_id' => 1, 'status' => 'enabled', 'action_type' => 'url', 'action_code' => 301, 'action_data' => home_url( '/guide/ac-guide/' ), 'match_type' => 'url', 'title' => 'inbound' ) );
+$wpdb->insert( $GI, array( 'url' => '/guide/termites-guide/', 'match_url' => '/guide/termites-guide', 'regex' => 0, 'group_id' => 1, 'status' => 'enabled', 'action_type' => 'url', 'action_code' => 301, 'action_data' => home_url( '/elsewhere/' ), 'match_type' => 'url', 'title' => 'own source' ) );
 echo wp_json_encode( $ids + array( 'terms' => compact( 'g_clean', 'g_pest', 'g_tank', 'g_new', 's_clean', 's_pest', 's_tank' ) ) ), "\n";
 flush_rewrite_rules( true );
