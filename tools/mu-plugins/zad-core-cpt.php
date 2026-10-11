@@ -8,20 +8,6 @@ defined( 'ABSPATH' ) || exit;
 
 add_action( 'init', function() {
 
-    // 1. مدونة الحشرات
-    register_post_type('pests-library', array(
-        'hierarchical'        => true,
-        'public'              => true,
-        'show_ui'             => true,
-        'has_archive'         => true,
-        'query_var'           => true,
-        'rewrite'             => array('slug' => 'pests-library', 'with_front' => true),
-        'capability_type'     => 'post',
-        'show_in_rest'        => true,
-        'labels'              => array('name' => 'مدونة الحشرات', 'singular_name' => 'مدونة الحشرات', 'menu_name' => 'مدونة الحشرات'),
-        'supports'            => array('title', 'thumbnail', 'editor')
-    ));
-
     // 2. الأقسام
     register_post_type('sections', array(
         'hierarchical'        => false,

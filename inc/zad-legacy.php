@@ -32,12 +32,15 @@ add_action( 'init', function () {
 		if ( ! in_array( $norm, $want, true ) || ( function_exists( 'zad_faqconv_retired' ) && zad_faqconv_retired() && $k === zad_faqconv_cfg( 'from' ) ) ) {
 			continue;
 		}
-		$lbl = ( apply_filters( 'zad_legacy_type_labels', array( 'cleaning' => 'التنظيف', 'pest_control' => 'مكافحة الحشرات', 'faq' => 'الأسئلة القديمة' ) )[ $k ] ?? ucwords( str_replace( array( '-', '_' ), ' ', $k ) ) ) . ' (مؤقت)';
+		$lbl = ( apply_filters( 'zad_legacy_type_labels', array( 'pests-library' => 'مدونة الحشرات', 'guide' => 'الأدلة', 'cleaning' => 'التنظيف', 'pest_control' => 'مكافحة الحشرات', 'faq' => 'الأسئلة القديمة' ) )[ $k ] ?? ucwords( str_replace( array( '-', '_' ), ' ', $k ) ) ) . ' (مؤقت)';
+		global $wpdb;
+		$hier = (bool) $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_type = %s AND post_parent > 0 AND post_status NOT IN ('trash','auto-draft','inherit') LIMIT 1", $k ) ); // nested pages keep their nested URLs (/pests-library/parent/child/)
 		register_post_type( $k, array(
 			'labels'        => array( 'name' => $lbl, 'singular_name' => $lbl, 'menu_name' => $lbl ),
 			'public'        => true,
+			'hierarchical'  => $hier,
 			'has_archive'   => $norm,
-			'rewrite'       => array( 'slug' => $norm, 'with_front' => false ),
+			'rewrite'       => array( 'slug' => $norm, 'with_front' => false, 'hierarchical' => $hier ),
 			'show_in_rest'  => true,
 			'menu_position' => 6,
 			'supports'      => array( 'title', 'editor', 'excerpt', 'thumbnail', 'page-attributes', 'revisions', 'author', 'custom-fields' ),
