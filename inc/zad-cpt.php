@@ -26,7 +26,7 @@ add_filter( 'register_post_type_args', function ( $args, $pt ) {
 
 /** Re-flush rewrite rules automatically when a URL base option changes. */
 add_action( 'init', function () {
-	$h = md5( zad_slug( 'zad_services_slug', 'services' ) . '|' . zad_opt( 'zad_service_slug', '' ) . '|' . zad_slug( 'zad_areas_slug', 'areas' ) . '|' . zad_slug( 'zad_faq_slug', 'faq' ) . '|' . implode( ',', zad_service_types() ) . '|' . implode( ',', zad_faq_types() ) . '|' . implode( ',', zad_article_types() ) );
+	$h = md5( zad_slug( 'zad_services_slug', 'services' ) . '|' . zad_opt( 'zad_service_slug', '' ) . '|' . zad_slug( 'zad_areas_slug', 'areas' ) . '|' . zad_slug( 'zad_faq_slug', 'faq' ) . '|' . zad_slug( 'zad_works_slug', 'works' ) . '|' . implode( ',', zad_service_types() ) . '|' . implode( ',', zad_faq_types() ) . '|' . implode( ',', zad_article_types() ) );
 	if ( get_option( 'zad_rw_hash' ) !== $h ) {
 		flush_rewrite_rules( false );
 		update_option( 'zad_rw_hash', $h, false );

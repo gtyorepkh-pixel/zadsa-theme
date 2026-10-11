@@ -62,7 +62,7 @@ foreach ( array( array( $dm_flat, 'dammam' ), array( $rd_flat, 'riyadh' ), array
 $cap = function ( $urls ) { return json_decode( shell_exec( 'php ' . escapeshellarg( __DIR__ . '/city-capture.php' ) . ' ' . implode( ' ', array_map( 'escapeshellarg', $urls ) ) ), true ); };
 $urls = array( '/pest-control/roaches-dammam/' => 'dammam', '/pest-control/pest-pillar/dammam/ants/' => 'dammam', '/pest-control/pest-pillar/jeddah/ants/' => 'jeddah', '/pest-control/roaches-riyadh/' => 'riyadh', '/pest-control/pest-pillar/dammam/nozha-pest/' => 'dammam', '/cleaning/cleaning-pillar/dammam/ac/' => 'dammam' );
 $pages = $cap( array_keys( $urls ) );
-foreach ( $urls as $u => $city ) { foreach ( array( 'sidebar', 'related', 'bridge', 'qnet', 'hood' ) as $k ) { $bad = $mentions_other( $pages[ $u ][ $k ] ?? array(), $city ); ok( '' === $bad, "page $u list «$k» has no other city: $bad" ); } ok( ! empty( $pages[ $u ]['sidebar'] ) || false !== strpos( $u, 'nozha' ), "page $u still has a sidebar" ); }
+foreach ( $urls as $u => $city ) { foreach ( array( 'sidebar', 'related', 'bridge', 'qnet', 'hood' ) as $k ) { $bad = $mentions_other( $pages[ $u ][ $k ] ?? array(), $city ); ok( '' === $bad, "page $u list «{$k}» has no other city: $bad" ); } ok( ! empty( $pages[ $u ]['sidebar'] ) || false !== strpos( $u, 'nozha' ), "page $u still has a sidebar" ); }
 $pt = $cap( array( '/pest-control/termites/' ) )['/pest-control/termites/'];
 ok( ! $pt['sidebar'] && ! $pt['related'] && ! $pt['qnet'], 'undetermined page: sidebar / related / questions show nothing from any city' );
 ok( ! array_filter( $pages['/pest-control/pest-pillar/dammam/nozha-pest/']['hood'], function ( $t ) { return false !== strpos( $t, 'الروضة' ); } ), 'hood page of Dammam: the Jeddah neighbour is gone' );

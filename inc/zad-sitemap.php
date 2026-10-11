@@ -66,6 +66,12 @@ function zad_sitemap_html() {
 	}
 	$o .= zad_sm_section( 'التغطية', 'الخدمات حسب المدينة', $rows, true );
 
+	/* 3b. our work */
+	$rows = '';
+	foreach ( get_posts( array( 'post_type' => 'zad_work', 'post_status' => 'publish', 'numberposts' => 300, 'orderby' => 'date', 'order' => 'DESC', 'suppress_filters' => true ) ) as $w ) { $rows .= zad_sm_row( get_permalink( $w ), wp_strip_all_tags( get_the_title( $w ) ) ); }
+	if ( '' !== $rows && function_exists( 'zad_works_url' ) ) { $rows = zad_sm_row( zad_works_url(), 'كل أعمالنا' ) . $rows; }
+	$o .= zad_sm_section( 'أعمالنا', 'قصص أعمال حقيقية', $rows, true );
+
 	/* 4. question bank by topic */
 	$rows = zad_faq_url() ? zad_sm_row( zad_faq_url(), 'كل الأسئلة' ) : '';
 	foreach ( get_object_taxonomies( zad_faq_types(), 'objects' ) as $tx ) {

@@ -100,6 +100,7 @@ function zsc_itemlist_node( $url, $name, $posts, $kind ) {
 		if ( ! $p instanceof WP_Post || 'publish' !== $p->post_status ) { continue; }
 		$u = get_permalink( $p );
 		if ( 'faq' === $kind ) { $it = array( '@type' => 'Question', 'name' => zad_card_title( $p->ID ), 'url' => $u ); }
+		elseif ( 'work' === $kind ) { $it = array( '@type' => 'CreativeWork', 'name' => wp_strip_all_tags( get_the_title( $p ) ), 'url' => $u ); }
 		elseif ( 'article' === $kind ) { $h = zad_card_title( $p->ID ); $it = array( '@type' => 'Article', 'headline' => mb_strlen( $h, 'UTF-8' ) > 110 ? mb_substr( $h, 0, 109, 'UTF-8' ) . '…' : $h, 'url' => $u ); }
 		else { $it = array( '@type' => 'Service', 'name' => zad_card_title( $p->ID ), 'url' => $u ); }
 		$els[] = array( '@type' => 'ListItem', 'position' => $pos++, 'item' => $it );
@@ -113,6 +114,7 @@ function zsc_current_listing() {
 	global $wp_query;
 	if ( is_post_type_archive( zad_service_types() ) || is_tax( array( 'service_cat', 'service_area' ) ) ) { return array( array_slice( (array) $wp_query->posts, 0, 40 ), 'service' ); }
 	if ( is_post_type_archive( zad_faq_types() ) || is_tax( 'faq_cat' ) ) { return array( array_slice( (array) $wp_query->posts, 0, 40 ), 'faq' ); }
+	if ( is_post_type_archive( 'zad_work' ) ) { return array( array_slice( (array) $wp_query->posts, 0, 40 ), 'work' ); }
 	if ( is_post_type_archive( zad_article_types() ) ) { return array( array_slice( (array) $wp_query->posts, 0, 40 ), 'article' ); }
 	return null;
 }

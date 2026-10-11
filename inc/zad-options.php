@@ -82,6 +82,7 @@ CSF::createSection( $zad_prefix, array(
 		array( 'id' => 'zad_services_slug', 'type' => 'text', 'title' => 'رابط الخدمات', 'default' => 'services', 'desc' => 'مثال: yourdomain.com/<b>services</b>/اسم-الخدمة — أحرف إنجليزية وشرطات فقط. يتحدّث الرابط تلقائياً بعد الحفظ.' ),
 		array( 'id' => 'zad_areas_slug', 'type' => 'text', 'title' => 'رابط المدن والأحياء', 'default' => 'areas' ),
 		array( 'id' => 'zad_faq_slug', 'type' => 'text', 'title' => 'رابط الأسئلة', 'default' => 'faq' ),
+		array( 'id' => 'zad_works_slug', 'type' => 'text', 'title' => 'رابط «أعمالنا»', 'default' => 'works', 'desc' => 'الأعمال تظهر على /works/ — تتحدث الروابط تلقائياً عند التغيير.' ),
 		array( 'id' => 'memopt_lead_email', 'type' => 'text', 'title' => 'بريد استقبال الطلبات', 'desc' => 'إن تُرك فارغاً يُستخدم بريد التواصل العام.' ),
 		array( 'id' => 'zad_hours', 'type' => 'text', 'title' => 'أوقات العمل', 'default' => 'من 8 صباحاً إلى 11 مساءً طوال أيام الأسبوع' ),
 		array( 'id' => 'zad_provider', 'type' => 'text', 'title' => 'الاسم الرسمي للشركة', 'default' => '' ),

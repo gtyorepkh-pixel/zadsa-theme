@@ -72,6 +72,15 @@ function zad_work_items() {
 			$items[] = array( 'type' => 'ba', 'ids' => array( (int) $b, (int) $a ), 'title' => $it['memopt_gallery_grp_h'] ?? '', 'link' => $it['memopt_gallery_grp_link'] ?? '', 'service' => '', 'cat' => 'أعمال أخرى', 'cat_slug' => 'other', 'city' => '' );
 		}
 	}
+	// 2b. «أعمالنا» pages (zad_work): their before/after pairs and cover, each linking to the work's own page
+	foreach ( get_posts( array( 'post_type' => 'zad_work', 'post_status' => 'publish', 'numberposts' => 200, 'orderby' => 'date', 'order' => 'DESC', 'suppress_filters' => true ) ) as $wk ) {
+		list( $wcat, $wcity, ) = zad_wk_terms( $wk->ID );
+		$wm  = array( 'link' => get_permalink( $wk ), 'service' => wp_strip_all_tags( get_the_title( $wk ) ), 'cat' => $wcat ? $wcat->name : 'أعمالنا', 'cat_slug' => $wcat ? $wcat->slug : 'works', 'city' => $wcity );
+		$wba = zad_wk_ids( $wk->ID, '_zad_wk_ba' );
+		for ( $i = 0; $i + 1 < count( $wba ); $i += 2 ) { $items[] = $wm + array( 'type' => 'ba', 'ids' => array( $wba[ $i ], $wba[ $i + 1 ] ), 'title' => wp_strip_all_tags( get_the_title( $wk ) ) ); }
+		$wc = zad_wk_image_id( $wk->ID );
+		if ( $wc ) { $items[] = $wm + array( 'type' => 'img', 'ids' => array( $wc ), 'title' => wp_strip_all_tags( get_the_title( $wk ) ) ); }
+	}
 	// 3. extra photos on the work page(s)
 	foreach ( get_posts( array( 'post_type' => 'page', 'meta_key' => '_wp_page_template', 'meta_value' => 'temp/memo-gallery.php', 'numberposts' => 5 ) ) as $pg ) {
 		foreach ( array_filter( array_map( 'intval', explode( ',', (string) get_post_meta( $pg->ID, '_zad_work_gallery', true ) ) ) ) as $aid ) {

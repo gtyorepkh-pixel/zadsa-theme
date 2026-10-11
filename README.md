@@ -11,6 +11,15 @@
 - الرئيسية: واجهة + نموذج، أرقام، أقسام، خدمات مميزة، لماذا نحن، آلية العمل، مناطق الخدمة، آراء، أسئلة شائعة، مدونة، دعوة ختامية.
 - ألوان الهوية من **إعدادات القالب ← الهوية والألوان**.
 
+## 3.27.0 — «أعمالنا» (نوع محتوى `zad_work`)
+- **نوع جديد `zad_work`** (الرابط `/works/` — يتغير من إعدادات القالب «رابط أعمالنا» `zad_works_slug` وتتحدث الروابط تلقائياً): كل صفحة قصة عمل حقيقية: فيديو مقسّم مقاطع، قبل/بعد، الحالة في سطور، الشكوى والفحص والنتيجة، الأدوات، أسئلة شائعة. يستعمل التصنيفين `service_cat` و`service_area`.
+- **حقول لوحة التحكم** (post meta، كلها `_zad_wk_*`): `service` · `date` · `facts` · `complaint` · `inspection` · `result` · `tools` · `ba` · `gallery` · `video_url` · `video_yt` · `poster` · `duration` · `upload` · `clips` · `faq`.
+- **القوالب:** `single-zad_work.php`، `archive-zad_work.php` (كروت + chips حسب نوع الخدمة `?svc=` + ترقيم)، `template-parts/work-card.php`، و`assets/css/zad-work.css` + `assets/js/zad-work.js` تُحمَّلان في صفحات هذا النوع (وصفحة خدمة فيها أعمال) فقط. أزرار المقاطع تنقل الفيديو، والرابط `#t=90` أو `#t=1:30` يفتح الصفحة عند تلك اللحظة. بلا مكتبات خارجية.
+- **الاسكيما** (`zsc_work_nodes` في `inc/zad-sc.php`): WebPage (about = `#service` للخدمة المرتبطة، contentLocation = Place بالحي والمدينة) + ImageObject + **VideoObject** بـ `hasPart` من Clip (يظهر فقط إن وُجد الاسم والغلاف وتاريخ الرفع ورابط الفيديو) + FAQPage + BreadcrumbList؛ والأرشيف CollectionPage + ItemList.
+- **الربط بباقي الثيم:** قسم «أعمال من الميدان» (حتى 3 أعمال) في صفحة الخدمة قبل الأسئلة ويختفي إن لم توجد أعمال؛ `zad_work_items()` تضيف أزواج قبل/بعد وأغلفة الأعمال إلى صفحة «أعمالنا» القديمة (`temp/memo-gallery.php`) دون تغييرها؛ خريطة الموقع HTML.
+- **أداة «نقل الأعمال القديمة»** (الأدوات): «تجربة» (لا تغيّر شيئاً) و«تنفيذ» (تنشئ `zad_work` بنفس الـ slug والعنوان والمحتوى والملخص والصورة البارزة وحقول Yoast، وتحوّل الصفحة القديمة لمسودة دون حذف، وتسجّل 301 من `/completed-projects/<slug>/` و`/completed-projects/` إلى `/works/…`) + «تراجع». التحويلات في خريطة الثيم (`template_redirect`) وفي Redirection إن كانت مفعّلة.
+- **ملفات:** `inc/zad-works.php`، `inc/zad-works-migrate.php`، تعديل `inc/zad-sc.php` و`inc/zad-schema.php` و`inc/zad-schema-extra.php` و`inc/zad-work.php` و`inc/zad-cpt.php` (hash الروابط) و`inc/zad-options.php` و`inc/zad-sitemap.php` و`single-zad_service.php` و`assets/js/admin.js` (اختيار فيديو/صورة واحدة).
+
 ## التركيب
 1. ارفع المجلد كثيم وفعّله (يُعاد ضبط الروابط تلقائياً). إن ظهرت 404 على `/services/` اذهب إلى الإعدادات ← الروابط الدائمة ← حفظ.
 2. أضف أقساماً ومدناً ثم خدماتك، وعيّن القوائم (القائمة العلوية/الفوتر).

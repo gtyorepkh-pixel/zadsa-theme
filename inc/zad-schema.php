@@ -135,6 +135,8 @@ add_action( 'wp_head', function () {
 		$nodes = array_merge( array_slice( $site, 0, 2 ), array( $page ) );
 		if ( $person ) { $nodes[] = $person; }
 		zad_print_graph( zsc_with_breadcrumb( $nodes, $aurl ) );
+	} elseif ( $id && 'zad_work' === $ptype ) { // «أعمالنا»: WebPage + ImageObject + VideoObject (+ Clip parts) + FAQPage + breadcrumb
+		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), zsc_work_nodes( $id ) ), get_permalink( $id ) ) );
 	} elseif ( $id && zsc_is_article_page( $id ) ) {
 		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), zsc_article_nodes( $id ) ), get_permalink( $id ) ) );
 	} elseif ( $id ) {

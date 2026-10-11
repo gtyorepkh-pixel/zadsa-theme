@@ -649,6 +649,56 @@ function zsc_home_nodes() {
 	return array( $page );
 }
 
+/**
+ * Nodes of a «أعمالنا» page (zad_work): WebPage (about = the linked service #service, contentLocation = the district + city, video = #video),
+ * ImageObject (main image), VideoObject with Clip parts (only when name + poster + upload date + a URL all exist), FAQPage (when there are questions).
+ * The nodes are the page's own; the foreign JSON-LD filter keeps VideoObject / FAQPage (zsc_is_owned_type) and our graph is printed by the theme.
+ */
+function zsc_work_nodes( $post ) {
+	$post = get_post( $post );
+	$home = trailingslashit( home_url() );
+	$id   = (int) $post->ID;
+	$url  = get_permalink( $post );
+	$title = wp_strip_all_tags( html_entity_decode( get_the_title( $post ), ENT_QUOTES, 'UTF-8' ) );
+	$desc  = has_excerpt( $post ) ? wp_strip_all_tags( get_the_excerpt( $post ) ) : wp_trim_words( wp_strip_all_tags( (string) get_post_meta( $id, '_zad_wk_complaint', true ) ?: strip_shortcodes( $post->post_content ) ), 35, '…' );
+	$desc  = trim( preg_replace( '/\s+/u', ' ', $desc ) );
+	$aid   = function_exists( 'zad_wk_image_id' ) ? zad_wk_image_id( $id ) : 0;
+	$src   = $aid ? (string) wp_get_attachment_image_url( $aid, 'full' ) : '';
+	$image = $src ? zsc_image_node( $src, $url . '#primaryimage', $title, $aid ) : null;
+	$vid   = zad_wk_video( $id );
+	$webpage = array( '@type' => 'WebPage', '@id' => $url . '#webpage', 'url' => $url, 'name' => $title, 'isPartOf' => array( '@id' => $home . '#website' ), 'inLanguage' => 'ar', 'datePublished' => get_post_time( 'c', true, $post ), 'dateModified' => get_post_modified_time( 'c', true, $post ) );
+	if ( $desc ) { $webpage['description'] = $desc; }
+	if ( $image ) { $webpage['primaryImageOfPage'] = array( '@id' => $url . '#primaryimage' ); $webpage['image'] = array( '@id' => $url . '#primaryimage' ); }
+	$svc = zad_wk_service( $id );
+	if ( $svc ) { $webpage['about'] = array( '@id' => get_permalink( $svc ) . '#service' ); }
+	list( , $city, $hood ) = zad_wk_terms( $id );
+	if ( $city || $hood ) {
+		$place = array( '@type' => 'Place', 'name' => ( $hood && $city ) ? $hood . '، ' . $city : ( $hood ? $hood : $city ) ); // (no trim() with Arabic characters: it works on bytes)
+		if ( $city ) { $place['address'] = array( '@type' => 'PostalAddress', 'addressLocality' => $city, 'addressCountry' => 'SA' ); }
+		$webpage['contentLocation'] = $place;
+	}
+	$nodes = array( $webpage );
+	if ( $image ) { $nodes[] = $image; }
+	$vurl = 'file' === $vid['kind'] ? $vid['src'] : ( 'yt' === $vid['kind'] ? $vid['embed'] : '' );
+	if ( $vid['kind'] && '' !== $title && '' !== $vid['poster'] && '' !== $vid['upload_iso'] && '' !== $vurl ) {
+		$video = array( '@type' => 'VideoObject', '@id' => $url . '#video', 'name' => $title, 'description' => $desc ? $desc : $title, 'thumbnailUrl' => array( $vid['poster'] ), 'uploadDate' => $vid['upload_iso'], 'inLanguage' => 'ar', 'publisher' => array( '@id' => $home . '#organization' ), 'isPartOf' => array( '@id' => $url . '#webpage' ) );
+		$video['file' === $vid['kind'] ? 'contentUrl' : 'embedUrl'] = $vurl;
+		if ( $vid['duration'] ) { $video['duration'] = zsc_iso_duration( $vid['duration'] ); }
+		$parts = array();
+		foreach ( zad_wk_clips( $id ) as $c ) { $parts[] = array( '@type' => 'Clip', 'name' => $c[2], 'startOffset' => (int) $c[0], 'endOffset' => (int) $c[1], 'url' => $url . '#t=' . (int) $c[0] ); }
+		if ( $parts ) { $video['hasPart'] = $parts; }
+		$nodes[0]['video'] = array( '@id' => $url . '#video' );
+		$nodes[] = $video;
+	}
+	$faq = zad_wk_faq( $id );
+	if ( $faq ) {
+		$ents = array();
+		foreach ( $faq as $f ) { $ents[] = array( '@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => $f['a'] ) ); }
+		$nodes[] = array( '@type' => 'FAQPage', '@id' => $url . '#faq', 'isPartOf' => array( '@id' => $url . '#webpage' ), 'inLanguage' => 'ar', 'mainEntity' => $ents );
+	}
+	return $nodes;
+}
+
 /** Attach BreadcrumbList to the graph and link it from the WebPage node. */
 function zsc_with_breadcrumb( $nodes, $url ) {
 	$crumbs = zad_current_crumbs();

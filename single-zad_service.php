@@ -364,6 +364,9 @@ while ( have_posts() ) :
 	<?php endif; ?>
 
 	<!-- 14. Coverage -->
+	<!-- 14b. field works: up to 3 works linked to this service (nothing when there are none) -->
+	<?php echo function_exists( 'zad_works_section_html' ) ? zad_works_section_html( $id ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
+
 	<!-- 15. FAQ -->
 	<?php if ( $faq ) : ?>
 	<section class="sec"><div class="wrap wrap--narrow">

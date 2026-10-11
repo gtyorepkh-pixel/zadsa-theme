@@ -27,18 +27,20 @@
 		var frame;
 		btn.addEventListener('click', function () {
 			if (!frame) {
-				frame = wp.media({ title: 'اختيار الصور', multiple: 'add', library: { type: 'image' } });
+				var type = btn.dataset.mtype || 'image', single = btn.dataset.single === '1';
+				frame = wp.media({ title: type === 'video' ? 'اختيار الفيديو' : 'اختيار الصور', multiple: single ? false : 'add', library: { type: type } });
 				frame.on('select', function () {
 					var ids = [];
-					prev.innerHTML = '';
+					if (prev) { prev.innerHTML = ''; }
 					frame.state().get('selection').each(function (att) {
+						if (btn.dataset.fill === 'url') { input.value = att.attributes.url; return; } // video: the file URL goes into the text field
 						ids.push(att.id);
 						var s = att.attributes.sizes, u = (s && s.thumbnail) ? s.thumbnail.url : att.attributes.url;
 						var img = document.createElement('img');
 						img.src = u; img.width = 60; img.height = 60;
-						prev.appendChild(img);
+						if (prev) { prev.appendChild(img); }
 					});
-					input.value = ids.join(',');
+					if (btn.dataset.fill !== 'url') { input.value = ids.join(','); }
 				});
 			}
 			frame.open();
