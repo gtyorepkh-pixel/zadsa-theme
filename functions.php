@@ -6,7 +6,7 @@
  */
 
 define('MEMO_VERSION_VERSION', '1.1');
-define( 'ZAD_VERSION', '3.25.0' );
+define( 'ZAD_VERSION', '3.25.1' );
 define( 'MEMO_THEME_DIR', trailingslashit( get_template_directory() ) );
 define( 'MEMO_THEME_URI', trailingslashit( esc_url( get_template_directory_uri() ) ) );
 
@@ -27,7 +27,6 @@ require_once MEMO_THEME_DIR .'inc/zad-price.php';
 require_once MEMO_THEME_DIR .'inc/zad-helpers.php';
 require_once MEMO_THEME_DIR .'inc/zad-warranty.php';
 require_once MEMO_THEME_DIR .'inc/zad-roles.php';
-require_once MEMO_THEME_DIR .'inc/zad-blog.php';
 require_once MEMO_THEME_DIR .'inc/zad-legacy.php';
 require_once MEMO_THEME_DIR .'inc/zad-cpt.php';
 require_once MEMO_THEME_DIR .'inc/zad-leads.php';
@@ -144,7 +143,7 @@ add_filter( 'wpseo_json_ld_output', '__return_false' );
  */
 add_filter('the_content', 'add_enhanced_seo_dates_to_cpt');
 function add_enhanced_seo_dates_to_cpt($content) {
-    $target_post_types = array('pest_control', 'cleaning', 'sections', 'pests-library', 'guide', 'zad_blog'); 
+    $target_post_types = array('pest_control', 'cleaning', 'sections', 'pests-library', 'guide'); 
 
     if (is_singular($target_post_types) && !zad_is_service() && !zad_is_faq() && is_main_query()) {
         $publish_date = get_the_date();

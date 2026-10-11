@@ -41,7 +41,7 @@ function zad_existing_types( $role ) {
 	$want = isset( $want[ $role ] ) ? $want[ $role ] : array();
 	$out  = array();
 	foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $k => $o ) {
-		if ( in_array( $k, array( 'zad_service', 'zad_faq', 'zad_blog', 'zad_lead', 'post', 'page', 'attachment' ), true ) ) {
+		if ( in_array( $k, array( 'zad_service', 'zad_faq', 'zad_lead', 'post', 'page', 'attachment' ), true ) ) {
 			continue;
 		}
 		$norm = str_replace( '_', '-', strtolower( $k ) );
@@ -74,7 +74,6 @@ function zad_faq_types() {
 
 function zad_article_types() {
 	$t = array_merge( array( 'post' ), array_keys( zad_existing_types( 'article' ) ) );
-	if ( post_type_exists( 'zad_blog' ) ) { $t[] = 'zad_blog'; } // the single blog type (/blog/)
 	return array_values( array_unique( $t ) );
 }
 
