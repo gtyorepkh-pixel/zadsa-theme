@@ -4,10 +4,6 @@
   Description: المحرك الأساسي لتسجيل المقالات المخصصة والتصنيفات لضمان استقرار الأرشفة والروابط
 */
 
-/*
- * ⚠ نسخة للاختبار المحلي فقط (tools/wptest) — لا تُنسخ فوق ملف الموقع الحقيقي أبداً.
- * الملف الحقيقي على الموقع هو المرجع؛ هذه نسخة أقدم منه. نوعا «نقل وتخزين الأثاث» و«تسليك المجاري» محذوفان نهائياً ولا يُسجَّلان هنا.
- */
 defined( 'ABSPATH' ) || exit;
 
 add_action( 'init', function() {
@@ -135,15 +131,3 @@ add_action( 'init', function() {
     register_taxonomy_for_object_type('post_tag', 'pest_control');
 
 }, 0);
-
-/**
- * وظائف حماية المحتوى والتعليقات الخاصة بالـ CPTs
- */
-add_filter('wp_insert_post_data', function ($data, $postarr) {
-    $cpts = array('cleaning', 'pest_control');
-    if (in_array($data['post_type'], $cpts)) {
-        $data['comment_status'] = 'closed';
-        $data['ping_status']    = 'closed';
-    }
-    return $data;
-}, 10, 2);
