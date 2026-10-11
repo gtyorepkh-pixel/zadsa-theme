@@ -5,7 +5,7 @@
  * Run from the WordPress root (locally, and again on the live site after the move):
  *   wp eval-file zad-seo-check.php
  * Options (environment variables):
- *   ZAD_TYPES=page,pest_control,cleaning,moving,zad_hood,guide   post types to test (default: those, plus the theme's service types)
+ *   ZAD_TYPES=page,pest_control,cleaning,zad_hood,guide   post types to test (default: those, plus the theme's service types)
  *   ZAD_LIMIT=40        only the first N URLs per type (default: all)  — use it for a quick first look
  *   ZAD_FETCH=0         skip the HTTP part, print only the configuration checks
  *
@@ -19,7 +19,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit( "Run with: wp eval-file zad-seo-check.php\n" ); }
 global $wpdb;
 
-$want  = array_filter( array_map( 'trim', explode( ',', (string) ( getenv( 'ZAD_TYPES' ) ?: 'page,pest_control,cleaning,moving,zad_hood,guide' ) ) ) );
+$want  = array_filter( array_map( 'trim', explode( ',', (string) ( getenv( 'ZAD_TYPES' ) ?: 'page,pest_control,cleaning,zad_hood,guide' ) ) ) );
 if ( function_exists( 'zad_service_types' ) && ! getenv( 'ZAD_TYPES' ) ) { $want = array_merge( $want, zad_service_types() ); }
 $want  = array_values( array_unique( array_filter( $want, 'post_type_exists' ) ) );
 $limit = (int) getenv( 'ZAD_LIMIT' );

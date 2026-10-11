@@ -15,7 +15,7 @@ function zad_service_pt_slug( $adopted ) {
 
 /** Two menus must not both be called «الخدمات»: an adopted type carrying that label gets its own name. */
 add_filter( 'register_post_type_args', function ( $args, $pt ) {
-	$map = apply_filters( 'zad_type_label_map', array( 'cleaning' => 'التنظيف', 'pest_control' => 'مكافحة الحشرات', 'drain_cleaning' => 'تسليك المجاري' ) );
+	$map = apply_filters( 'zad_type_label_map', array( 'cleaning' => 'التنظيف', 'pest_control' => 'مكافحة الحشرات' ) );
 	if ( 'zad_service' !== $pt && isset( $map[ $pt ] ) && isset( $args['labels'] ) && is_array( $args['labels'] ) && in_array( $args['labels']['name'] ?? '', array( 'الخدمات', 'خدمات' ), true ) ) {
 		$args['labels']['name'] = $map[ $pt ];
 		$args['labels']['menu_name'] = $map[ $pt ];

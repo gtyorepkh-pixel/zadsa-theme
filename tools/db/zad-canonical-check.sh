@@ -2,9 +2,9 @@
 # Zad Saudi — canonical / noindex check over URLs with curl (read-only). Works on the live server or from any machine.
 #   bash zad-canonical-check.sh                 → takes the URLs from WordPress (run in the WP root; needs wp-cli)
 #   bash zad-canonical-check.sh urls.txt        → one URL per line (no WordPress needed)
-# Types (WP mode): TYPES="page,pest_control,cleaning,moving,zad_hood,guide"   Parallel requests: JOBS=6
+# Types (WP mode): TYPES="page,pest_control,cleaning,zad_hood,guide"   Parallel requests: JOBS=6
 set -uo pipefail
-TYPES="${TYPES:-page,pest_control,cleaning,moving,zad_hood,guide}"
+TYPES="${TYPES:-page,pest_control,cleaning,zad_hood,guide}"
 JOBS="${JOBS:-6}"
 OUT="${OUT:-zad-canonical-$(date +%Y%m%d-%H%M).csv}"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT

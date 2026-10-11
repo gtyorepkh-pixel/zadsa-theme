@@ -24,7 +24,7 @@ function zad_slug_list( $opt, $default ) {
 
 function zad_role_slugs() {
 	return array(
-		'service' => zad_slug_list( 'zad_service_slugs', 'pest-control,cleaning,drain-cleaning' ),
+		'service' => zad_slug_list( 'zad_service_slugs', 'pest-control,cleaning' ),
 		'faq'     => zad_slug_list( 'zad_faq_slugs', 'faq' ),
 		'article' => zad_slug_list( 'zad_article_slugs', 'sections,guide,pests-library' ),
 	);

@@ -1,7 +1,7 @@
 <?php
 /**
  * Smart cross-section links ("قد تحتاج أيضاً"). Off until the owner fills option zad_bridges:
- *   drain-cleaning > cleaning, pest-control      (one rule per line: from-section > to-sections)
+ *   cleaning > pest-control      (one rule per line: from-section > to-sections)
  * On a page inside the "from" section it links to the main services of the "to" sections and,
  * for district pages, to the same district's pages in those sections (published ones only).
  *

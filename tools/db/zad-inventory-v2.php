@@ -13,7 +13,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit( "Run with: wp eval-file zad-inventory.php\n" ); }
 global $wpdb;
 
-$types = array( 'page', 'pest_control', 'cleaning', 'moving', 'zad_service', 'zad_hood', 'guide', 'sections', 'zad_faq', 'pests-library', 'best_guide', 'post', 'drain-cleaning' );
+$types = array( 'page', 'pest_control', 'cleaning', 'zad_service', 'zad_hood', 'guide', 'sections', 'zad_faq', 'pests-library', 'best_guide', 'post' );
 
 /* -------- which service a row talks about (from slug / title; "other" when unknown) -------- */
 function zi_service( $s ) {

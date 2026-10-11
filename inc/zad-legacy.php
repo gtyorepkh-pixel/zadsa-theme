@@ -28,10 +28,11 @@ add_action( 'init', function () {
 	$done = array();
 	foreach ( zad_db_orphan_types() as $k ) {
 		$norm = str_replace( '_', '-', strtolower( $k ) );
+		if ( in_array( $norm, array( 'moving', 'drain-cleaning' ), true ) ) { continue; } // retired for good: never brought back (see inc/zad-purge-types.php)
 		if ( ! in_array( $norm, $want, true ) || ( function_exists( 'zad_faqconv_retired' ) && zad_faqconv_retired() && $k === zad_faqconv_cfg( 'from' ) ) ) {
 			continue;
 		}
-		$lbl = ( apply_filters( 'zad_legacy_type_labels', array( 'drain_cleaning' => 'تسليك المجاري', 'cleaning' => 'التنظيف', 'pest_control' => 'مكافحة الحشرات', 'faq' => 'الأسئلة القديمة' ) )[ $k ] ?? ucwords( str_replace( array( '-', '_' ), ' ', $k ) ) ) . ' (مؤقت)';
+		$lbl = ( apply_filters( 'zad_legacy_type_labels', array( 'cleaning' => 'التنظيف', 'pest_control' => 'مكافحة الحشرات', 'faq' => 'الأسئلة القديمة' ) )[ $k ] ?? ucwords( str_replace( array( '-', '_' ), ' ', $k ) ) ) . ' (مؤقت)';
 		register_post_type( $k, array(
 			'labels'        => array( 'name' => $lbl, 'singular_name' => $lbl, 'menu_name' => $lbl ),
 			'public'        => true,
@@ -74,3 +75,8 @@ add_action( 'admin_notices', function () {
 	}
 	echo '<div class="notice notice-warning"><p><strong>Zad Pro:</strong> سُجّلت أنواع المحتوى التالية تلقائياً لأنها موجودة في قاعدة البيانات وغير مسجّلة (على الأرجح كان الثيم القديم يسجّلها): <code>' . esc_html( implode( '، ', $zad_legacy_registered ) ) . '</code>. للتثبيت الدائم سجّلها في إضافة أو mu-plugin، ثم راجع «الأدوات ← تبنّي المحتوى الحالي».</p></div>';
 } );
+
+/** «نقل وتخزين الأثاث» و«تسليك المجاري» أُلغيا نهائياً: لو سجّلهما أي ملف خارج القالب (mu-plugin قديم) يُلغى تسجيلهما هنا فلا يظهران في اللوحة ولا الروابط. */
+add_action( 'init', function () {
+	foreach ( array( 'moving', 'drain_cleaning', 'drain-cleaning' ) as $t ) { if ( post_type_exists( $t ) ) { unregister_post_type( $t ); } }
+}, 9999 );

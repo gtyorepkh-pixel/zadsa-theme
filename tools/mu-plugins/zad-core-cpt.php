@@ -4,6 +4,10 @@
   Description: المحرك الأساسي لتسجيل المقالات المخصصة والتصنيفات لضمان استقرار الأرشفة والروابط
 */
 
+/*
+ * ⚠ نسخة للاختبار المحلي فقط (tools/wptest) — لا تُنسخ فوق ملف الموقع الحقيقي أبداً.
+ * الملف الحقيقي على الموقع هو المرجع؛ هذه نسخة أقدم منه. نوعا «نقل وتخزين الأثاث» و«تسليك المجاري» محذوفان نهائياً ولا يُسجَّلان هنا.
+ */
 defined( 'ABSPATH' ) || exit;
 
 add_action( 'init', function() {
@@ -129,36 +133,6 @@ add_action( 'init', function() {
     register_taxonomy_for_object_type('category', 'pest_control');
     register_taxonomy_for_object_type('post_tag', 'cleaning');
     register_taxonomy_for_object_type('post_tag', 'pest_control');
-
-// 7. صفحات نقل وتخزين الأثاث
-register_post_type('moving', array(
-    'hierarchical'      => true,
-    'public'            => true,
-    'show_ui'           => true,
-    'menu_icon'         => 'dashicons-migrate',
-    'has_archive'       => true,
-    'show_in_rest'      => true,
-    'capability_type'   => 'page',
-    'map_meta_cap'      => true,
-    'rewrite'           => array('slug' => 'moving', 'with_front' => false, 'hierarchical' => true),
-    'labels'            => array('name' => 'نقل وتخزين الأثاث', 'menu_name' => 'نقل وتخزين الأثاث'),
-    'supports'          => array('title', 'editor', 'thumbnail', 'excerpt', 'page-attributes')
-));
-
-// 8. تسليك المجاري
-register_post_type('drain_cleaning', array(
-    'hierarchical'      => true,
-    'public'            => true,
-    'show_ui'           => true,
-    'menu_icon'         => 'dashicons-admin-tools',
-    'has_archive'       => true,
-    'show_in_rest'      => true,
-    'capability_type'   => 'page',
-    'map_meta_cap'      => true,
-    'rewrite'           => array('slug' => 'drain-cleaning', 'with_front' => false, 'hierarchical' => true),
-    'labels'            => array('name' => 'تسليك المجاري', 'menu_name' => 'تسليك المجاري'),
-    'supports'          => array('title', 'editor', 'thumbnail', 'excerpt', 'page-attributes')
-));
 
 }, 0);
 

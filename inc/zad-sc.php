@@ -214,7 +214,7 @@ function zsc_detect_type( $name, $title, $post_type ) {
 			if ( preg_match( $t[0], (string) $text ) ) { return $t[1]; }
 		}
 	}
-	$fb = array( 'pest_control' => 'مكافحة الحشرات', 'cleaning' => 'خدمات التنظيف', 'drain_cleaning' => 'تسليك المجاري وشفط البيارات', 'tile_polishing' => 'جلي البلاط والرخام' );
+	$fb = array( 'pest_control' => 'مكافحة الحشرات', 'cleaning' => 'خدمات التنظيف', 'tile_polishing' => 'جلي البلاط والرخام' );
 	return $fb[ $post_type ] ?? 'خدمات التنظيف';
 }
 
