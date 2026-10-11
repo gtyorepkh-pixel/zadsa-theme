@@ -457,7 +457,10 @@ add_action( 'pre_get_posts', function ( $q ) {
 		return;
 	}
 	if ( $q->is_post_type_archive( zad_service_types() ) || $q->is_tax( array( 'service_cat', 'service_area' ) ) ) {
-		$q->set( 'post_type', zad_service_types() );
+		// Only the native /services/ archive and the term archives span every service type. The archive of an adopted type (/pest-control/, /cleaning/) must keep ITS OWN type:
+		// overwriting it made zad_query_pt() return the FIRST type (cleaning), so /pest-control/ got cleaning's title, H1, canonical, linked page and list.
+		$one = $q->get( 'post_type' );
+		if ( ! ( $q->is_post_type_archive() && is_string( $one ) && '' !== $one && 'zad_service' !== $one ) ) { $q->set( 'post_type', zad_service_types() ); }
 		$q->set( 'posts_per_page', 12 );
 		$q->set( 'orderby', array( 'menu_order' => 'ASC', 'date' => 'DESC' ) );
 		if ( $q->is_post_type_archive( zad_service_types() ) && ! empty( $_GET['q'] ) ) { // phpcs:ignore

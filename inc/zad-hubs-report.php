@@ -94,6 +94,24 @@ function zad_hr_pages() {
 	return $o;
 }
 
+
+/** Fetch a public URL of this site and read what a visitor/Google gets: H1, <title>, canonical, robots, number of section cards, schema types. */
+function zad_hr_fetch( $url ) {
+	$r = wp_remote_get( $url, array( 'timeout' => 20, 'redirection' => 0, 'sslverify' => false, 'headers' => array( 'Cache-Control' => 'no-cache' ), 'user-agent' => 'ZadHubReport/1' ) );
+	if ( is_wp_error( $r ) ) { return array( 'err' => $r->get_error_message() ); }
+	$code = (int) wp_remote_retrieve_response_code( $r ); $h = (string) wp_remote_retrieve_body( $r );
+	$o = array( 'code' => $code, 'loc' => (string) wp_remote_retrieve_header( $r, 'location' ) );
+	$o['h1']    = preg_match( '#<h1[^>]*>(.*?)</h1>#su', $h, $m ) ? trim( wp_strip_all_tags( $m[1] ) ) : '';
+	$o['title'] = preg_match( '#<title>(.*?)</title>#su', $h, $m ) ? html_entity_decode( trim( $m[1] ), ENT_QUOTES, 'UTF-8' ) : '';
+	$o['canon'] = preg_match( '#<link rel=["\']canonical["\'] href=["\']([^"\']+)#i', $h, $m ) ? $m[1] : '';
+	$o['robots'] = preg_match( '#<meta name=["\']robots["\'] content=["\']([^"\']*)#i', $h, $m ) ? $m[1] : '';
+	$o['cards'] = substr_count( $h, 'class="zhub__card"' ); $o['hub'] = false !== strpos( $h, 'class="zhub"' ) || false !== strpos( $h, 'class="zhub__' );
+	$types = array();
+	if ( preg_match_all( '#<script type="application/ld\+json"[^>]*>(.*?)</script>#s', $h, $mm ) ) { foreach ( $mm[1] as $j ) { $d = json_decode( $j, true ); if ( ! $d ) { continue; } foreach ( isset( $d['@graph'] ) ? $d['@graph'] : array( $d ) as $x ) { foreach ( (array) ( $x['@type'] ?? array() ) as $t ) { $types[ $t ] = 1; } } } }
+	$o['schema'] = array_keys( $types );
+	return $o;
+}
+
 function zad_hr_report() {
 	global $wpdb;
 	$brand = zad_brand_name(); $m = '';
@@ -184,6 +202,22 @@ function zad_hr_report() {
 	// section vs section
 	foreach ( $sec as $k => $w ) { if ( '' !== $k && count( $w ) > 1 ) { $m .= '- ⚠️ عنوان واحد لأكثر من قسم: «' . zad_hr_md( $k ) . '» ← ' . implode( ' و', $w ) . "\n"; } }
 
+	/* 5) what the site really serves (each URL is fetched) */
+	$m .= "\n## 5) ما يخدمه الموقع فعلاً (جلب كل رابط)\nCanonical مخالف للرابط = مشكلة. «تصميم القسم» = الصفحة تعرض قالب الأقسام الجديد.\n";
+	$urls = array();
+	foreach ( $rows as $r ) { if ( $r['url'] ) { $urls[ $r['url'] ] = 'أرشيف ' . $r['pt']; } }
+	foreach ( $terms as $t ) { $urls[ $t['url'] ] = $t['tax'] . ' «' . $t['term']->name . '»'; }
+	foreach ( $pg['sections'] as $r ) { $urls[ $r['url'] ] = 'قسم هرمي #' . $r['p']->ID; }
+	foreach ( $pg['has_city'] as $r ) { if ( count( $urls ) < 70 ) { $urls[ $r['url'] ] = 'خدمة بمدينة #' . $r['p']->ID . ' (يجب أن تبقى خدمة)'; } }
+	if ( $cp ) { $urls[ get_permalink( $cp ) ] = 'صفحة /cities/'; }
+	$m .= "| الصفحة | الحالة | H1 | title | robots | canonical | تصميم القسم (كروت) | schema |\n|---|---|---|---|---|---|---|---|\n";
+	foreach ( array_slice( $urls, 0, 70, true ) as $u => $what ) {
+		$f = zad_hr_fetch( $u );
+		if ( isset( $f['err'] ) ) { $m .= '| ' . zad_hr_md( $what . ' ' . rawurldecode( $u ) ) . ' | تعذّر الجلب: ' . zad_hr_md( $f['err'] ) . " | | | | | | |\n"; continue; }
+		$bad = $f['canon'] && untrailingslashit( rawurldecode( $f['canon'] ) ) !== untrailingslashit( rawurldecode( $u ) );
+		$m .= '| ' . zad_hr_md( $what . ' — ' . rawurldecode( (string) wp_parse_url( $u, PHP_URL_PATH ) ) ) . ' | ' . $f['code'] . ' | ' . zad_hr_md( $f['h1'] ) . ' | ' . zad_hr_md( $f['title'] ) . ' | ' . zad_hr_md( $f['robots'] ) . ' | ' . ( $bad ? '⚠️ ' . zad_hr_md( rawurldecode( $f['canon'] ) ) : 'نفسها' ) . ' | ' . ( $f['hub'] ? 'نعم / ' . $f['cards'] : 'لا' ) . ' | ' . implode( ',', $f['schema'] ) . " |\n";
+	}
+	$h1c = array();
 	$m .= "\n---\nللقراءة فقط: هذه الأداة لا تغيّر أي صفحة أو إعداد.\n";
 	return $m;
 }

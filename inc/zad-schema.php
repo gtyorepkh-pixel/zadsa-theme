@@ -116,6 +116,9 @@ add_action( 'wp_head', function () {
 	if ( is_front_page() ) {
 		$nodes = array_merge( $site, zsc_home_nodes() );
 		zad_print_graph( $nodes );
+	} elseif ( function_exists( 'zad_hub_ctx' ) && zad_hub_ctx() ) { // section page (hub): CollectionPage + ItemList of the cards + breadcrumb. No Service / Offer / FAQPage / AggregateRating.
+		list( $hub_url, $hub_nodes ) = zad_hub_schema_nodes();
+		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), $hub_nodes ), $hub_url ) );
 	} elseif ( $id && in_array( $ptype, zad_service_types(), true ) && 'none' !== zsc_meta( $id, 'mode' ) ) {
 		$nodes = zsc_service_nodes( $id );
 		$kids  = zsc_hub_children( $id ); // a hub page (pillar / city with published children): CollectionPage whose list is the children; the Service node stays (about)
@@ -170,7 +173,7 @@ add_action( 'wp_head', function () {
 		zad_print_graph( zsc_with_breadcrumb( array_slice( $site, 0, 2 ), zad_current_url() ) );
 	}
 
-	if ( zad_is_service() && ! ( function_exists( 'zad_hood_active' ) && zad_hood_active( get_queried_object_id() ) ) ) {
+	if ( zad_is_service() && ! ( function_exists( 'zad_hub_ctx' ) && zad_hub_ctx() ) && ! ( function_exists( 'zad_hood_active' ) && zad_hood_active( get_queried_object_id() ) ) ) {
 		$id = get_queried_object_id();
 		$faq = array_filter( (array) get_post_meta( $id, '_zad_faq', true ), function ( $f ) { return ! empty( $f['q'] ); } );
 		if ( $faq ) {
