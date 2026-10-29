@@ -24,11 +24,12 @@ $r = zad_cp_apply( $id, 'tanks-knowledge' );
 $new = get_post( $id )->post_content;
 ok( true === $r, 'apply succeeds' );
 ok( false !== strpos( $new, 'INTRO_KEEP' ) && false === strpos( $new, 'OLD_BLOCK' ), 'intro kept, old text gone' );
-ok( false !== strpos( $new, 'ما الفرق بين تنظيف الخزان وتعقيمه' ) && false !== strpos( $new, 'كيف أختار شركة تنظيف خزانات' ), 'new pack text present' );
+ok( false !== strpos( $new, 'هل أشرب من ماء الخزان بعد التنظيف' ) && false !== strpos( $new, 'ما الفرق بين تنظيف الخزان وتعقيمه' ) && false !== strpos( $new, 'كيف أختار شركة تنظيف خزانات' ), 'new pack text present' );
 ok( $orig === get_post_meta( $id, ZAD_CP_META, true ), 'full original content saved in meta' );
 ok( 'تنظيف خزانات اختبار الحزمة' === get_the_title( $id ) && 'pack-test-tanks' === get_post( $id )->post_name, 'title and slug untouched' );
 ok( 1 === substr_count( $new, '<!--more-->' ), 'exactly one more tag' );
 $w = zad_cp_words( zad_cp_html( 'tanks-knowledge' ) ); ok( $w >= 600 && $w <= 800, "pack length 600-800 words ($w)" );
+ok( 0 === preg_match( '#أوقف الشرب|فلتر الشرب|صالحاً للشرب#u', zad_cp_html( 'tanks-knowledge' ) ), 'pack does not treat tank water as drinking water' );
 ok( 0 === preg_match( '#<table|mk__todo|⟵#', zad_cp_html( 'tanks-knowledge' ) ), 'pack has no tables and no review placeholders' );
 ok( 1 <= preg_match_all( '#<ul class="wp-block-list">#', zad_cp_html( 'tanks-knowledge' ) ) && 1 <= preg_match_all( '#<ol class="wp-block-list">#', zad_cp_html( 'tanks-knowledge' ) ), 'pack uses bullet and numbered lists' );
 
