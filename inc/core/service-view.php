@@ -43,7 +43,42 @@ function zad_service_view_data( $id ) {
 	return compact( 'm', 'arr', 'title', 'first_city', 'tagline', 'stats', 'subs', 'tools', 'steps', 'factors', 'faq', 'signs', 'harms', 'prices', 'min', 'unit', 'gallery', 'ba_ids', 'ba_text', 'video', 'rating', 'reviews', 'areas', 'cats', 'cta', 'phone', 'wa', 'facts', 'thumb', 'provider', 'area_names' );
 }
 
-function zad_service_sections() {
+/** Page design: 'classic' (default, the long-standing order) or 'new' (needs → harms → prices → steps first). Per page via _zad_layout; editors can preview with ?zad_layout=new|classic. */
+function zad_service_layout( $id ) {
+	$l = get_post_meta( $id, '_zad_layout', true );
+	if ( isset( $_GET['zad_layout'] ) && current_user_can( 'edit_post', $id ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$l = sanitize_key( wp_unslash( $_GET['zad_layout'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	}
+	return apply_filters( 'zad_service_layout', 'new' === $l ? 'new' : 'classic', $id );
+}
+
+function zad_service_sections( $id = 0 ) {
+	if ( $id && 'new' === zad_service_layout( $id ) ) {
+		return array(
+			'hero',
+			'stats',
+			'ix-modules',   // self-check wizard / map (the text that follows the "Read more" tag moves to ix-after)
+			'signs',
+			'harms',
+			'pricing',
+			'price-factors',
+			'steps',
+			'equipment',
+			'before-after',
+			'video',
+			'content',
+			'ix-after',
+			'coverage',
+			'subservices',
+			'business',
+			'clients',
+			'works',
+			'gallery',
+			'faq',
+			'links',
+			'related',
+		);
+	}
 	return array(
 		'hero',
 		'stats',
@@ -56,6 +91,7 @@ function zad_service_sections() {
 		'price-factors',
 		'pricing',
 		'signs',
+		'harms',
 		'before-after',
 		'video',
 		'business',
@@ -70,7 +106,13 @@ function zad_service_sections() {
 
 function zad_render_service( $id ) {
  extract( zad_service_view_data( $id ), EXTR_SKIP );
- foreach ( zad_service_sections() as $zad_service_section ) {
+ $zad_layout = zad_service_layout( $id );
+ if ( 'new' === $zad_layout ) { // the editor content is rendered first so [zad_ix] shortcodes mark their modules as done before ix-modules prints the rest
+  ob_start();
+  the_content();
+  list( $ix_before, $ix_after ) = zad_ix_split( ob_get_clean(), $id );
+ }
+ foreach ( zad_service_sections( $id ) as $zad_service_section ) {
   $zad_service_template = locate_template( 'template-parts/service/' . $zad_service_section . '.php' );
   if ( $zad_service_template ) { include $zad_service_template; }
  }

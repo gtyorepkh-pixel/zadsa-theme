@@ -1,5 +1,5 @@
 <?php defined( 'ABSPATH' ) || exit; ?>
-<main id="main">
+<main id="main"<?php echo ( isset( $zad_layout ) && 'new' === $zad_layout ) ? ' class="svc--new"' : ''; ?>>
 
 	<!-- 1. HERO + instant price estimator -->
 	<section class="shero<?php echo $thumb ? ' shero--photo' : ''; ?>">

@@ -8,9 +8,11 @@
 				<h2 class="h-line"><?php echo esc_html( $ctitle ); ?></h2>
 				<?php endif; ?>
 				<?php
-				ob_start();
-				the_content();
-				list( $ix_before, $ix_after ) = zad_ix_split( ob_get_clean(), $id );
+				if ( ! isset( $ix_before ) ) { // new layout renders the content early (shortcodes mark their modules as done first)
+					ob_start();
+					the_content();
+					list( $ix_before, $ix_after ) = zad_ix_split( ob_get_clean(), $id );
+				}
 				?>
 				<div class="prose entry-content"><?php echo $ix_before; // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 				<p><a class="btn btn--accent" href="#quote" data-scroll-quote><?php echo zad_icon( 'bolt', 20 ); // phpcs:ignore ?> <?php echo esc_html( $cta ); ?></a></p>
