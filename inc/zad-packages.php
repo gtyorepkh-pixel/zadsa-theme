@@ -110,6 +110,8 @@ function zad_pk_html( $id ) {
 	$city  = function_exists( 'zad_current_city' ) ? zad_current_city( $id )['name'] : '';
 	$svc   = function_exists( 'zad_svc_label' ) ? zad_svc_label( $id ) : get_the_title( $id );
 	$n     = count( $pks );
+	$ws    = array_map( function ( $p ) use ( $id ) { return zad_warranty_pkg( $p['warranty'], $id ); }, $pks );
+	$same_w = zad_layout_is_new( $id ) && '' !== $ws[0] && 1 === count( array_unique( $ws ) ); // new layout: identical warranty on every card is printed once under the cards
 	$o  = '<section class="sec pkgsec pkgsec--' . esc_attr( $style ) . '" id="prices"><div class="wrap"><header class="sec__head"><span class="eyebrow">' . ( 'pest' === $style ? zad_icon( 'shield', 14 ) . ' ' : '' ) . esc_html( $eyebrows[ $style ] ) . '</span><h2>' . esc_html( zad_pk_title( $id ) ) . '</h2>' . ( '' !== $sub ? '<p>' . esc_html( $sub ) . '</p>' : '' ) . '</header>';
 	$o .= '<div class="pkgx pkgx--n' . min( $n, 4 ) . '">';
 	foreach ( $pks as $p ) {
@@ -122,13 +124,14 @@ function zad_pk_html( $id ) {
 		if ( '' !== $p['desc'] ) { $o .= '<p class="pkgx__d">' . esc_html( $p['desc'] ) . '</p>'; }
 		$o  .= zad_pk_price_html( $p );
 		$pw = zad_warranty_pkg( $p['warranty'], $id );
-		if ( '' !== $pw ) { $o .= '<div class="pkgx__w" title="ضمان">' . zad_icon( 'shield', 16 ) . ' ' . esc_html( $pw ) . '</div>'; }
+		if ( '' !== $pw && ! $same_w ) { $o .= '<div class="pkgx__w" title="ضمان">' . zad_icon( 'shield', 16 ) . ' ' . esc_html( $pw ) . '</div>'; }
 		if ( $p['feat'] ) { $o .= '<ul class="pkgx__f">'; foreach ( $p['feat'] as $f ) { $o .= '<li>' . zad_icon( 'check', 16 ) . '<span>' . esc_html( $f ) . '</span></li>'; } $o .= '</ul>'; }
 		$msg = 'السلام عليكم، أبغى باقة ' . $p['name'] . ' — ' . $svc . ( ( '' !== $city && false === mb_strpos( $svc, $city ) ) ? ' — ' . $city : '' ); // the city only when the service name does not already say it
 		$at  = zad_wa_attrs( $msg, $id );
 		$o  .= '<button type="button" class="pkgx__btn"' . ( $at ?: ' data-open-wizard' ) . '>' . zad_icon( 'whatsapp', 18 ) . ' ' . esc_html( '' !== $p['cta'] ? $p['cta'] : 'اطلب هذه الباقة' ) . '</button></article>';
 	}
 	$o .= '</div><p class="pkgx__note">' . esc_html( $note ) . '</p>';
+	if ( $same_w ) { $o .= '<p class="pkgx__wall">' . zad_icon( 'shield', 16 ) . ' ' . esc_html( ( false === mb_strpos( $ws[0], 'ضمان' ) ? 'ضمان ' : '' ) . $ws[0] ) . ' على جميع الباقات</p>'; }
 	$o .= zad_pk_factors_html( $id );
 	return $o . '</div></section>';
 }

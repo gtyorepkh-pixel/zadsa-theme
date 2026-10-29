@@ -182,6 +182,7 @@ function zad_ticket_render( $tiles, $x ) {
 	$o .= '</div></div></div>';
 	$o .= '<a class="btn btn--wa btn--block tk__go" data-tk-go href="' . esc_url( $href ) . '" target="_blank" rel="noopener">' . zad_icon( 'whatsapp', 20 ) . '<span data-tk-lbl>اطلب ' . esc_html( $first['svc'] ) . ' على واتساب</span></a>';
 	$badges = array_slice( zad_lines( zad_opt( 'zad_card_badges', "فحص مجاني\nضمان مكتوب" ) ), 0, 3 );
+	if ( zad_layout_is_new( $id ) ) { $badges = array_values( array_filter( $badges, function ( $b ) { return false === mb_strpos( $b, 'ضمان' ); } ) ); } // new layout: the warranty is said once, in the hero facts
 	if ( $badges ) {
 		$o .= '<ul class="tk__trust">';
 		foreach ( $badges as $b ) { $o .= '<li>' . zad_icon( 'check', 15 ) . '<span>' . esc_html( $b ) . '</span></li>'; }

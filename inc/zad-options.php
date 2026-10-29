@@ -544,6 +544,7 @@ Zad_Settings::createSection( $zad_prefix, array(
 				'faqanswer'    => 'أداة إجابات الأسئلة (FAQ Answer Tool)',
 				'diag'         => 'تشخيص النظام (System Diagnostics)',
 				'layout'       => 'تصميم صفحات الخدمة (كلاسيكي/جديد)',
+				'contentpack'  => 'محتوى جاهز لصفحات الخدمة (معاينة + تراجع)',
 			),
 			'default'    => array( 'leadreport', 'worksmigrate', 'schemacheck', 'audit' ),
 			'dependency' => array( 'zad_tools_mode', '==', 'custom' ),

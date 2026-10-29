@@ -1424,3 +1424,4 @@ p.has-background{padding:1.25em 2em}
 .expert small{color:var(--muted)}.expert h3{margin:2px 0 6px;font-size:1.1rem}.expert p{margin:0;color:var(--muted);line-height:1.8;font-size:.95rem}
 @media(min-width:860px){.biz{grid-template-columns:1.1fr .9fr}}
 .svc--new .zw-grid4:has(> :only-child){grid-template-columns:minmax(0,420px);justify-content:center}
+.svc--new .pkgx__wall{display:flex;justify-content:center;align-items:center;gap:6px;margin:10px 0 0;font-weight:700;color:var(--primary)}

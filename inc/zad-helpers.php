@@ -522,3 +522,8 @@ function zad_link_lines( $opt ) {
 	}
 	return $out;
 }
+
+/** True while the page being served is this service in the «new» layout (see inc/core/service-view.php). Never true elsewhere (hubs, cards, prices page). */
+function zad_layout_is_new( $id ) {
+	return function_exists( 'zad_service_layout' ) && is_singular() && (int) get_queried_object_id() === (int) $id && 'new' === zad_service_layout( (int) $id );
+}
