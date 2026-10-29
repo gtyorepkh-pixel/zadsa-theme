@@ -70,10 +70,22 @@ P={i+1:p for i,p in enumerate(parts)}
 def sub(p): return p.replace('<h2 class="wp-block-heading">','<h3 class="wp-block-heading">').replace('</h2>','</h3>')
 def ksec(inner,idd=''):
     return f'<section class="sec"{(" id=%s"%chr(34)+idd+chr(34)) if idd else ""}><div class="wrap wrap--narrow"><div class="prose entry-content">{inner}</div></div></section>'
-K1=ksec(P[1]+sub(P[5])+sub(P[6]))
-K2=ksec(P[3]+sub(P[4]))
+FAQ='http://zadksa.local/faq/'
+def klinks(items,lead='تفاصيل أكثر:'):
+    return '<p class="klinks">'+lead+' '+' · '.join(f'<a href="{u}">{t}</a>' for t,u in items)+'</p>'
+review='<p class="kreview">المحتوى الفني في هذا القسم: <a href="http://zadksa.local/author/mahmoud/">محمود القحطاني</a>، محرر المحتوى الفني · آخر مراجعة: <time datetime="2026-10-29">29 أكتوبر 2026</time></p>'
+P5='<h2 class="wp-block-heading">متى يحتاج الخزان صيانة أو عزلاً لا غسيلاً فقط؟</h2><p class="wp-block-paragraph">إذا عادت الرواسب أو الرائحة خلال أسابيع رغم تنظيف جيد، فالسبب غالباً في الخزان نفسه: <strong>شروخ في الجدار</strong>، أو <strong>جذور داخل الخزان الأرضي</strong>، أو <strong>صدأ وتقشر في الطبقة الداخلية</strong>، أو <strong>غطاء مكسور</strong>. نخبرك بالوضع الفعلي قبل البدء ونقدّم سعر الإصلاح أو العزل منفصلاً عن التنظيف. وبطء التصريف داخل البيت مشكلة أخرى تحتاج <a href="/services/drain-cleaning/riyadh/">تسليك مجاري بالرياض</a>.</p>'+klinks([('أفضل نوع عزل للخزانات الخرسانية',FAQ+'best-type-of-insulation-for-concrete-tanks/'),('هل الخزان الأرضي يحتاج عزلاً؟',FAQ+'does-the-underground-tank-need-insulation/'),('باقة العزل والصيانة وسعرها','#prices')])+'<p class="mk__todo">⟵ مقترح: صفحة مستقلة «عزل خزانات المياه» (أعلى طلب بحثي في الموضوع، صعوبة منخفضة) تُربط من هنا بدل تضخيم هذا القسم. لا رابط ميتاً الآن.</p>'
+P4=P[4]+klinks([('أسباب ظهور رائحة كريهة لمياه الخزانات',FAQ+'appearance-of-a-foul-odor-in-the-water-tanks/')])
+P8=P[8]+klinks([('هل يمكنني استخدام المياه فور الانتهاء من التنظيف؟',FAQ+'can-i-use-water-immediately-after-cleaning/')])+'<p class="mk__todo">⟵ يُضاف هنا مصدر رسمي لجودة مياه الشرب (جهة مختصة) — يحدده فريقك؛ لا أكتب مصدراً من عندي.</p>'
+K1=ksec(P[1].replace('</h2>','</h2>'+review,1)+sub(P5)+sub(P[6]))
+K2=ksec(P[3]+sub(P4))
 K3=ksec(P[2]+sub(P[7]))
-K4=ksec(P[8])
+KPREP=ksec('''<h2 class="wp-block-heading">كيف أجهّز الخزان قبل الزيارة؟</h2>
+<ol class="wp-block-list"><li><strong>سهّل الوصول إلى الغطاء</strong> وحدد لنا مكان الخزان ونوعه (علوي أم أرضي) لنجهّز الفريق والمعدات المناسبة.</li><li><strong>اعرف سعة الخزان تقريباً:</strong> الطول × العرض × الارتفاع بالمتر × 1000 = السعة باللتر. السعة من عوامل السعر.</li><li><strong>خزّن ماءً للاستخدام</strong> خلال فترة التفريغ والتنظيف؛ نخبرك بالمدة المتوقعة قبل البدء.</li></ol>
+<h3 class="wp-block-heading">ماذا يحدث لمياه البيت أثناء التنظيف؟</h3>
+<p class="wp-block-paragraph">يُفرَّغ الخزان ثم يُنظَّف ويُعقَّم ويُشطَف قبل إعادة التعبئة، فينقطع الماء عن الخزان خلال هذه المدة. لذلك يُنصح بتخزين ماء للشرب والطبخ مسبقاً، ونخبرك بالمدة المتوقعة قبل البدء.</p>
+<p class="mk__todo">⟵ مسودة تشغيلية: يراجعها فريق التنفيذ (مدة الزيارة الفعلية بحسب السعة، وما يُغلق قبل التفريغ). لا أرقام من عندي.</p>''')
+K4=ksec(P8)
 K5=ksec('''<h2 class="wp-block-heading">كيف أختار شركة تنظيف خزانات؟</h2>
 <p class="wp-block-paragraph">اسأل أي شركة عن هذه النقاط قبل أن تحجز، وستعرف بسرعة من يعمل بطريقة صحيحة:</p>
 <ul class="wp-block-list"><li>هل يتم <strong>تفريغ الخزان بالكامل</strong> وفرك القاع والجدران قبل التعقيم؟</li><li>ما <strong>مادة التعقيم</strong> المستخدمة وكيف تُشطف بعدها؟</li><li>هل يُسلَّم <strong>تقرير مصور</strong> قبل وبعد؟</li><li>هل <strong>الضمان مكتوب</strong> بمدة واضحة، وماذا يغطي؟</li><li>هل <strong>السعر مكتوب قبل البدء</strong> وما الذي يغيّره؟</li></ul>''','choose')
@@ -134,6 +146,7 @@ order=[
  sec('merged','كم مرة ننظف + الرائحة بعد التنظيف',K2),
  sec('merged','الأرضي أم العلوي + خزانات العمائر',K3),
  sec('merged','هل الماء صالح للشرب؟',K4),
+ sec('new','كيف أجهّز الخزان قبل الزيارة؟ + ماذا يحدث للمياه + السعة — مسودة للمراجعة',KPREP),
  sec('new','كيف أختار شركة تنظيف خزانات؟ — مسودة محتوى للمراجعة',K5),
  sec('new','كيف أحجز وكيف أدفع؟ — مسودة محتوى للمراجعة',K6),
  sec('keep','أحياء الرياض (روابط نصية) — بعد حذف مربع «30 يوماً ضمان» المكرر منها',cov),
@@ -168,6 +181,7 @@ mk_css='''
 .mk-top__bar button{margin-inline-start:auto;border:0;border-radius:999px;padding:6px 14px;font:700 13px Tajawal;background:#f49400;color:#1a1200;cursor:pointer}
 .mk-top__legend{padding:0 16px 10px}
 .mk__empty{border:2px dashed #9aa7ad;border-radius:12px;padding:18px;text-align:center;color:#51616a;background:rgba(255,255,255,.6)}
+.klinks{font-size:.95rem;margin:.6rem 0 0;color:#51616a}.klinks a{font-weight:700}.kreview{font-size:.85rem;color:#51616a;border-inline-start:3px solid var(--accent,#d4a24c);padding-inline-start:10px;margin:0 0 1rem}
 .mk__todo{border:2px dashed #9aa7ad;border-radius:10px;padding:8px 12px;color:#51616a;font-size:.9rem}
 .mk--ghost .mk__tag{background:#1b8a4b}
 .mk-removed{max-width:1000px;margin:30px auto;padding:20px 24px;border:2px dashed #b32d2e;border-radius:14px;background:#fff7f7;color:#222}
