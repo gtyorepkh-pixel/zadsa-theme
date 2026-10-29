@@ -19,8 +19,8 @@ while ( have_posts() ) :
 				<div class="svc-cta__b"><a class="btn btn--accent" href="<?php echo esc_url( get_permalink( $psid ) ); ?>"><?php echo esc_html( 'تعرّف على خدمة ' . zad_card_title( $psid ) ); ?></a><?php if ( $psw ) : ?><a class="btn btn--wa" href="<?php echo esc_url( $psw ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> واتساب</a><?php endif; ?></div></div>
 			<?php endif; ?>
 			<?php echo zad_author_box(); // phpcs:ignore ?>
-			<div class="footer-meta"><?php memo_tags_in(); ?></div>
-			<?php echo memo_sharing_buttons(); // phpcs:ignore ?>
+			<div class="footer-meta"><?php zad_post_tags(); ?></div>
+			<?php echo zad_share_buttons(); // phpcs:ignore ?>
 			<?php if ( zad_comments_enabled() && ( comments_open() || get_comments_number() ) ) { comments_template(); } ?>
 		</article>
 		<aside class="slayout__side">

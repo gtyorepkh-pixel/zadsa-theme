@@ -1,0 +1,89 @@
+/* ===========================================================
+   صفحة الأسعار (قالب «الأسعار الشاملة») — بطاقات ولوائح، مش جداول.
+   الأرقام هي البطل: مقاس كبير وأرقام مصطفّة، والتفاصيل تحتها هادية.
+   =========================================================== */
+
+.zpr{--zpr-tone:var(--primary)}
+
+/* أيقونة القسم */
+.zpr__ic{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;flex:none;
+  border-radius:12px;color:var(--zpr-tone);background:color-mix(in srgb,var(--zpr-tone) 11%,#fff)}
+.zpr__ic--lg{width:48px;height:48px;border-radius:14px}
+
+/* ---------- 1) فهرس الخدمات: شبكة بلاطات بالسعر الابتدائي ---------- */
+.zpr__idx{list-style:none;display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));margin:0 0 34px}
+.zpr__tile{display:flex;flex-direction:column;gap:10px;height:100%;padding:18px 18px 16px;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);text-decoration:none;color:inherit;
+  transition:border-color .15s,box-shadow .15s,transform .15s}
+.zpr__tile:hover{border-color:color-mix(in srgb,var(--zpr-tone) 42%,#fff);box-shadow:var(--shadow);transform:translateY(-2px);color:inherit}
+.zpr__tile b{font-size:1rem;font-weight:700;line-height:1.45}
+.zpr__tile:hover .zpr__ic{background:color-mix(in srgb,var(--zpr-tone) 18%,#fff)}
+.zpr__from{margin-top:auto;display:flex;align-items:baseline;gap:6px;font-weight:800;color:var(--zpr-tone)}
+.zpr__from small{font-size:.72rem;font-weight:600;color:var(--muted);opacity:.75}
+.zpr__from i{font-style:normal;font-size:1.9rem;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.zpr__from span{font-size:.85rem;font-weight:700}
+.zpr__from--q i{font-size:1.05rem;font-weight:700}
+
+/* ---------- 2) مرشّح الأقسام ---------- */
+.zpr__filter{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px;padding:12px 0;
+  background:linear-gradient(var(--surface) 78%,transparent)}
+.zpr__chip{font:700 .9rem/1 var(--font);padding:11px 18px;border-radius:999px;border:1px solid var(--line);
+  background:var(--surface);color:var(--muted);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.zpr__chip:hover{border-color:color-mix(in srgb,var(--primary) 40%,#fff)}
+.zpr__chip.is-on{background:var(--primary);border-color:var(--primary);color:#fff}
+
+/* ---------- 3) كتلة الخدمة ---------- */
+.zpr__svc{margin:0 0 30px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);overflow:hidden;scroll-margin-top:84px}
+.zpr__svc{border-top:3px solid var(--zpr-tone)}
+.zpr__head{display:flex;flex-wrap:wrap;align-items:center;gap:14px;
+  padding:20px 24px;background:var(--tint);border-bottom:1px solid var(--line)}
+.zpr__ttl{flex:1 1 260px;min-width:0}
+.zpr__ttl p{margin:4px 0 0;font-size:.88rem;line-height:1.65;color:var(--muted);opacity:.85}
+.zpr__head h2{margin:0;font-size:1.25rem}
+.zpr__head h2 a{text-decoration:none}
+.zpr__head h2 a:hover{text-decoration:underline}
+.zpr__more-wrap{margin:0;padding:14px 24px 18px;border-top:1px solid var(--line)}
+.zpr__more{font-weight:700;font-size:.9rem;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.zpr__more:hover{text-decoration:underline}
+
+/* صفوف الأسعار */
+.zpr__rows{list-style:none;margin:0;padding:0}
+.zpr__grp{padding:14px 24px 6px;font-size:.76rem;font-weight:800;letter-spacing:.06em;color:var(--muted);opacity:.8}
+.zpr__row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:12px 24px;border-top:1px solid var(--line)}
+.zpr__row:first-child{border-top:0}
+.zpr__grp+.zpr__row{border-top:0}
+.zpr__row:hover{background:color-mix(in srgb,var(--tint) 55%,#fff)}
+.zpr__nm{min-width:0}
+.zpr__nm b{display:block;font-weight:700;line-height:1.5}
+.zpr__tag{display:inline-block;margin-inline-start:7px;font:700 .7rem/1 var(--font);font-style:normal;
+  color:var(--zpr-tone);background:color-mix(in srgb,var(--zpr-tone) 10%,#fff);border-radius:999px;
+  padding:5px 10px;vertical-align:middle}
+.zpr__nm small{display:block;font-size:.84rem;color:var(--muted);opacity:.85;line-height:1.6;margin-top:2px}
+.zpr__val{flex:none;text-align:left;display:flex;align-items:baseline;gap:5px;font-weight:800;color:var(--zpr-tone);
+  font-variant-numeric:tabular-nums}
+.zpr__val i{font-style:normal;font-size:1.5rem;line-height:1;letter-spacing:-.02em}
+.zpr__val span{font-size:.8rem;font-weight:700;color:var(--muted)}
+.zpr__val--q{font:700 .86rem/1 var(--font);color:var(--muted);background:var(--tint);border:1px solid var(--line);
+  border-radius:999px;padding:8px 14px;white-space:nowrap}
+.zpr__note{padding:12px 24px 18px;margin:0;font-size:.86rem;color:var(--muted);opacity:.9}
+
+/* ---------- 4) ملاحظة الشفافية ---------- */
+.zpr__fine{display:flex;align-items:flex-start;gap:10px;margin:0 0 30px;padding:16px 18px;
+  background:var(--mint);border:1px solid color-mix(in srgb,var(--ok) 22%,#fff);border-radius:var(--r);
+  font-size:.92rem;line-height:1.7}
+.zpr__fine .zi{color:var(--ok);margin-top:3px}
+
+.zpr__empty{padding:40px 0;text-align:center;color:var(--muted)}
+
+/* ---------- الموبايل ---------- */
+@media (max-width:640px){
+  .zpr__idx{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .zpr__tile{padding:14px}
+  .zpr__from i{font-size:1.6rem}
+  .zpr__head{padding:16px}
+  .zpr__more-wrap{padding:12px 16px 16px}
+  .zpr__row{padding:13px 16px;gap:12px}
+  .zpr__grp{padding:12px 16px 4px}
+  .zpr__note{padding:12px 16px 16px}
+  .zpr__val i{font-size:1.3rem}
+}

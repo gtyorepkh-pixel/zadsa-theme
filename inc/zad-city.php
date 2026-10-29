@@ -64,15 +64,10 @@ function zad_area_page_url( $service_id, $term ) {
 	return $p ? get_permalink( $p ) : '';
 }
 
-/** Is the area term's archive open to Google (exists, not noindexed by the theme or by Yoast)? */
+/** Is the area term's archive open to Google (exists, not noindexed by the theme)? */
 function zad_area_term_open( $term ) {
 	if ( ! $term || is_wp_error( $term ) ) { return false; }
 	if ( function_exists( 'zad_term_noindexed' ) && zad_term_noindexed( $term ) ) { return false; }
-	if ( 'yoast' === zad_seo_mode() ) {
-		if ( class_exists( 'WPSEO_Taxonomy_Meta' ) && 'noindex' === WPSEO_Taxonomy_Meta::get_term_meta( $term, $term->taxonomy, 'noindex' ) ) { return false; }
-		$ti = get_option( 'wpseo_titles' );
-		if ( is_array( $ti ) && ! empty( $ti[ 'noindex-tax-' . $term->taxonomy ] ) ) { return false; }
-	}
 	return ! is_wp_error( get_term_link( $term ) );
 }
 
@@ -86,9 +81,52 @@ function zad_area_link( $service_id, $term ) {
 
 /* ---------------- the city of a service page ---------------- */
 
-/** slug => Arabic name (extend with the filter `zad_city_map`). */
+/**
+ * The city registry: one row per city we serve, and the single source for every place-dependent value
+ * (page meta, schema, geo tags, the booking form and the local phone number).
+ *
+ * name   Arabic name as it is written on the pages.
+ * lat/lng city centre, for geo.position and ICBM. A page outside any city falls back to the company's own.
+ * region  administrative region, for geo.region (ISO 3166-2:SA).
+ * phone   the local number answered for that city; empty means the company-wide number.
+ * parent  slug of the governorate a town belongs to, so a town inherits its region's links and pricing.
+ *
+ * Extend with the filter `zad_city_data`.
+ */
+function zad_city_data() {
+	static $rows = null;
+	if ( null === $rows ) {
+		$rows = apply_filters( 'zad_city_data', array(
+			'riyadh'    => array( 'name' => 'الرياض',        'lat' => '24.7136', 'lng' => '46.6753', 'region' => 'SA-01', 'phone' => '' ),
+			'kharj'     => array( 'name' => 'الخرج',          'lat' => '24.1554', 'lng' => '47.3346', 'region' => 'SA-01', 'phone' => '', 'parent' => 'riyadh' ),
+			'jeddah'    => array( 'name' => 'جدة',            'lat' => '21.4858', 'lng' => '39.1925', 'region' => 'SA-02', 'phone' => '' ),
+			'makkah'    => array( 'name' => 'مكة',            'lat' => '21.3891', 'lng' => '39.8579', 'region' => 'SA-02', 'phone' => '' ),
+			'dammam'    => array( 'name' => 'الدمام',         'lat' => '26.4207', 'lng' => '50.0888', 'region' => 'SA-04', 'phone' => '' ),
+			'qatif'     => array( 'name' => 'القطيف',         'lat' => '26.5196', 'lng' => '49.9962', 'region' => 'SA-04', 'phone' => '' ),
+			'al-ahsa'   => array( 'name' => 'الأحساء',        'lat' => '25.3647', 'lng' => '49.5870', 'region' => 'SA-04', 'phone' => '' ),
+			'qassim'    => array( 'name' => 'القصيم',         'lat' => '26.3260', 'lng' => '43.9750', 'region' => 'SA-05', 'phone' => '0545912579' ),
+			'buraydah'  => array( 'name' => 'بريدة',          'lat' => '26.3260', 'lng' => '43.9750', 'region' => 'SA-05', 'phone' => '0545912579', 'parent' => 'qassim' ),
+			'unaizah'   => array( 'name' => 'عنيزة',          'lat' => '26.0840', 'lng' => '43.9930', 'region' => 'SA-05', 'phone' => '0545912579', 'parent' => 'qassim' ),
+			'najran'    => array( 'name' => 'نجران',          'lat' => '17.4924', 'lng' => '44.1277', 'region' => 'SA-10', 'phone' => '0500403084' ),
+		) );
+	}
+	return $rows;
+}
+
+/** One city's row, by slug or by Arabic name. Empty array when the place is not in the registry. */
+function zad_city_row( $city ) {
+	$rows = zad_city_data();
+	$key  = strtolower( trim( urldecode( (string) $city ), " \t\n\r/" ) );
+	if ( isset( $rows[ $key ] ) ) { return $rows[ $key ] + array( 'slug' => $key ); }
+	foreach ( $rows as $slug => $row ) {
+		if ( $row['name'] === trim( (string) $city ) ) { return $row + array( 'slug' => $slug ); }
+	}
+	return array();
+}
+
+/** slug => Arabic name, derived from the registry (extend with the filter `zad_city_map`). */
 function zad_city_map() {
-	return apply_filters( 'zad_city_map', array( 'riyadh' => 'الرياض', 'jeddah' => 'جدة', 'dammam' => 'الدمام', 'qatif' => 'القطيف' ) );
+	return apply_filters( 'zad_city_map', wp_list_pluck( zad_city_data(), 'name' ) );
 }
 
 /**

@@ -6,7 +6,7 @@
  *  - write the intro paragraph first, add a "Read more" tag, and everything after it is shown
  *    BELOW the interactive modules (or leave out the tag and all content is shown above them);
  *  - any module can also be placed inside the content with [zad_ix m="wiz"].
- * Modules: map (explore), wiz (self-check → plan → booking), report, life, safe, check.
+ * Modules: map (explore), wiz (self-check → plan → booking), safe, story.
  */
 
 require_once __DIR__ . '/zad-ix-packs.php';
@@ -15,13 +15,8 @@ function zad_ix_modules() {
 	return array(
 		'map'    => 'خريطة تفاعلية (أين يختبئ / يدخل)',
 		'wiz'    => 'فحص ذاتي ← خطة ← حجز',
-		'report' => 'نموذج تقرير الزيارة',
-		'life'   => 'دورة الحياة ولماذا المتابعة',
 		'safe'   => 'حاسبة الأمان للأسرة',
-		'check'  => 'قائمة التحضير',
 		'story'  => 'قصة من الميدان (مشاهد قبل/أثناء/بعد)',
-		'when'   => 'متى لا تحتاج خدمة؟ (مصداقية)',
-		'pay'    => 'قبل أن تدفع (شفافية الأسعار)',
 	);
 }
 
@@ -57,13 +52,8 @@ function zad_ix_fields() {
 	return array(
 		'map'    => array( 'title' => 'text', 'lead' => 'text', 'img' => 'int', 'items' => 'area' ),
 		'wiz'    => array( 'title' => 'text', 'lead' => 'text', 'questions' => 'area', 'tiers' => 'area' ),
-		'report' => array( 'title' => 'text', 'lead' => 'text', 'items' => 'area' ),
-		'life'   => array( 'title' => 'text', 'lead' => 'text', 'items' => 'area', 'rule' => 'text' ),
 		'safe'   => array( 'title' => 'text', 'lead' => 'text', 'items' => 'area', 'after' => 'text' ),
-		'check'  => array( 'title' => 'text', 'lead' => 'text', 'items' => 'area' ),
 		'story'  => array( 'title' => 'text', 'lead' => 'text', 'scenes' => 'area', 'imgs' => 'ids', 'audio' => 'url', 'cta' => 'text' ),
-		'when'   => array( 'title' => 'text', 'lead' => 'text', 'no_h' => 'text', 'no' => 'area', 'yes_h' => 'text', 'yes' => 'area' ),
-		'pay'    => array( 'title' => 'text', 'lead' => 'text', 'items' => 'area' ),
 	);
 }
 
@@ -75,13 +65,8 @@ function zad_ix_metabox( $post ) {
 	$hints = array(
 		'map'   => 'سطر لكل نقطة:  الاسم | لماذا | ماذا تفعل | x% | y%   (x و y اختياريان لوضع النقطة على الصورة)',
 		'wiz'   => 'الأسئلة: سطر لكل سؤال:  السؤال || single أو multi || خيار::وزن ; خيار::وزن',
-		'report' => 'سطر لكل بند:  العنوان | الوصف',
-		'life'  => 'سطر لكل مرحلة:  المرحلة | الشرح | المدة',
 		'safe'  => 'سطر لكل حالة:  الحالة | الاحتياط',
-		'check' => 'سطر لكل بند',
 		'story' => 'المشاهد: سطر لكل مشهد:  العنوان (قبل/أثناء/بعد) | المدة بالثواني | النص. الصور تُختار بنفس الترتيب.',
-		'when'  => 'سطر لكل بند في كل عمود.',
-		'pay'   => 'سطر لكل بند:  البند | النوع (free مجاني، paid مدفوع، deduct يُخصم، incl مشمول) | الشرح',
 	);
 	$packs = array();
 	foreach ( zad_ix_packs() as $k => $p ) {
@@ -138,7 +123,7 @@ function zad_ix_metabox( $post ) {
 			var k=box.querySelector('[data-ix-pack]').value; if(!k) return;
 			if(!confirm('سيتم استبدال محتوى الحقول بالنموذج الجاهز. متابعة؟')) return;
 			var p=JSON.parse(box.dataset.packs)[k];
-			['map','wiz','report','life','safe','check','story','when','pay'].forEach(function(m){
+			['map','wiz','safe','story'].forEach(function(m){
 				Object.keys(p[m]||{}).forEach(function(f){
 					var el=box.querySelector('[data-f="'+m+'.'+f+'"]'); if(el) el.value=p[m][f];
 				});
@@ -158,7 +143,7 @@ add_action( 'save_post', function ( $id ) {
 	$in  = isset( $_POST['zad_ix'] ) && is_array( $_POST['zad_ix'] ) ? wp_unslash( $_POST['zad_ix'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 	$out = array( 'on' => ! empty( $in['on'] ) ? 1 : 0, 'order' => implode( ',', zad_ix_order( array( 'order' => sanitize_text_field( $in['order'] ?? '' ) ) ) ), 'en' => array() );
 	foreach ( zad_ix_fields() as $k => $fields ) {
-		$out['en'][ $k ] = ! empty( $in['en'][ $k ] ) ? 1 : 0;
+		if ( isset( zad_ix_modules()[ $k ] ) ) { $out['en'][ $k ] = ! empty( $in['en'][ $k ] ) ? 1 : 0; }
 		foreach ( $fields as $f => $type ) {
 			$v = $in[ $k ][ $f ] ?? '';
 			$out[ $k ][ $f ] = 'int' === $type ? absint( $v ) : ( 'area' === $type ? sanitize_textarea_field( $v ) : ( 'ids' === $type ? implode( ',', array_filter( array_map( 'absint', explode( ',', sanitize_text_field( $v ) ) ) ) ) : ( 'url' === $type ? esc_url_raw( $v ) : sanitize_text_field( $v ) ) ) );
@@ -226,17 +211,7 @@ function zad_ix_module_html( $k, $ix, $post_id ) {
 			break;
 
 		case 'wiz':
-			$qs = array();
-			foreach ( zad_lines( $d['questions'] ?? '' ) as $l ) {
-				$c = array_map( 'trim', explode( '||', $l ) );
-				if ( count( $c ) < 3 ) { continue; }
-				$opts = array();
-				foreach ( preg_split( '/[;؛]/u', $c[2] ) as $op ) {
-					$p = array_map( 'trim', explode( '::', $op ) );
-					if ( '' !== $p[0] ) { $opts[] = array( $p[0], (int) ( $p[1] ?? 0 ) ); }
-				}
-				if ( $opts ) { $qs[] = array( $c[0], 'multi' === $c[1] ? 'multi' : 'single', $opts ); }
-			}
+			$qs = zad_ix_questions( $d );
 			if ( ! $qs ) { return ''; }
 			$tiers = array();
 			foreach ( zad_lines( $d['tiers'] ?? '' ) as $l ) {
@@ -246,15 +221,15 @@ function zad_ix_module_html( $k, $ix, $post_id ) {
 			usort( $tiers, function ( $a, $b ) { return $a['min'] <=> $b['min']; } );
 			$wa = zad_whatsapp( $post_id );
 			$o .= zad_ix_head( $d, 'افحص بنفسك' );
-			$o .= '<div class="ixw" data-ixw data-svc="' . esc_attr( $title ) . '" data-wa="' . esc_attr( $wa ) . '"><form class="ixw__form" novalidate>';
+			$o .= '<div class="ixw" data-ixw data-svc="' . esc_attr( $title ) . '" data-wa="' . esc_attr( $wa ) . '"><form class="ixw__form" novalidate method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="zad_ix_result"><input type="hidden" name="post_id" value="' . (int) $post_id . '">';
 			foreach ( $qs as $qi => $q ) {
 				$o .= '<fieldset class="ixw__q" data-qi="' . (int) $qi . '" data-type="' . esc_attr( $q[1] ) . '"><legend><span class="ixw__n">' . ( $qi + 1 ) . '</span>' . esc_html( $q[0] ) . ( 'multi' === $q[1] ? ' <small>(يمكن اختيار أكثر من إجابة)</small>' : '' ) . '</legend><div class="ixw__opts">';
 				foreach ( $q[2] as $oi => $op ) {
-					$o .= '<label class="ixw__opt"><input type="' . ( 'multi' === $q[1] ? 'checkbox' : 'radio' ) . '" name="q' . (int) $qi . '" value="' . (int) $oi . '" data-w="' . (int) $op[1] . '"><span>' . esc_html( $op[0] ) . '</span></label>';
+					$o .= '<label class="ixw__opt"><input type="' . ( 'multi' === $q[1] ? 'checkbox' : 'radio' ) . '" name="q' . (int) $qi . ( 'multi' === $q[1] ? '[]' : '' ) . '" value="' . (int) $oi . '" data-w="' . (int) $op[1] . '"><span>' . esc_html( $op[0] ) . '</span></label>';
 				}
 				$o .= '</div></fieldset>';
 			}
-			$o .= '<div class="ixw__nav"><button type="button" class="btn btn--ghost" data-ixw-prev hidden>السابق</button><button type="button" class="btn btn--accent" data-ixw-next>التالي</button></div></form>';
+			$o .= '<div class="ixw__nav"><button type="button" class="btn btn--ghost" data-ixw-prev hidden>السابق</button><button type="button" class="btn btn--accent" data-ixw-next>التالي</button><noscript><button class="btn btn--accent" type="submit">اعرض نتيجة الفحص</button></noscript></div></form>';
 			if ( $tiers ) { // printed on the server (crawlable); hidden until the tool picks one for the result
 				$o .= '<div class="ixw__tiers" data-ixw-tiers hidden><h3>الخطط حسب حجم المشكلة</h3>';
 				foreach ( $tiers as $t ) {
@@ -264,36 +239,11 @@ function zad_ix_module_html( $k, $ix, $post_id ) {
 				}
 				$o .= '</div>';
 			}
-			$o .= '<template data-ixw-res-tpl><div class="ixw__res ix-printable" data-ixw-res hidden aria-live="polite"><span class="ixw__badge" data-res-title></span><p data-res-text></p><h3>الخطة المبدئية</h3><ol data-res-plan></ol><h3>إجاباتك</h3><ul class="ixw__ans" data-res-ans></ul><p class="ixw__disc">خطة مبدئية حسب إجاباتك وليست عرض سعر. يحدد الفني الخطة النهائية والسعر بعد المعاينة.</p>';
+			$o .= '<div class="ixw__res ix-printable" data-ixw-res hidden aria-live="polite"><span class="ixw__badge" data-res-title></span><p data-res-text></p><h3>الخطة المبدئية</h3><ol data-res-plan></ol><h3>إجاباتك</h3><ul class="ixw__ans" data-res-ans></ul><p class="ixw__disc">خطة مبدئية حسب إجاباتك وليست عرض سعر. يحدد الفني الخطة النهائية والسعر بعد المعاينة.</p>';
 			$o .= '<div class="ixw__cta"><button type="button" class="btn btn--accent" data-ixw-book>' . zad_icon( 'bolt', 20 ) . ' احجز معاينة بهذه الخطة</button>';
 			if ( $wa ) { $o .= '<a class="btn btn--wa" data-ixw-wa target="_blank" rel="noopener" href="' . esc_url( 'https://wa.me/' . $wa ) . '">' . zad_icon( 'whatsapp', 20 ) . ' أرسلها واتساب</a>'; }
-			$o .= '<button type="button" class="btn btn--ghost" data-ix-print>اطبع أو احفظ PDF</button><button type="button" class="btn btn--ghost" data-ixw-reset>إعادة الفحص</button></div></div></template></div>'; // the result block lives in a <template>: built by the JS on the first result
-			break;
-
-		case 'report':
-			$rows = zad_ix_pipe( $d['items'] ?? '', 2 );
-			if ( ! $rows ) { return ''; }
-			$o .= zad_ix_head( $d, 'بكل شفافية' ) . '<div class="ixr"><div class="ixr__head"><b>' . esc_html( get_bloginfo( 'name' ) ) . '</b><span>تقرير زيارة</span><em>نموذج توضيحي</em></div><ul class="ixr__list">';
-			foreach ( $rows as $r ) {
-				$o .= '<li>' . zad_icon( 'check', 18 ) . '<div><strong>' . esc_html( $r[0] ) . '</strong><span>' . esc_html( $r[1] ) . '</span></div></li>';
-			}
-			$o .= '</ul></div>';
-			break;
-
-		case 'life':
-			$rows = zad_ix_pipe( $d['items'] ?? '', 3 );
-			if ( ! $rows ) { return ''; }
-			$o .= zad_ix_head( $d, 'لماذا نتابع؟' ) . '<div class="ixl" data-ixl><ol class="ixl__steps">';
-			foreach ( $rows as $i => $r ) {
-				$o .= '<li><button type="button" class="ixl__step' . ( 0 === $i ? ' is-on' : '' ) . '" data-i="' . (int) $i . '"><b>' . ( $i + 1 ) . '</b><span>' . esc_html( $r[0] ) . '</span></button></li>';
-			}
-			$o .= '</ol><div class="ixl__panels">';
-			foreach ( $rows as $i => $r ) {
-				$o .= '<article class="ixl__panel" data-i="' . (int) $i . '"' . ( 0 === $i ? '' : ' hidden' ) . '><h3>' . esc_html( $r[0] ) . ( $r[2] ? ' <small>' . esc_html( $r[2] ) . '</small>' : '' ) . '</h3><p>' . esc_html( $r[1] ) . '</p></article>';
-			}
-			$o .= '</div>';
-			if ( ! empty( $d['rule'] ) ) { $o .= '<p class="ixl__rule">' . esc_html( $d['rule'] ) . '</p>'; }
-			$o .= '</div>';
+			$o .= '<button type="button" class="btn btn--ghost" data-ix-print>اطبع أو احفظ PDF</button><button type="button" class="btn btn--ghost" data-ixw-reset>إعادة الفحص</button></div></div></div>'; // personalized result uses the existing server-rendered container
+			$o .= '<noscript><style>.ixw__q[hidden],[data-ixw-tiers][hidden]{display:block!important}.ixw__nav [data-ixw-next],.ixw__nav [data-ixw-prev]{display:none!important}</style></noscript>';
 			break;
 
 		case 'safe':
@@ -312,15 +262,6 @@ function zad_ix_module_html( $k, $ix, $post_id ) {
 			$o .= '</div>';
 			break;
 
-		case 'check':
-			$items = zad_lines( $d['items'] ?? '' );
-			if ( ! $items ) { return ''; }
-			$o .= zad_ix_head( $d, 'جهّز بيتك' ) . '<div class="ixc ix-printable" data-ixc data-key="' . esc_attr( 'zadixc' . $post_id ) . '" data-svc="' . esc_attr( $title ) . '" data-wa="' . esc_attr( zad_whatsapp( $post_id ) ) . '"><div class="ixc__bar"><div class="ixc__fill" data-ixc-fill></div></div><p class="ixc__pct"><b data-ixc-n>0</b> من ' . count( $items ) . ' جاهز</p><ul class="ixc__list">';
-			foreach ( $items as $i => $it ) {
-				$o .= '<li><label><input type="checkbox" data-i="' . (int) $i . '"><span>' . esc_html( $it ) . '</span></label></li>';
-			}
-			$o .= '</ul><div class="ixc__cta"><button type="button" class="btn btn--wa" data-ixc-wa>' . zad_icon( 'whatsapp', 20 ) . ' أرسل القائمة واتساب</button><button type="button" class="btn btn--ghost" data-ix-print>اطبع أو احفظ PDF</button></div></div>';
-			break;
 		case 'story':
 			$sc = array();
 			foreach ( zad_lines( $d['scenes'] ?? '' ) as $l ) {
@@ -342,30 +283,14 @@ function zad_ix_module_html( $k, $ix, $post_id ) {
 			$o .= '<div class="ixst__ctl"><button type="button" class="ixst__btn" data-ixst-play aria-label="تشغيل / إيقاف">' . zad_icon( 'bolt', 18 ) . '</button>' . ( ! empty( $d['audio'] ) ? '<button type="button" class="ixst__btn" data-ixst-mute aria-pressed="false" aria-label="كتم الصوت">' . zad_icon( 'sparkle', 18 ) . '</button>' : '' ) . '<button type="button" class="ixst__btn" data-ixst-replay aria-label="إعادة" hidden>↻</button></div></div>';
 			$o .= '<div class="ixst__side"><p class="ixst__meta">' . count( $sc ) . ' مشاهد · ' . (int) $total . ' ث</p><button type="button" class="btn btn--accent" data-ixst-book>' . zad_icon( 'bolt', 20 ) . ' ' . esc_html( ! empty( $d['cta'] ) ? $d['cta'] : 'اطلب فحصاً مثل هذا' ) . '</button></div></div>';
 			break;
-
-		case 'when':
-			$no  = zad_lines( $d['no'] ?? '' );
-			$yes = zad_lines( $d['yes'] ?? '' );
-			if ( ! $no && ! $yes ) { return ''; }
-			$o  .= zad_ix_head( $d, 'بصدق معك' ) . '<div class="ixwhen"><div class="ixwhen__col ixwhen__col--no"><h3>' . esc_html( ! empty( $d['no_h'] ) ? $d['no_h'] : 'لا تحتاج خدمة إذا…' ) . '</h3><ul>';
-			foreach ( $no as $l ) { $o .= '<li>' . zad_icon( 'check', 18 ) . '<span>' . esc_html( $l ) . '</span></li>'; }
-			$o  .= '</ul></div><div class="ixwhen__col ixwhen__col--yes"><h3>' . esc_html( ! empty( $d['yes_h'] ) ? $d['yes_h'] : 'اطلب معاينة إذا…' ) . '</h3><ul>';
-			foreach ( $yes as $l ) { $o .= '<li>' . zad_icon( 'bolt', 18 ) . '<span>' . esc_html( $l ) . '</span></li>'; }
-			$o  .= '</ul><p><button type="button" class="btn btn--accent" data-open-wizard>اطلب معاينة مجانية</button></p></div></div>';
-			break;
-
-		case 'pay':
-			$rows = zad_ix_pipe( $d['items'] ?? '', 3 );
-			if ( ! $rows ) { return ''; }
-			$tag = array( 'free' => array( 'مجاني', 'free' ), 'paid' => array( 'مدفوع', 'paid' ), 'deduct' => array( 'يُخصم', 'deduct' ), 'incl' => array( 'مشمول', 'incl' ) );
-			$o  .= zad_ix_head( $d, 'بلا مفاجآت' ) . '<ul class="ixpay">';
-			foreach ( $rows as $r ) {
-				$t  = $tag[ strtolower( $r[1] ) ] ?? array( $r[1], 'incl' );
-				$o .= '<li><div><strong>' . esc_html( $r[0] ) . '</strong><span>' . esc_html( $r[2] ) . '</span></div><em class="ixpay__tag ixpay__tag--' . esc_attr( $t[1] ) . '">' . esc_html( $t[0] ) . '</em></li>';
-			}
-			$o  .= '</ul>';
-			break;
 	}
+		// 4.0.2: بديل «بدون جافاسكربت» للصفحة كلها، فمرة واحدة في الطلب تكفي. قبل كده كان بيتطبع مع كل وحدة
+		// تفاعلية (7 وحدات في صفحة الخدمة = 7 نسخ حرفية من نفس الـCSS). التأثير مطابق: CSS لا يتأثر بالتكرار.
+		static $ns_printed = false;
+		if ( ! $ns_printed ) {
+			$ns_printed = true;
+			$o         .= '<noscript><style>.ixm__panel[hidden],.ixs__list [hidden],.ixst__scene[hidden]{display:block!important}.ixst__phone{aspect-ratio:auto;max-height:none}.ixst__scene{position:static;min-height:360px;margin-bottom:12px}.ixm__tabs,.ixm__pin,.ixst__ctl,.ixst__bars{display:none!important}</style></noscript>';
+		}
 	return '<section class="sec ix ix--' . esc_attr( $k ) . '" id="ix-' . esc_attr( $k ) . '"><div class="wrap">' . $o . '</div></section>';
 }
 
@@ -403,17 +328,8 @@ add_shortcode( 'zad_ix', function ( $atts ) {
 } );
 
 /* assets only where used */
-add_action( 'wp_enqueue_scripts', function () {
-	if ( ! is_singular() ) {
-		return;
-	}
-	$p = get_queried_object();
-	if ( ! $p || ( ! zad_ix_enabled( $p->ID ) && ! has_shortcode( $p->post_content, 'zad_ix' ) ) ) {
-		return;
-	}
-	wp_enqueue_style( 'zad-ix', get_template_directory_uri() . '/assets/css/zad-ix.css', array( 'zad-main' ), zad_asset_ver( 'assets/css/zad-ix.css' ) );
-	wp_enqueue_script( 'zad-ix', get_template_directory_uri() . '/assets/js/zad-ix.js', array(), zad_asset_ver( 'assets/js/zad-ix.js' ), true );
-}, 110 );
+// Frontend assets are registered by inc/core/assets.php.
+
 
 /** Split rendered content around the "Read more" marker: [before, after]. */
 function zad_ix_split( $html, $post_id ) {

@@ -6,14 +6,14 @@ $hero_img = $img_id( 'zad_hero_img' );
 $points   = zad_lines( zad_opt( 'zad_hero_points' ) );
 $stats    = array_filter( (array) zad_opt( 'zad_stats', array() ), function ( $s ) { return ! empty( $s['n'] ); } );
 $process  = (array) zad_opt( 'zad_process', array() );
-$tests    = array_filter( (array) zad_opt( 'zad_testimonials', array() ), function ( $t ) { return ! empty( $t['text'] ); } );
+$tests    = zad_gmb_testimonials() ?: array_filter( (array) zad_opt( 'zad_testimonials', array() ), function ( $t ) { return ! empty( $t['text'] ); } ); // تقييمات جوجل الحقيقية لو اتسحبت، وإلا اليدوية
 $faq      = (array) zad_opt( 'zad_faq', array() );
 $why      = (array) zad_opt( 'memo_sec4_grp', array() );
 $hl       = array_filter( (array) zad_opt( 'zad_highlights', array() ), function ( $h ) { return ! empty( $h['t'] ); } );
 
 $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'parent' => 0, 'number' => 12 ) );
 $areas = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
-$all   = new WP_Query( array( 'post_type' => zad_service_types(), 'posts_per_page' => 12, 'no_found_rows' => true, 'orderby' => array( 'menu_order' => 'ASC', 'date' => 'DESC' ) ) );
+$all   = zad_home_service_query();
 
 // price teaser: cheapest services
 $teaser = array();
@@ -25,7 +25,7 @@ usort( $teaser, function ( $a, $b ) { return $a[1] <=> $b[1]; } );
 $teaser = array_slice( $teaser, 0, 4 );
 $price_page = zad_page_url( 'temp/zad-prices.php', array( 'price-plans' ) );
 $areas_page = zad_page_url( 'temp/zad-areas.php', array( 'areas' ) );
-$about_page = zad_page_url( 'temp/memo-about.php', array( 'about' ) );
+$about_page = zad_page_url( 'temp/zad-about.php', array( 'about' ) );
 ?>
 <main id="main">
 
@@ -258,7 +258,7 @@ if ( $clients ) : ?>
 <section class="sec">
 	<div class="wrap">
 		<header class="sec__head"><span class="eyebrow">آراء العملاء</span><h2>ثقة عملائنا هي رأس مالنا</h2>
-			<?php if ( zad_opt( 'zad_rating_score' ) ) : ?><p class="ratesum"><?php echo zad_stars( (float) zad_opt( 'zad_rating_score' ) ); // phpcs:ignore ?> <b><?php echo esc_html( zad_opt( 'zad_rating_score' ) ); ?></b><?php if ( zad_opt( 'zad_rating_count' ) ) : ?> <span>من <?php echo esc_html( zad_opt( 'zad_rating_count' ) ); ?> تقييم</span><?php endif; ?></p><?php endif; ?></header>
+			<?php echo zad_gmb_summary_html(); // phpcs:ignore ?></header>
 		<?php if ( $tests ) : ?>
 		<div class="slider" data-slider>
 			<button type="button" class="slider__b slider__b--prev" data-slide="-1" aria-label="السابق"><?php echo zad_icon( 'chevron', 22, 'rot-r' ); // phpcs:ignore ?></button>

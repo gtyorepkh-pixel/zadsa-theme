@@ -1,17 +1,14 @@
 <?php defined( 'ABSPATH' ) || exit;
 /**
  * SEO pack: term intros + smart defaults, sitemap hygiene, clean archive H1,
- * author pages (profile, Person, byline/box, 301 when no bio) and the "yoast" mode split.
- *
- * Modes (zad_seo_mode()):
- *   theme — the theme prints title/description/canonical/robots/OG and uses wp-sitemap (this file filters it).
- *   yoast — the theme prints schema ONLY. Yoast prints all meta and the sitemap; we feed it smart defaults.
+ * author pages (profile, Person, byline/box, 301 when no bio).
+ * The theme prints title/description/canonical/robots/OG and uses wp-sitemap (this file filters it).
  */
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
 /* ------------------------------------------------------------------ */
-function zad_seo_tax_list() { return array( 'service_area', 'service_cat', 'faq_cat' ); }
+function zad_seo_tax_list() { return array_values( array_unique( array_merge( array( 'service_area', 'service_cat', 'faq_cat' ), get_taxonomies( array( 'public' => true ) ) ) ) ); }
 
 function zad_brand_name() {
 	$b = trim( (string) zad_opt( 'zad_provider', '' ) );
@@ -34,7 +31,8 @@ function zad_term_city( $term ) {
 /** Explicit noindex (checkbox on the term). Optional automatic rule behind the theme option zad_thin_noindex (off by default). */
 function zad_term_noindexed( $term ) {
 	if ( ! $term || is_wp_error( $term ) ) { return false; }
-	if ( '1' === (string) get_term_meta( $term->term_id, '_zad_noindex', true ) ) { return true; }
+	if ( ( 'category' === $term->taxonomy && zad_opt( 'zad_noindex_cat', false ) ) || ( 'post_tag' === $term->taxonomy && zad_opt( 'zad_noindex_tag', false ) ) ) { return true; }
+	if ( '1' === (string) zad_seo_term_meta( $term, 'noindex' ) ) { return true; }
 	if ( 'service_area' === $term->taxonomy && zad_opt( 'zad_thin_noindex', false ) ) { // no intro text and fewer than two services
 		return '' === zad_term_intro( $term ) && (int) $term->count < 2;
 	}
@@ -61,7 +59,7 @@ add_action( 'delete_term', 'zad_flush_nx' );
 add_action( 'set_object_terms', 'zad_flush_nx' );
 add_action( 'update_option__memo_theme_options', 'zad_flush_nx' ); // the thin-area switch lives in the theme options
 
-/** Default title/description for a term (used by the theme and, in yoast mode, fed to Yoast when its fields are empty). */
+/** Default title/description for a term. */
 function zad_term_default( $term, $field ) {
 	$brand = zad_brand_name();
 	$name  = $term->name;
@@ -77,6 +75,7 @@ function zad_term_default( $term, $field ) {
 		$d = trim( wp_strip_all_tags( (string) $term->description ) );
 		return '' !== $intro ? $intro : ( '' !== $d ? wp_trim_words( $d, 28, '…' ) : 'تعرّف على خدمات ' . $name . ' من ' . $brand . ' في ' . $city . ' واطلب معاينة مجانية.' );
 	}
+	if ( 'faq_cat' !== $term->taxonomy ) { return 'title' === $field ? $name . ' | ' . $brand : ( $intro ?: wp_trim_words( wp_strip_all_tags( $term->description ), 30, '…' ) ); }
 	if ( 'title' === $field ) { return $name . ' — أسئلة شائعة | ' . $brand; }
 	return '' !== $intro ? $intro : 'إجابات واضحة عن ' . $name . ' من فريق ' . $brand . '.';
 }
@@ -84,22 +83,23 @@ function zad_term_default( $term, $field ) {
 /** Archive defaults: /services/ and /faq/. */
 function zad_archive_default( $kind, $field ) {
 	$brand = zad_brand_name();
-	$city  = (string) zad_opt( 'zad_city_name', 'الرياض' );
 	if ( 'services' === $kind ) {
-		return 'title' === $field ? 'كل خدمات ' . $brand . ' في ' . $city . ' | معاينة مجانية' : 'تصفّح كل خدمات ' . $brand . ' في ' . $city . ' واطلب معاينة مجانية وعرض سعر واضحاً قبل البدء.';
+		// /services/ بيعرض خدمات كل المدن، فعنوانه ما يسمّيش مدينة واحدة (زي /cleaning/ و/pest-control/).
+		return 'title' === $field ? 'كل خدمات ' . $brand . ' في السعودية | معاينة مجانية' : 'تصفّح كل خدمات ' . $brand . ' في مدن التغطية واطلب معاينة مجانية وعرض سعر واضحاً قبل البدء.';
 	}
 	return 'title' === $field ? 'الأسئلة الشائعة | ' . $brand : 'إجابات مختصرة وواضحة عن خدمات ' . $brand . ' من فريقنا.';
 }
 
 /** What the current request is, for defaults: array( 'term'|'archive', object|kind ) or null. */
 function zad_seo_target() {
-	if ( is_tax( zad_seo_tax_list() ) ) { return array( 'term', get_queried_object() ); }
+	if ( is_tax( zad_seo_tax_list() ) || is_category() || is_tag() ) { return array( 'term', get_queried_object() ); }
 	if ( function_exists( 'zad_is_services_archive' ) && zad_is_services_archive() ) {
 		$pt = function_exists( 'zad_query_pt' ) ? zad_query_pt() : '';
 		// Native /services/ vs an adopted custom type (/cleaning/, /pest-control/ …): each type gets its own defaults.
 		return ( '' === $pt || 'zad_service' === $pt ) ? array( 'archive', 'services' ) : array( 'type', $pt );
 	}
 	if ( function_exists( 'zad_is_faq_archive' ) && zad_is_faq_archive() ) { return array( 'archive', 'faq' ); }
+	if ( defined( 'ZAD_WK' ) && is_post_type_archive( ZAD_WK ) ) { return array( 'type', ZAD_WK ); }   // أرشيف «أعمالنا» كان بره تغطية السيو فطلع بدون وصف
 	return null;
 }
 
@@ -108,7 +108,7 @@ function zad_seo_archive_value( $field ) {
 	$t = zad_seo_target();
 	if ( ! $t ) { return ''; }
 	if ( 'term' === $t[0] ) {
-		$own = trim( (string) get_term_meta( $t[1]->term_id, 'title' === $field ? '_zad_seo_title' : '_zad_seo_desc', true ) );
+		$own = trim( (string) zad_seo_term_meta( $t[1], $field ) );
 		return '' !== $own ? $own : zad_term_default( $t[1], $field );
 	}
 	if ( 'type' === $t[0] ) { return zad_type_default( $t[1], $field ); }
@@ -119,12 +119,20 @@ function zad_seo_archive_value( $field ) {
 function zad_type_default( $pt, $field ) {
 	$o = get_post_type_object( $pt );
 	if ( ! $o ) { return ''; }
-	$label = trim( preg_replace( '/^\s*(?:صفحات|صفحة)\s+/u', '', (string) $o->labels->name ) );
+	// «أعمالنا» معرض تنفيذ، مش قسم خدمات، فصيغة «خدمات …» ما تنفعش له وكان بيخرج بدون وصف.
+	if ( defined( 'ZAD_WK' ) && ZAD_WK === $pt ) {
+		$brand = zad_brand_name();
+		return 'title' === $field
+			? 'أعمالنا — نماذج من تنفيذ ' . $brand
+			: 'صور من أعمال ' . $brand . ' قبل التنفيذ وبعده في التنظيف ومكافحة الحشرات وتسليك المجاري وجلي البلاط، مرتّبة حسب الخدمة والمدينة.';
+	}
+	$label = function_exists( 'zad_hub_type_h1' ) ? zad_hub_type_h1( $pt ) : trim( preg_replace( '/^\s*(?:صفحات|صفحة)\s+/u', '', (string) $o->labels->name ) ); // same name as the H1 («خدمات التنظيف»)
 	if ( '' === $label ) { return ''; }
 	if ( 0 !== mb_strpos( $label, 'خدمات' ) && 0 !== mb_strpos( $label, 'خدمة' ) ) { $label = 'خدمات ' . $label; }
 	$brand = zad_brand_name();
-	$city  = (string) zad_opt( 'zad_city_name', 'الرياض' );
-	return 'title' === $field ? $label . ' في ' . $city . ' | ' . $brand : 'تعرّف على ' . $label . ' من ' . $brand . ' في ' . $city . ': معاينة مجانية وتواصل سريع عبر واتساب أو الاتصال.';
+	// أرشيف نوع المحتوى بيعرض كل المدن، فما ينفعش عنوانه يقول مدينة واحدة.
+	// نفس صيغة zad_hub_default_title() علشان /services/ و/cleaning/ و/pest-control/ يبقوا متسقين.
+	return 'title' === $field ? $label . ' في السعودية | ' . $brand : 'تعرّف على ' . $label . ' من ' . $brand . ' في كل مدن التغطية: معاينة مجانية وتواصل سريع عبر واتساب أو الاتصال.';
 }
 
 /* ------------------------------------------------------------------ */
@@ -138,25 +146,20 @@ foreach ( array( 'service_area', 'service_cat', 'faq_cat' ) as $zad_tx ) {
 	add_action( $zad_tx . '_edit_form_fields', function ( $term ) {
 		wp_nonce_field( 'zad_term_seo', 'zad_term_nonce' );
 		$g   = function ( $k ) use ( $term ) { return (string) get_term_meta( $term->term_id, $k, true ); };
-		$mode = zad_seo_mode();
 		echo '<tr class="form-field"><th><label for="zad_intro">مقدمة نصية للصفحة</label></th><td><textarea name="zad_term[intro]" id="zad_intro" rows="5" class="large-text">' . esc_textarea( $g( '_zad_intro' ) ) . '</textarea><p class="description">تظهر أول الصفحة.</p></td></tr>';
-		if ( 'yoast' === $mode ) {
-			echo '<tr class="form-field"><th>السيو</th><td><p class="description">العنوان والوصف وrobots من Yoast. إن تُركت حقوله فارغة يعطيه الثيم قيمة افتراضية: «' . esc_html( zad_term_default( $term, 'title' ) ) . '».</p></td></tr>';
-			return;
-		}
-		echo '<tr class="form-field"><th><label for="zad_seo_t">عنوان الصفحة (Title)</label></th><td><input type="text" name="zad_term[seo_title]" id="zad_seo_t" class="large-text" value="' . esc_attr( $g( '_zad_seo_title' ) ) . '" placeholder="' . esc_attr( zad_term_default( $term, 'title' ) ) . '"></td></tr>';
-		echo '<tr class="form-field"><th><label for="zad_seo_d">الوصف (Meta description)</label></th><td><textarea name="zad_term[seo_desc]" id="zad_seo_d" rows="3" class="large-text" placeholder="' . esc_attr( zad_term_default( $term, 'desc' ) ) . '">' . esc_textarea( $g( '_zad_seo_desc' ) ) . '</textarea></td></tr>';
-		echo '<tr class="form-field"><th>الفهرسة</th><td><label><input type="checkbox" name="zad_term[noindex]" value="1" ' . checked( $g( '_zad_noindex' ), '1', false ) . '> عدم الفهرسة (noindex) وإخراجها من خريطة الموقع</label></td></tr>';
+		echo '<tr class="form-field"><th><label for="zad_seo_t">عنوان الصفحة (Title)</label></th><td><input type="text" name="zad_term[seo_title]" id="zad_seo_t" class="large-text" value="' . esc_attr( zad_seo_term_meta( $term, 'title' ) ) . '" placeholder="' . esc_attr( zad_term_default( $term, 'title' ) ) . '"></td></tr>';
+		echo '<tr class="form-field"><th><label for="zad_seo_d">الوصف (Meta description)</label></th><td><textarea name="zad_term[seo_desc]" id="zad_seo_d" rows="3" class="large-text" placeholder="' . esc_attr( zad_term_default( $term, 'desc' ) ) . '">' . esc_textarea( zad_seo_term_meta( $term, 'desc' ) ) . '</textarea></td></tr>';
+		echo '<tr class="form-field"><th>الرابط الأساسي</th><td><input type="url" name="zad_term[canonical]" class="large-text" value="' . esc_attr( zad_seo_term_meta( $term, 'canonical' ) ) . '"></td></tr>';
+		echo '<tr class="form-field"><th>الفهرسة</th><td><label><input type="checkbox" name="zad_term[noindex]" value="1" ' . checked( zad_seo_term_meta( $term, 'noindex' ), '1', false ) . '> عدم الفهرسة (noindex) وإخراجها من خريطة الموقع</label></td></tr>';
 	} );
 	$zad_save = function ( $term_id ) {
 		if ( ! isset( $_POST['zad_term_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['zad_term_nonce'] ) ), 'zad_term_seo' ) || ! current_user_can( 'manage_categories' ) ) { return; }
 		$in = isset( $_POST['zad_term'] ) ? wp_unslash( (array) $_POST['zad_term'] ) : array();
 		update_term_meta( $term_id, '_zad_intro', isset( $in['intro'] ) ? wp_kses_post( $in['intro'] ) : '' );
-		if ( array_key_exists( 'seo_title', $in ) || array_key_exists( 'seo_desc', $in ) || array_key_exists( 'noindex', $in ) || 'yoast' !== zad_seo_mode() ) {
-			update_term_meta( $term_id, '_zad_seo_title', isset( $in['seo_title'] ) ? sanitize_text_field( $in['seo_title'] ) : '' );
-			update_term_meta( $term_id, '_zad_seo_desc', isset( $in['seo_desc'] ) ? sanitize_textarea_field( $in['seo_desc'] ) : '' );
-			update_term_meta( $term_id, '_zad_noindex', ! empty( $in['noindex'] ) ? '1' : '' );
-		}
+		update_term_meta( $term_id, '_zad_seo_title', isset( $in['seo_title'] ) ? sanitize_text_field( $in['seo_title'] ) : '' );
+		update_term_meta( $term_id, '_zad_seo_desc', isset( $in['seo_desc'] ) ? sanitize_textarea_field( $in['seo_desc'] ) : '' );
+		update_term_meta( $term_id, '_zad_seo_canonical', esc_url_raw( $in['canonical'] ?? '' ) );
+		update_term_meta( $term_id, '_zad_noindex', ! empty( $in['noindex'] ) ? '1' : '' );
 	};
 	add_action( 'created_' . $zad_tx, $zad_save );
 	add_action( 'edited_' . $zad_tx, $zad_save );
@@ -188,130 +191,34 @@ add_filter( 'get_the_archive_title', function ( $t ) {
 add_filter( 'wp_sitemaps_posts_query_args', function ( $args ) {
 	if ( 'theme' !== zad_seo_mode() ) { return $args; }
 	$mq   = isset( $args['meta_query'] ) ? (array) $args['meta_query'] : array();
-	$mq[] = array( 'relation' => 'AND',
-		array( 'relation' => 'OR', array( 'key' => '_zad_seo_noindex', 'compare' => 'NOT EXISTS' ), array( 'key' => '_zad_seo_noindex', 'value' => '1', 'compare' => '!=' ) ),
-		array( 'relation' => 'OR', array( 'key' => '_yoast_wpseo_meta-robots-noindex', 'compare' => 'NOT EXISTS' ), array( 'key' => '_yoast_wpseo_meta-robots-noindex', 'value' => '1', 'compare' => '!=' ) ),
+	$mq[] = array( 'relation' => 'OR',
+		array( 'key' => '_zad_seo_noindex', 'value' => '1', 'compare' => '!=' ),
+		array( 'key' => '_zad_seo_noindex', 'compare' => 'NOT EXISTS' ), // pages noindexed only by the old SEO plugin are dropped by zad_seo_eligible_ids() (inc/seo/policy.php)
 	);
 	$args['meta_query'] = $mq;
 	return $args;
 } );
 add_filter( 'wp_sitemaps_taxonomies_query_args', function ( $args, $taxonomy ) {
 	if ( 'theme' !== zad_seo_mode() || ! in_array( $taxonomy, zad_seo_tax_list(), true ) ) { return $args; }
-	$ex = zad_noindex_term_ids( $taxonomy );
+	$ex = array();
+	$terms = get_terms( array( 'taxonomy' => $taxonomy, 'hide_empty' => false ) );
+	if ( ! is_wp_error( $terms ) ) { foreach ( $terms as $term ) { if ( ! zad_seo_term_eligible( $term ) ) { $ex[] = (int) $term->term_id; } } }
 	if ( $ex ) { $args['exclude'] = array_values( array_unique( array_merge( (array) ( $args['exclude'] ?? array() ), $ex ) ) ); }
 	return $args;
 }, 10, 2 );
 add_filter( 'wp_sitemaps_add_provider', function ( $provider, $name ) {
-	return ( 'theme' === zad_seo_mode() && 'users' === $name ) ? false : $provider; // author pages are noindex
+	return ( 'theme' === zad_seo_mode() && 'users' === $name && zad_opt( 'zad_noindex_author', false ) ) ? false : $provider; // respect the saved author indexing option
 }, 10, 2 );
 
-/** Robots for terms and authors (theme mode only; Yoast mode: see below). */
+/** Robots for terms and authors. */
 add_filter( 'wp_robots', function ( $r ) {
-	if ( 'theme' !== zad_seo_mode() || defined( 'WPSEO_VERSION' ) ) { return $r; }
+	if ( 'theme' !== zad_seo_mode() ) { return $r; }
 	$nx = false;
-	if ( is_author() ) { $nx = true; }
-	elseif ( is_tax( zad_seo_tax_list() ) && zad_term_noindexed( get_queried_object() ) ) { $nx = true; }
+	if ( is_author() ) { $nx = zad_opt( 'zad_noindex_author', false ); }
+	elseif ( ( is_tax( zad_seo_tax_list() ) || is_category() || is_tag() ) && zad_term_noindexed( get_queried_object() ) ) { $nx = true; }
 	if ( $nx ) { $r['noindex'] = true; $r['follow'] = true; unset( $r['max-image-preview'], $r['index'], $r['nofollow'] ); }
 	return $r;
 }, 12 );
-
-/* ------------------------------------------------------------------ */
-/* Yoast mode: Yoast owns meta + sitemap, the theme owns schema          */
-/* ------------------------------------------------------------------ */
-add_filter( 'wp_sitemaps_enabled', function ( $on ) { return 'yoast' === zad_seo_mode() ? false : $on; } );
-add_action( 'template_redirect', function () {
-	if ( 'yoast' !== zad_seo_mode() ) { return; }
-	$path = trim( (string) wp_parse_url( isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '', PHP_URL_PATH ), '/' ); // phpcs:ignore
-	if ( 'wp-sitemap.xml' === $path || 0 === strpos( $path, 'wp-sitemap-' ) ) {
-		wp_safe_redirect( home_url( '/sitemap_index.xml' ), 301 );
-		exit;
-	}
-}, 1 );
-add_action( 'init', function () {
-	if ( 'yoast' === zad_seo_mode() ) { add_filter( 'wpseo_json_ld_output', '__return_false', 99 ); }
-} );
-
-function zad_yoast_term_meta( $term, $key ) {
-	if ( class_exists( 'WPSEO_Taxonomy_Meta' ) && method_exists( 'WPSEO_Taxonomy_Meta', 'get_term_meta' ) ) {
-		$v = WPSEO_Taxonomy_Meta::get_term_meta( $term, $term->taxonomy, $key );
-		return is_string( $v ) ? trim( $v ) : '';
-	}
-	return null; // unknown: never override
-}
-
-/** Smart default for Yoast when ITS field is empty. Returns '' when Yoast has a value (or we cannot tell). */
-function zad_yoast_default( $field ) {
-	if ( 'yoast' !== zad_seo_mode() ) { return ''; }
-	$yoast_empty = function ( $id, $f ) { return '' === trim( (string) get_post_meta( $id, 'title' === $f ? '_yoast_wpseo_title' : '_yoast_wpseo_metadesc', true ) ); };
-
-	if ( is_front_page() ) { // home description: zad_site_desc (then the hero text) when Yoast's home description is empty
-		if ( 'desc' !== $field ) { return ''; }
-		if ( is_singular() ) { $mine = (string) get_post_meta( get_queried_object_id(), '_yoast_wpseo_metadesc', true ); }
-		elseif ( class_exists( 'WPSEO_Options' ) && method_exists( 'WPSEO_Options', 'get' ) ) { $mine = (string) WPSEO_Options::get( 'metadesc-home-wpseo', '' ); }
-		else { return ''; } // cannot tell: never override
-		return '' === trim( $mine ) && function_exists( 'zad_seo_desc' ) ? zad_seo_desc() : '';
-	}
-	if ( is_singular() ) {
-		$id = get_queried_object_id();
-		if ( ! $id || ! $yoast_empty( $id, $field ) ) { return ''; }
-		if ( function_exists( 'zad_is_service' ) && zad_is_service() ) {
-			return 'title' === $field ? ( function_exists( 'zad_seo_title' ) ? zad_seo_title() : '' ) : ( function_exists( 'zad_seo_desc' ) ? zad_seo_desc() : '' );
-		}
-		// Questions (excerpt = short answer) and articles (excerpt): description only.
-		$is_faq = function_exists( 'zad_is_faq' ) && zad_is_faq( $id );
-		$is_art = is_singular( 'post' ) || ( function_exists( 'zad_is_article' ) && zad_is_article( $id ) );
-		if ( 'desc' === $field && ( $is_faq || $is_art ) && function_exists( 'zad_seo_desc' ) ) { return zad_seo_desc(); }
-		return '';
-	}
-	$t = zad_seo_target();
-	if ( $t && 'term' === $t[0] ) {
-		$y = zad_yoast_term_meta( $t[1], 'title' === $field ? 'wpseo_title' : 'wpseo_desc' );
-		return ( '' === $y ) ? zad_term_default( $t[1], $field ) : '';
-	}
-	if ( $t && in_array( $t[0], array( 'archive', 'type' ), true ) ) { // /services/, /faq/ and adopted-type archives
-		$pt = function_exists( 'zad_query_pt' ) ? zad_query_pt() : '';
-		$v  = zad_seo_archive_value( $field );
-		return ( '' !== $v && zad_yoast_ptarchive_is_default( $pt, $field ) ) ? $v : '';
-	}
-	return '';
-}
-
-/** True when Yoast's archive title/description for this post type is empty or still its stock template ("%%pt_plural%% Archive …"). */
-function zad_yoast_ptarchive_is_default( $pt, $field ) {
-	if ( ! class_exists( 'WPSEO_Options' ) || ! method_exists( 'WPSEO_Options', 'get' ) ) { return true; }
-	$v = trim( (string) WPSEO_Options::get( ( 'title' === $field ? 'title-ptarchive-' : 'metadesc-ptarchive-' ) . $pt, '' ) );
-	if ( '' === $v ) { return true; }
-	return 'title' === $field && (bool) preg_match( '/^%%pt_plural%%\s+(?:archive|الأرشيف|أرشيف)\b.*%%sitename%%$/iu', $v );
-}
-foreach ( array( 'wpseo_title' => 'title', 'wpseo_opengraph_title' => 'title', 'wpseo_twitter_title' => 'title', 'wpseo_metadesc' => 'desc', 'wpseo_opengraph_desc' => 'desc', 'wpseo_twitter_description' => 'desc' ) as $zad_h => $zad_f ) {
-	add_filter( $zad_h, function ( $v ) use ( $zad_f ) {
-		$d = zad_yoast_default( $zad_f );
-		return '' !== $d ? $d : $v;
-	}, 20 );
-}
-foreach ( array( 'wpseo_opengraph_image', 'wpseo_twitter_image' ) as $zad_h ) {
-	add_filter( $zad_h, function ( $img ) {
-		if ( 'yoast' !== zad_seo_mode() || ( is_string( $img ) && '' !== $img ) ) { return $img; }
-		$d = function_exists( 'zad_seo_image' ) ? zad_seo_image() : null;
-		return $d ? $d[0] : $img;
-	}, 20 );
-}
-/** Terms explicitly marked noindex: noindex,follow + out of Yoast's sitemap. */
-add_filter( 'wpseo_robots', function ( $r ) {
-	if ( 'yoast' !== zad_seo_mode() || ! is_string( $r ) ) { return $r; }
-	if ( is_tax( zad_seo_tax_list() ) && zad_term_noindexed( get_queried_object() ) ) { return 'noindex, follow'; }
-	return $r;
-}, 15 );
-add_filter( 'wpseo_exclude_from_sitemap_by_term_ids', function ( $ids ) {
-	if ( 'yoast' !== zad_seo_mode() ) { return $ids; }
-	foreach ( zad_seo_tax_list() as $tx ) { $ids = array_merge( (array) $ids, zad_noindex_term_ids( $tx ) ); }
-	return array_values( array_unique( $ids ) );
-} );
-add_filter( 'wpseo_exclude_from_sitemap_by_post_ids', function ( $ids ) {
-	if ( 'yoast' !== zad_seo_mode() ) { return $ids; }
-	$more = get_posts( array( 'post_type' => 'any', 'post_status' => 'publish', 'numberposts' => 500, 'fields' => 'ids', 'meta_key' => '_zad_seo_noindex', 'meta_value' => '1', 'suppress_filters' => true ) ); // phpcs:ignore
-	return array_values( array_unique( array_merge( (array) $ids, $more ) ) );
-} );
 
 /** Two schema sources on the same site. */
 add_action( 'admin_notices', function () {

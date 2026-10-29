@@ -1,4 +1,6 @@
-<?php defined( 'ABSPATH' ) || exit; /* Template Name: المناطق (كل المدن) */
+<?php
+/* Template Name: المناطق (كل المدن) */
+defined( 'ABSPATH' ) || exit;
 get_header();
 get_template_part( 'template-parts/page-hero', null, array( 'sub' => '<p>نغطي المدن والأحياء التالية — اختر مدينتك لتصفح الخدمات المتاحة فيها.</p>', 'crumbs' => array( array( 'الرئيسية', home_url( '/' ) ), array( get_the_title(), '' ) ) ) );
 $cities = get_terms( array( 'taxonomy' => 'service_area', 'parent' => 0, 'hide_empty' => false ) );

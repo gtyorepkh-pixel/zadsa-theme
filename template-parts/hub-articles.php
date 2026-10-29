@@ -55,7 +55,7 @@ $first = ( 1 === $paged && have_posts() ) ? $GLOBALS['wp_query']->posts[0] : nul
 					</article>
 				<?php } ?>
 			</div>
-			<?php echo memo_pagination(); // phpcs:ignore ?>
+			<?php echo zad_pagination(); // phpcs:ignore ?>
 		<?php else : ?><p class="empty">لا يوجد محتوى منشور بعد.</p><?php endif; ?>
 	</div>
 	<?php get_template_part( 'template-parts/cta-band' ); ?>

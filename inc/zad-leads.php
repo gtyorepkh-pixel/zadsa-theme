@@ -30,8 +30,18 @@ function zad_quote_form( $args = array() ) {
 	$sections = $locked ? array() : zad_lead_sections(); // no service page → the short list of sections; only when it is empty the old list of pages is used
 	$services = ( $locked || $sections ) ? array() : get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 100, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) );
 	$page_id  = is_singular() ? (int) get_queried_object_id() : 0;
-	$areas    = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
+	// City options = the registry plus any area term the site added, so a page's city can always be chosen.
+	$terms    = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => false, 'parent' => 0 ) );
+	$areas    = function_exists( 'zad_city_map' ) ? array_values( zad_city_map() ) : array();
+	if ( $terms && ! is_wp_error( $terms ) ) {
+		foreach ( $terms as $t ) { if ( ! in_array( $t->name, $areas, true ) ) { $areas[] = $t->name; } }
+	}
 	$sel_area = $a['area'];
+	if ( '' === trim( (string) $sel_area ) && function_exists( 'zad_current_city' ) && is_singular() ) {
+		$c = zad_current_city( (int) get_queried_object_id() );
+		if ( 'default' !== $c['source'] ) { $sel_area = $c['name']; }
+	}
+	if ( '' !== trim( (string) $sel_area ) && ! in_array( $sel_area, $areas, true ) ) { $areas[] = $sel_area; }
 	$status   = isset( $_GET['zad_sent'] ) ? sanitize_key( wp_unslash( $_GET['zad_sent'] ) ) : ''; // phpcs:ignore
 	$id       = esc_attr( $a['id'] );
 	ob_start();
@@ -72,12 +82,12 @@ function zad_quote_form( $args = array() ) {
 				<?php endforeach; ?>
 			</select></label>
 		<?php endif; ?>
-		<?php if ( $areas && ! is_wp_error( $areas ) ) : ?>
+		<?php if ( $areas ) : ?>
 			<label class="fld" for="<?php echo $id; ?>-area"><span>المدينة</span>
 				<select id="<?php echo $id; ?>-area" name="area">
 					<option value="">اختر المدينة</option>
-					<?php foreach ( $areas as $t ) : ?>
-						<option value="<?php echo esc_attr( $t->name ); ?>" <?php selected( $sel_area, $t->name ); ?>><?php echo esc_html( $t->name ); ?></option>
+					<?php foreach ( $areas as $area_name ) : ?>
+						<option value="<?php echo esc_attr( $area_name ); ?>" <?php selected( $sel_area, $area_name ); ?>><?php echo esc_html( $area_name ); ?></option>
 					<?php endforeach; ?>
 				</select></label>
 		<?php endif; ?>
@@ -107,6 +117,7 @@ add_shortcode( 'zad_quote_form', function ( $atts ) {
 } );
 
 function zad_normalize_phone( $raw ) {
+	$raw = strtr( zad_digits_en( $raw ), array( '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4', '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9' ) ); // Arabic-Indic / Persian digits (after rokn_normalize_phone)
 	$d = preg_replace( '/\D+/', '', (string) $raw );
 	if ( 0 === strpos( $d, '00966' ) ) {
 		$d = substr( $d, 5 );

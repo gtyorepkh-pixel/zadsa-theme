@@ -24,16 +24,17 @@ add_shortcode( 'hs_moving_bundle', function () {
 	$svc_hint = array( 'clean_old' => 'لتسليمها نظيفة واسترداد التأمين', 'move' => 'من الشقة القديمة إلى الجديدة داخل المدينة', 'clean_new' => 'جاهزة للسكن قبل دخول العفش', 'spray' => 'أسهل وقت للرش قبل دخول العفش' );
 	$h  = '<ol class="hs-progress" aria-label="خطوات الباقة"><li class="is-on">الشقتان</li><li>الخدمات</li><li>الملخص</li></ol>';
 	if ( $cities ) { $h .= '<datalist id="hs-cities">'; foreach ( $cities as $c ) { $h .= '<option value="' . esc_attr( $c ) . '">'; } $h .= '</datalist>'; }
-	$h .= '<section class="hs-step" data-s="1"><div class="hs-two">' . $place( 'old', 'الشقة القديمة' ) . $place( 'new', 'الشقة الجديدة' ) . '</div>';
+	$h .= '<form class="hs-bundle-calc" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="zad_bundle_result"><section class="hs-step" data-s="1"><div class="hs-two">' . $place( 'old', 'الشقة القديمة' ) . $place( 'new', 'الشقة الجديدة' ) . '</div>';
 	$h .= '<div class="hs-field hs-date"><label>تاريخ الانتقال المتوقع<input type="date" name="date"></label></div><p class="hs-note" data-inter hidden>النقل بين المدن يُسعّر بعد التواصل.</p>';
 	$h .= '<p class="hs-err" role="alert" hidden></p><div class="hs-nav"><button type="button" class="hs-btn hs-btn--main" data-next>التالي: اختر الخدمات</button></div></section>';
 	$h .= '<section class="hs-step" data-s="2" hidden><p>اختر الخدمات التي تريدها. كلما زادت الخدمات زاد خصم الباقة.</p><div class="hs-svcs">';
 	foreach ( hs_bundle_services() as $k => $l ) {
 		$on = 'spray' !== $k;
-		$h .= '<label class="hs-svc"><input type="checkbox" name="svc" value="' . $k . '"' . ( $on ? ' checked' : '' ) . '><span><b>' . esc_html( $l ) . '</b><small>' . esc_html( $svc_hint[ $k ] ) . '</small></span></label>';
+		$h .= '<label class="hs-svc"><input type="checkbox" name="svc[]" value="' . $k . '"' . ( $on ? ' checked' : '' ) . '><span><b>' . esc_html( $l ) . '</b><small>' . esc_html( $svc_hint[ $k ] ) . '</small></span></label>';
 		if ( 'move' === $k ) { $h .= '<div class="hs-extras"><label class="hs-check"><input type="checkbox" name="assemble"> فك وتركيب الأثاث</label><label class="hs-check"><input type="checkbox" name="pack"> تغليف</label></div>'; }
 	}
 	$h .= '</div><p class="hs-err" role="alert" hidden></p><div class="hs-nav"><button type="button" class="hs-btn" data-prev>رجوع</button><button type="button" class="hs-btn hs-btn--main" data-next>التالي: الملخص</button></div></section>';
+	$h .= '<noscript><style>.hs-bundle-calc .hs-step[hidden]{display:block!important}.hs-bundle-calc .hs-nav{display:none!important}</style><button type="submit" class="hs-btn">احسب الباقة</button></noscript></form>';
 	$h .= '<section class="hs-step" data-s="3" hidden aria-live="polite"><div class="hs-sum"></div><div class="hs-nav"><button type="button" class="hs-btn" data-prev>رجوع وتعديل</button><button type="button" class="hs-btn hs-btn--main" data-order>اطلب الباقة</button></div>' . hs_lead_form( 'أرسل طلب الباقة', 'أرسل الطلب عبر واتساب', true, false ) . '</section>';
 	$h .= '<p class="hs-fine">سعر تقديري - السعر النهائي بعد المعاينة.</p>';
 	return hs_wrap( 'moving-bundle', 'باقة الانتقال: تنظيف ونقل عفش وتعقيم', $h, $data );

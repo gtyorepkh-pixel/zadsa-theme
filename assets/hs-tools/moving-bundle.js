@@ -48,7 +48,7 @@
       return {
         old: { city: val('old_city').trim(), hood: val('old_hood').trim(), size: val('old_size'), floor: +val('old_floor') || 0, lift: chk('old_lift') },
         'new': { city: val('new_city').trim(), hood: val('new_hood').trim(), size: val('new_size'), floor: +val('new_floor') || 0, lift: chk('new_lift') },
-        svcs: [].filter.call(root.querySelectorAll('[name=svc]'), function (c) { return c.checked; }).map(function (c) { return c.value; }),
+        svcs: [].filter.call(root.querySelectorAll('[name="svc[]"]'), function (c) { return c.checked; }).map(function (c) { return c.value; }),
         pack: chk('pack'), assemble: chk('assemble'), date: date.value
       };
     }

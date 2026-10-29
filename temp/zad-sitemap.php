@@ -1,4 +1,6 @@
-<?php defined( 'ABSPATH' ) || exit; /* Template Name: خريطة الموقع */
+<?php
+/* Template Name: خريطة الموقع */
+defined( 'ABSPATH' ) || exit;
 get_header();
 get_template_part( 'template-parts/page-hero', null, array(
 	'sub'    => wp_kses_post( wpautop( 'كل صفحات وخدمات وتصنيفات الموقع في مكان واحد — تُحدَّث تلقائياً مع أي إضافة جديدة.' ) ),

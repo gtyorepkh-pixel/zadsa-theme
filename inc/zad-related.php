@@ -81,50 +81,6 @@ function zad_related_save( $post_id, $in ) {
 	update_post_meta( $post_id, '_zad_related', array_slice( $ok, 0, 12 ) );
 }
 
-/* ---------- Cleanup tool ---------- */
-add_action( 'admin_menu', function () {
-	add_management_page( 'تنظيف «ذات صلة»', 'تنظيف «ذات صلة» (زاد)', 'manage_options', 'zad-related-clean', 'zad_related_clean_page' );
-} );
-
-function zad_related_clean_page() {
-	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'غير مسموح' ); }
-	$msg = '';
-	if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['zad_rc'] ) && check_admin_referer( 'zad_rc' ) ) { // phpcs:ignore
-		$act = sanitize_key( wp_unslash( $_POST['zad_rc'] ) ); $n = 0;
-		if ( 'clear' === $act ) {
-			foreach ( array_map( 'absint', (array) wp_unslash( $_POST['ids'] ?? array() ) ) as $id ) { // phpcs:ignore
-				$v = get_post_meta( $id, '_zad_related', true );
-				if ( is_array( $v ) && $v ) { update_post_meta( $id, '_zad_related_backup', $v ); update_post_meta( $id, '_zad_related', array() ); $n++; }
-			}
-			$msg = "فُرِّغ حقل «ذات صلة» في {$n} صفحة (نسخة احتياطية محفوظة).";
-		} elseif ( 'undo' === $act ) {
-			$id = absint( $_POST['undo_id'] ?? 0 ); $b = get_post_meta( $id, '_zad_related_backup', true );
-			if ( is_array( $b ) ) { update_post_meta( $id, '_zad_related', $b ); delete_post_meta( $id, '_zad_related_backup' ); $msg = 'تم التراجع.'; }
-		}
-	}
-	$ids = get_posts( array( 'post_type' => zad_related_types(), 'post_status' => array( 'publish', 'draft', 'private' ), 'numberposts' => 1000, 'fields' => 'ids', 'suppress_filters' => true, 'zad_all' => true, 'meta_query' => array( 'relation' => 'OR', array( 'key' => '_zad_related', 'compare' => 'EXISTS' ), array( 'key' => '_zad_related_backup', 'compare' => 'EXISTS' ) ) ) );
-	$total = count( get_posts( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => 1000, 'fields' => 'ids', 'suppress_filters' => true, 'zad_all' => true ) ) );
-	echo '<div class="wrap" dir="rtl"><h1>تنظيف «خدمات ذات صلة»</h1><p>يعرض الصفحات التي فيها قيمة محفوظة في حقل «ذات صلة». الصفحات التي اختير فيها عدد كبير غالباً امتلأت بالخطأ (اختيار الكل). التفريغ لا يغيّر شيئاً آخر، ويُحفظ ما فُرِّغ للتراجع.</p>';
-	if ( $msg ) { echo '<div class="notice notice-success"><p>' . esc_html( $msg ) . '</p></div>'; }
-	$rows = array();
-	foreach ( $ids as $id ) {
-		$v = get_post_meta( $id, '_zad_related', true ); $v = is_array( $v ) ? array_filter( array_map( 'intval', $v ) ) : array();
-		$bk = is_array( get_post_meta( $id, '_zad_related_backup', true ) );
-		if ( $v || $bk ) { $rows[ $id ] = array( count( $v ), $bk ); }
-	}
-	if ( ! $rows ) { echo '<p><b>لا توجد صفحات فيها قيمة محفوظة.</b></p></div>'; return; }
-	uasort( $rows, function ( $a, $b ) { return $b[0] <=> $a[0]; } );
-	echo '<form method="post">'; wp_nonce_field( 'zad_rc' );
-	echo '<p><label><input type="checkbox" onclick="jQuery(\'.zrc\').prop(\'checked\',this.checked)"> تحديد الكل</label></p>';
-	echo '<table class="widefat striped"><thead><tr><th></th><th>الصفحة</th><th>النوع</th><th>عدد المختار</th><th>تقدير</th><th></th></tr></thead><tbody>';
-	foreach ( $rows as $id => $r ) {
-		$many = $r[0] >= 8 || ( $total && $r[0] >= $total * 0.5 );
-		echo '<tr><td>' . ( $r[0] ? '<input class="zrc" type="checkbox" name="ids[]" value="' . (int) $id . '"' . ( $many ? ' checked' : '' ) . '>' : '' ) . '</td><td><a href="' . esc_url( get_edit_post_link( $id, 'raw' ) ) . '">' . esc_html( get_the_title( $id ) ) . '</a></td><td>' . esc_html( get_post_type( $id ) ) . '</td><td>' . (int) $r[0] . '</td><td>' . ( $many ? '<span style="color:#b91c1c">يبدو اختيار الكل</span>' : ( $r[0] ? 'اختيار محدود' : '—' ) ) . '</td><td>' . ( $r[1] ? '<button class="button" name="zad_rc" value="undo" onclick="this.form.undo_id.value=' . (int) $id . '">تراجع</button>' : '' ) . '</td></tr>';
-	}
-	echo '</tbody></table><input type="hidden" name="undo_id" value=""><p><button class="button button-primary" name="zad_rc" value="clear" onclick="return confirm(\'تفريغ الصفحات المحددة؟\')">تفريغ المحدد</button></p></form></div>';
-}
-
-
 /* ---------- Coverage section ("نصل إليك في أي حي"): shown only when filled ---------- */
 function zad_cov_keys() { return array( 'eyebrow', 'title', 'sub', 'box', 'text', 'chips', 'note', 'stats', 'other' ); }
 
@@ -177,8 +133,17 @@ function zad_cov_more_html( $chips, $shown_n = 12, $post_id = 0, $custom = '' ) 
 	return '<p class="cov__other"><b>' . esc_html( $leads[ (int) $post_id % count( $leads ) ] ) . '</b> ' . implode( '، ', array_map( $name, $rest ) ) . '.</p>';
 }
 
-/** One district: always a plain <span> (no link), one look for all. */
-function zad_cov_chip_li( $c ) {
+/** One district: a matching public page in the same city/service, otherwise plain text. */
+function zad_cov_chip_li( $c, $post_id = 0 ) {
+	$url = $post_id && function_exists( 'zad_find_hood_url' ) ? zad_find_hood_url( $c[0], $post_id ) : '';
+	if ( ! empty( $c[1] ) && $post_id ) {
+		$target = url_to_postid( $c[1] );
+		$name = trim( preg_replace( '/^حي\s+/u', '', zad_link_name( $c[0] ) ) );
+		if ( $target !== (int) $post_id && zad_link_public_target( $target ) && zad_link_concrete_city( $post_id ) && zad_link_concrete_city( $target ) === zad_link_concrete_city( $post_id ) && zad_link_same_service( $post_id, $target ) && in_array( $name, zad_link_district_names( $target ), true ) ) { $url = get_permalink( $target ); }
+	}
+	if ( $url ) {
+		return '<a class="cov__chip cov__chip--link" href="' . esc_url( $url ) . '">' . zad_icon( 'pin', 14 ) . ' ' . esc_html( $c[0] ) . '</a>';
+	}
 	return '<span class="cov__chip cov__chip--plain">' . esc_html( $c[0] ) . '</span>';
 }
 
@@ -229,7 +194,7 @@ function zad_coverage_html( $post_id = 0, $home = false ) {
 	if ( $chips ) {
 		$n = count( $chips );
 		$o .= '<div class="cov__chips">';
-		foreach ( array_slice( $chips, 0, 12 ) as $c ) { $o .= zad_cov_chip_li( $c ); }
+		foreach ( array_slice( $chips, 0, 12 ) as $c ) { $o .= zad_cov_chip_li( $c, $post_id ); }
 		$o .= '</div>';
 	}
 	$o .= zad_cov_more_html( $chips ?: array(), 12, $post_id, $own['other'] ?? '' );
@@ -281,7 +246,7 @@ function zad_service_guides( $id, $limit = 4 ) {
 	$args = array( 'post_type' => zad_article_types(), 'post_status' => 'publish', 'numberposts' => $limit, 'ignore_sticky_posts' => true );
 	if ( $ids ) {
 		$args['post__in'] = $ids; $args['orderby'] = 'post__in';
-	} elseif ( zad_opt( 'zad_guides_auto', false ) ) {
+	} elseif ( zad_opt( 'zad_guides_auto', true ) ) {
 		$t = wp_get_post_terms( $id, 'service_cat', array( 'fields' => 'ids' ) );
 		if ( ! $t || is_wp_error( $t ) ) { return array(); }
 		$args['tax_query'] = array( array( 'taxonomy' => 'service_cat', 'terms' => $t ) );

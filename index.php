@@ -10,7 +10,7 @@ get_template_part( 'template-parts/page-hero', null, array(
 	<div class="wrap">
 		<?php if ( have_posts() ) : ?>
 			<div class="sgrid"><?php while ( have_posts() ) { the_post(); get_template_part( 'template-parts/post-card' ); } ?></div>
-			<?php echo memo_pagination(); // phpcs:ignore ?>
+			<?php echo zad_pagination(); // phpcs:ignore ?>
 		<?php else : ?>
 			<p class="empty">لا يوجد محتوى حالياً.</p>
 		<?php endif; ?>

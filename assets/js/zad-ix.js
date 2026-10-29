@@ -20,16 +20,6 @@
 		$$('.ixm__pin', box).forEach(function (p, n) { if (n === 0) { p.classList.add('is-on'); } });
 	});
 
-	/* ---------- lifecycle ---------- */
-	$$('[data-ixl]').forEach(function (box) {
-		box.addEventListener('click', function (e) {
-			var b = e.target.closest('.ixl__step'); if (!b) { return; }
-			var i = b.getAttribute('data-i');
-			$$('.ixl__step', box).forEach(function (s) { s.classList.toggle('is-on', s === b); });
-			$$('.ixl__panel', box).forEach(function (p) { p.hidden = p.getAttribute('data-i') !== i; });
-		});
-	});
-
 	/* ---------- safety ---------- */
 	$$('[data-ixs]').forEach(function (box) {
 		var hint = $('[data-ixs-hint]', box);
@@ -53,30 +43,6 @@
 		t.classList.add('ix-print-now'); document.body.classList.add('ix-print');
 		window.print();
 		setTimeout(function () { document.body.classList.remove('ix-print'); t.classList.remove('ix-print-now'); }, 500);
-	});
-
-	/* ---------- checklist ---------- */
-	$$('[data-ixc]').forEach(function (box) {
-		var key = box.getAttribute('data-key'), boxes = $$('input[type=checkbox]', box), saved = [];
-		try { saved = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) {}
-		boxes.forEach(function (c) { c.checked = saved.indexOf(+c.getAttribute('data-i')) > -1; });
-		function upd() {
-			var n = boxes.filter(function (c) { return c.checked; }).length;
-			$('[data-ixc-n]', box).textContent = n;
-			$('[data-ixc-fill]', box).style.width = Math.round(n / boxes.length * 100) + '%';
-			try { localStorage.setItem(key, JSON.stringify(boxes.filter(function (c) { return c.checked; }).map(function (c) { return +c.getAttribute('data-i'); }))); } catch (e) {}
-		}
-		boxes.forEach(function (c) { c.addEventListener('change', function () { upd(); track('ix_check_toggle'); }); });
-		upd();
-		var wa = $('[data-ixc-wa]', box);
-		if (wa) {
-			wa.addEventListener('click', function () {
-				var txt = 'قائمة التحضير — ' + box.getAttribute('data-svc') + '\n' + $$('li', box).map(function (li) { return (li.querySelector('input').checked ? '✅ ' : '⬜ ') + li.textContent.trim(); }).join('\n');
-				var num = box.getAttribute('data-wa');
-				window.open('https://wa.me/' + (num || '') + '?text=' + encodeURIComponent(txt), '_blank', 'noopener');
-				track('ix_check_whatsapp');
-			});
-		}
 	});
 
 	/* ---------- self-check wizard ---------- */
@@ -107,8 +73,7 @@
 		}
 		function buildRes() { /* the result block + buttons are printed inside a <template>: created on the first result */
 			if (res) { return; }
-			var tpl = $('[data-ixw-res-tpl]', box); if (!tpl) { return; }
-			box.appendChild(tpl.content.cloneNode(true)); res = $('[data-ixw-res]', box);
+			res = $('[data-ixw-res]', box); if (!res) { return; }
 			$('[data-ixw-reset]', box).addEventListener('click', function () {
 				$$('input', form).forEach(function (i) { i.checked = false; });
 				step = 0; res.hidden = true; form.hidden = false; render();

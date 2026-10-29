@@ -17,12 +17,12 @@ function zad_page_role( $id ) {
 	foreach ( array( 'about' => 'zad_about_page', 'contact' => 'zad_contact_page' ) as $role => $opt ) {
 		if ( (int) zad_opt( $opt, 0 ) === $id ) { return $role; }
 	}
-	$tpl  = (string) get_post_meta( $id, '_wp_page_template', true );
+	$tpl  = zad_tpl_norm( (string) get_post_meta( $id, '_wp_page_template', true ) );
 	$slug = rawurldecode( (string) get_post_field( 'post_name', $id ) );
 	if ( 'temp/zad-prices.php' === $tpl ) { return 'prices'; }
-	if ( 'temp/memo-services.php' === $tpl ) { return 'services'; }
-	if ( ! (int) zad_opt( 'zad_about_page', 0 ) && ( 'temp/memo-about.php' === $tpl || in_array( $slug, array( 'about', 'about-us', 'من-نحن' ), true ) ) ) { return 'about'; }
-	if ( ! (int) zad_opt( 'zad_contact_page', 0 ) && ( 'temp/memo-contact.php' === $tpl || in_array( $slug, array( 'contact', 'contact-us', 'اتصل-بنا' ), true ) ) ) { return 'contact'; }
+	if ( 'temp/zad-services.php' === $tpl ) { return 'services'; }
+	if ( ! (int) zad_opt( 'zad_about_page', 0 ) && ( 'temp/zad-about.php' === $tpl || in_array( $slug, array( 'about', 'about-us', 'من-نحن' ), true ) ) ) { return 'about'; }
+	if ( ! (int) zad_opt( 'zad_contact_page', 0 ) && ( 'temp/zad-contact.php' === $tpl || in_array( $slug, array( 'contact', 'contact-us', 'اتصل-بنا' ), true ) ) ) { return 'contact'; }
 	return '';
 }
 
@@ -30,7 +30,7 @@ function zad_page_role( $id ) {
 function zad_role_url( $role ) {
 	$id = (int) zad_opt( 'zad_' . $role . '_page', 0 );
 	if ( $id && 'publish' === get_post_status( $id ) ) { return get_permalink( $id ); }
-	return 'contact' === $role ? zad_page_url( 'temp/memo-contact.php', array( 'contact', 'اتصل-بنا' ) ) : '';
+	return 'contact' === $role ? zad_page_url( 'temp/zad-contact.php', array( 'contact', 'اتصل-بنا' ) ) : '';
 }
 
 /* ================= images: rights only on «صورة من شغلنا» ================= */
@@ -74,7 +74,7 @@ add_filter( 'attachment_fields_to_edit', function ( $fields, $post ) {
 	$opt = array( '' => 'حسب الإعداد العام', 'yes' => 'صورة من شغلنا', 'no' => 'ليست من شغلنا' );
 	$h   = '<select name="attachments[' . (int) $post->ID . '][zad_img_ours]">';
 	foreach ( $opt as $k => $l ) { $h .= '<option value="' . esc_attr( $k ) . '"' . selected( $v, $k, false ) . '>' . esc_html( $l ) . '</option>'; }
-	$fields['zad_img_ours'] = array( 'label' => 'ملكية الصورة (للسكيما)', 'input' => 'html', 'html' => $h . '</select>', 'helps' => 'تُطبع حقوق النشر والترخيص في بيانات Google لهذه الصورة فقط إذا كانت «من شغلنا» وصفحة الحقوق محددة في إعدادات القالب.' );
+	$fields['zad_img_ours'] = array( 'label' => 'ملكية الملف (للسكيما)', 'input' => 'html', 'html' => $h . '</select>', 'helps' => 'تُطبع حقوق النشر والترخيص في بيانات Google لهذه الصورة فقط إذا كانت «من شغلنا» وصفحة الحقوق محددة في إعدادات القالب.' );
 	return $fields;
 }, 10, 2 );
 add_filter( 'attachment_fields_to_save', function ( $post, $att ) {
@@ -89,7 +89,7 @@ add_filter( 'attachment_fields_to_save', function ( $post, $att ) {
 
 function zsc_page_node( $type, $url, $name, $post_id = 0 ) {
 	$n = array( '@type' => $type, '@id' => $url . '#webpage', 'url' => $url, 'name' => $name, 'isPartOf' => array( '@id' => home_url( '/#website' ) ), 'inLanguage' => 'ar' );
-	if ( $post_id ) { $n['datePublished'] = get_post_time( 'c', true, $post_id ); $n['dateModified'] = get_post_modified_time( 'c', true, $post_id ); }
+	if ( $post_id ) { $n['datePublished'] = zsc_safe_iso_date( $post_id, false ); $n['dateModified'] = zsc_safe_iso_date( $post_id, true ); }
 	return $n;
 }
 

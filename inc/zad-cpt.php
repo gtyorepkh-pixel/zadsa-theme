@@ -6,12 +6,26 @@ function zad_slug( $opt, $default ) {
 	return $v ? $v : $default;
 }
 
-/** URL base of the theme's own service type: the option if set, /service/ beside adopted types, otherwise the old /services/ (native sites keep their URLs). */
-function zad_service_pt_slug( $adopted ) {
+/** URL base of the theme's own service type: the option if set, else /services/ (3.46.0; was /service/ beside adopted types, with no page under it). */
+function zad_service_pt_slug( $adopted = true ) {
 	$o = sanitize_title_with_dashes( (string) zad_opt( 'zad_service_slug', '' ) );
-	if ( $o ) { return $o; }
-	return $adopted ? 'service' : zad_slug( 'zad_services_slug', 'services' );
+	return $o ? $o : zad_slug( 'zad_services_slug', 'services' );
 }
+
+/**
+ * zad_service (also when the mu-plugin registers it first): hierarchical like «صفحات الخدمات», under /services/, with /services/ itself as the page
+ * that lists every service of the site (archive-zad_service.php → template-parts/services-index.php).
+ * A section is a zad_service page with pages under it: /services/furniture-moving/ → /services/furniture-moving/riyadh/.
+ */
+add_filter( 'register_post_type_args', function ( $args, $pt ) {
+	if ( 'zad_service' !== $pt ) { return $args; }
+	$slug                 = zad_service_pt_slug();
+	$args['hierarchical'] = true;
+	$args['has_archive']  = $slug;
+	$args['rewrite']      = array( 'slug' => $slug, 'with_front' => false );
+	$args['supports']     = array_values( array_unique( array_merge( (array) ( $args['supports'] ?? array() ), array( 'title', 'editor', 'excerpt', 'thumbnail', 'page-attributes' ) ) ) );
+	return $args;
+}, 30, 2 );
 
 /** Two menus must not both be called «الخدمات»: an adopted type carrying that label gets its own name. */
 add_filter( 'register_post_type_args', function ( $args, $pt ) {
@@ -26,7 +40,7 @@ add_filter( 'register_post_type_args', function ( $args, $pt ) {
 
 /** Re-flush rewrite rules automatically when a URL base option changes. */
 add_action( 'init', function () {
-	$h = md5( zad_slug( 'zad_services_slug', 'services' ) . '|' . zad_opt( 'zad_service_slug', '' ) . '|' . zad_slug( 'zad_areas_slug', 'areas' ) . '|' . zad_slug( 'zad_faq_slug', 'faq' ) . '|' . zad_slug( 'zad_works_slug', 'works' ) . '|' . implode( ',', zad_service_types() ) . '|' . implode( ',', zad_faq_types() ) . '|' . implode( ',', zad_article_types() ) );
+	$h = md5( 'svc-hier-1|' . zad_slug( 'zad_services_slug', 'services' ) . '|' . zad_opt( 'zad_service_slug', '' ) . '|' . zad_slug( 'zad_areas_slug', 'areas' ) . '|' . zad_slug( 'zad_faq_slug', 'faq' ) . '|' . zad_slug( 'zad_works_slug', 'works' ) . '|' . implode( ',', zad_service_types() ) . '|' . implode( ',', zad_faq_types() ) . '|' . implode( ',', zad_article_types() ) );
 	if ( get_option( 'zad_rw_hash' ) !== $h ) {
 		flush_rewrite_rules( false );
 		update_option( 'zad_rw_hash', $h, false );
@@ -173,14 +187,9 @@ function zad_service_metabox( $post ) {
 			<p><label>عدد التقييمات<input type="number" min="0" step="1" name="zad[reviews]" value="<?php echo esc_attr( $g( 'reviews' ) ); ?>"></label></p>
 		</div>
 
-		<h4>مميزات الخدمة <small>(ميزة في كل سطر)</small></h4>
-		<p><textarea name="zad[features]" rows="5" style="width:100%"><?php echo esc_textarea( $g( 'features' ) ); ?></textarea></p>
 
 		<h4>الأرقام والإنجازات <small>(الرقم + الوصف، مثال: 13+ / سنة خبرة)</small></h4>
 		<?php zad_repeater_ui( $post->ID, 'stats', 'n', 'l', 'الرقم', 'الوصف', 'إضافة رقم' ); ?>
-
-		<h4>لماذا نحن (بطاقات)</h4>
-		<?php zad_repeater_ui( $post->ID, 'why', 't', 'd', 'العنوان', 'الوصف', 'إضافة ميزة' ); ?>
 
 		<h4>أنواع الخدمة / الخدمات الفرعية</h4>
 		<?php zad_repeater_ui( $post->ID, 'subs', 't', 'd', 'العنوان', 'الوصف', 'إضافة خدمة فرعية' ); ?>
@@ -198,7 +207,7 @@ function zad_service_metabox( $post ) {
 		<?php zad_repeater_ui( $post->ID, 'factors', 't', 'd', 'العنوان', 'الوصف', 'إضافة عامل' ); ?>
 
 		<h4>قائمة الأسعار (قديم) <small>(سطر لكل بند: الفئة | الخدمة | السعر | التفاصيل | الضمان — لم تعد تظهر في الصفحة)</small></h4>
-		<?php if ( $both && 'table' !== $pview ) : ?><p class="description" style="color:#b45309">⚠ هذا الجدول غير ظاهر في الصفحة لأن فيها باقات — لكنه ما زال يغذّي مقدّر السعر في الهيرو</p><?php endif; ?>
+		<?php if ( zad_parse_packages( get_post_meta( $post->ID, '_zad_packages', true ) ) ) : ?><p class="description" style="color:#b45309">⚠ هذا الجدول غير ظاهر في الصفحة لأن فيها باقات — مصدر الأسعار المعتمد هو الباقات</p><?php endif; ?>
 		<p><textarea name="zad[prices]" rows="8" style="width:100%" placeholder="غرف خاصة | غرفة صغيرة | 400 ريال / شهرياً | مناسبة لشقة صغيرة | &#10;خدمات إضافية | النقل والتغليف | 300 - 650 ريال | تُدفع مرة واحدة"><?php echo esc_textarea( $g( 'prices' ) ); ?></textarea></p>
 
 		<h4>علامات الإصابة / المشكلة <small>(كيف تعرف أنك تحتاج الخدمة)</small></h4>
@@ -207,18 +216,8 @@ function zad_service_metabox( $post ) {
 		<h4>الأضرار المحتملة عند التأجيل</h4>
 		<?php zad_repeater_ui( $post->ID, 'harms', 't', 'd', 'الضرر', 'الوصف', 'إضافة ضرر' ); ?>
 
-		<h4>الأمان أولاً <small>(بطاقات)</small></h4>
-		<?php zad_repeater_ui( $post->ID, 'safety', 't', 'd', 'العنوان', 'الوصف', 'إضافة نقطة أمان' ); ?>
-		<p><label>إرشادات ما بعد الخدمة (سطر لكل إرشاد)<textarea name="zad[aftercare]" rows="3" style="width:100%"><?php echo esc_textarea( $g( 'aftercare' ) ); ?></textarea></label></p>
-
 		<?php zad_pk_box( $post->ID ); ?>
 		<?php zad_qnet_box( $post->ID ); ?>
-
-		<h4>الضمان <small>(بطاقات)</small></h4>
-		<?php zad_repeater_ui( $post->ID, 'warrantyrows', 't', 'd', 'العنوان', 'الوصف', 'إضافة بند ضمان' ); ?>
-
-		<h4>البطاقة الفنية <small>(سطر: الاسم | القيمة — تظهر كجدول وفي بيانات Google فقط إن كتبت؛ فارغ = لا قسم)</small></h4>
-		<p><textarea name="zad[spec]" rows="4" style="width:100%" placeholder="الاسم | القيمة"><?php echo esc_textarea( $g( 'spec' ) ); ?></textarea></p>
 
 		<p><label>ملاحظة تحت جدول الأسعار (خصومات، شروط…)<textarea name="zad[price_note]" rows="2" style="width:100%"><?php echo esc_textarea( $g( 'price_note' ) ); ?></textarea></label></p>
 
@@ -251,10 +250,16 @@ function zad_service_metabox( $post ) {
 		<?php zad_guides_box( $post->ID ); ?>
 		<?php zad_anchors_box( $post->ID ); ?>
 		<?php zad_links_box( $post->ID ); ?>
-		<?php zad_sbar_box( $post->ID ); ?>
 		<?php zad_sec_box( $post->ID ); ?>
 		<?php zad_coverage_box( $post->ID ); ?>
 		<?php zad_quick_box( $post->ID ); ?>
+		<h4>السيو — محركات البحث</h4>
+		<p class="description">العنوان والوصف والفهرسة والسكيما تُدار من محرك الثيم. بيانات الأسعار والضمان والأسئلة تُقرأ من تبويباتها الحالية.</p>
+		<?php zad_seo_metabox( $post ); ?>
+		<h4>المراجعة الفنية للمحتوى</h4>
+		<?php zad_schema_review_metabox( $post ); ?>
+		<h4>فحص اتساق المحتوى والسيو</h4>
+		<?php zad_seo_quality_metabox( $post ); ?>
 	</div>
 	<?php zad_mb_tabs( $post->ID ); ?>
 	<?php
@@ -299,7 +304,6 @@ add_action( 'save_post', function ( $post_id ) {
 	$rating = isset( $in['rating'] ) && '' !== $in['rating'] ? min( 5, max( 1, (float) $in['rating'] ) ) : '';
 	update_post_meta( $post_id, '_zad_rating', $rating );
 	update_post_meta( $post_id, '_zad_featured', ! empty( $in['featured'] ) ? '1' : '' );
-	update_post_meta( $post_id, '_zad_features', isset( $in['features'] ) ? sanitize_textarea_field( $in['features'] ) : '' );
 	update_post_meta( $post_id, '_zad_video', isset( $in['video'] ) ? esc_url_raw( $in['video'] ) : '' );
 	update_post_meta( $post_id, '_zad_video_duration', isset( $in['video_duration'] ) && '' !== $in['video_duration'] ? absint( $in['video_duration'] ) : '' );
 
@@ -308,7 +312,6 @@ add_action( 'save_post', function ( $post_id ) {
 
 	$maps = array(
 		'stats'   => array( 'n', 'l' ),
-		'why'     => array( 't', 'd' ),
 		'subs'    => array( 't', 'd' ),
 		'tools'   => array( 't', 'd' ),
 		'steps'   => array( 't', 'd' ),
@@ -316,8 +319,6 @@ add_action( 'save_post', function ( $post_id ) {
 		'faq'     => array( 'q', 'a' ),
 		'signs'   => array( 't', 'd' ),
 		'harms'   => array( 't', 'd' ),
-		'safety'  => array( 't', 'd' ),
-		'warrantyrows' => array( 't', 'd' ),
 	);
 	foreach ( $maps as $key => $f ) {
 		$rows = array();
@@ -332,7 +333,7 @@ add_action( 'save_post', function ( $post_id ) {
 	}
 	zad_pk_save( $post_id, $in );
 	zad_qnet_save( $post_id, $in );
-	foreach ( array( 'aftercare', 'packages', 'spec', 'price_note' ) as $tk ) {
+	foreach ( array( 'packages', 'price_note' ) as $tk ) {
 		update_post_meta( $post_id, '_zad_' . $tk, isset( $in[ $tk ] ) ? sanitize_textarea_field( $in[ $tk ] ) : '' );
 	}
 	update_post_meta( $post_id, '_zad_prices', isset( $in['prices'] ) ? sanitize_textarea_field( $in['prices'] ) : '' );
@@ -341,7 +342,6 @@ add_action( 'save_post', function ( $post_id ) {
 	zad_related_save( $post_id, $in );
 	zad_guides_save( $post_id, $in );
 	zad_links_save( $post_id, $in );
-	zad_sbar_save( $post_id, $in );
 	zad_sec_save( $post_id, $in );
 	zad_coverage_save( $post_id, $in );
 	zad_steps_save( $post_id, $in );
@@ -460,7 +460,7 @@ add_action( 'pre_get_posts', function ( $q ) {
 		// Only the native /services/ archive and the term archives span every service type. The archive of an adopted type (/pest-control/, /cleaning/) must keep ITS OWN type:
 		// overwriting it made zad_query_pt() return the FIRST type (cleaning), so /pest-control/ got cleaning's title, H1, canonical, linked page and list.
 		$one = $q->get( 'post_type' );
-		if ( ! ( $q->is_post_type_archive() && is_string( $one ) && '' !== $one && 'zad_service' !== $one ) ) { $q->set( 'post_type', zad_service_types() ); }
+		if ( ! ( $q->is_post_type_archive() && is_string( $one ) && '' !== $one ) ) { $q->set( 'post_type', zad_service_types() ); } // /services/ too keeps zad_service: its page lists the sections itself (services-index.php)
 		$q->set( 'posts_per_page', 12 );
 		$q->set( 'orderby', array( 'menu_order' => 'ASC', 'date' => 'DESC' ) );
 		if ( $q->is_post_type_archive( zad_service_types() ) && ! empty( $_GET['q'] ) ) { // phpcs:ignore
@@ -532,6 +532,7 @@ function zad_mb_tabs( $post_id ) {
 	.zad-tabs button{border:1px solid #cfe0e8;background:#fff;color:#0c687e;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:700;font-size:13px}
 	.zad-tabs button:hover{border-color:#0c687e}
 	.zad-tabs button.is-on{background:#0c687e;border-color:#0c687e;color:#fff}
+	.zad-tabs button svg{vertical-align:middle;margin-inline-end:5px}
 	.zad-tab-panel{display:none}.zad-tab-panel.is-on{display:block}
 	.zad-tab-panel>h4:first-child{margin-top:4px}
 	</style>
@@ -548,7 +549,8 @@ function zad_mb_tabs( $post_id ) {
 			['الأسئلة',/^الأسئلة/],
 			['الصور والفيديو',/^(قبل|معرض)/],
 			['التواصل والربط',/^(تواصل|خدمات ومقالات)/],
-			['التغطية',/^التغطية/]
+			['التغطية',/^التغطية/],
+			['السيو',/^(السيو|المراجعة الفنية|فحص اتساق)/]
 		];
 		var order=rules.map(function(r){return r[0]}),groups={},cur=rules[0][0];
 		function pick(t){t=t.trim();for(var i=0;i<rules.length;i++){if(rules[i][1].test(t))return rules[i][0];}return null;}
@@ -561,9 +563,11 @@ function zad_mb_tabs( $post_id ) {
 		var names=order.filter(function(g){return groups[g]&&groups[g].length;}),panels={};
 		names.forEach(function(g){
 			var p=document.createElement('div');p.className='zad-tab-panel';groups[g].forEach(function(n){p.appendChild(n);});panels[g]=p;box.appendChild(p);
-			var b=document.createElement('button');b.type='button';b.textContent=g;b.setAttribute('role','tab');b.onclick=function(){show(g);};nav.appendChild(b);
+			var b=document.createElement('button');b.type='button';
+			if(g==='السيو'){b.innerHTML=<?php echo wp_json_encode( zad_icon( 'search', 16 ) ); ?>;}
+			b.appendChild(document.createTextNode(g));b.setAttribute('role','tab');b.setAttribute('aria-selected','false');b.onclick=function(){show(g);};nav.appendChild(b);
 		});
-		function show(g){names.forEach(function(x,i){panels[x].classList.toggle('is-on',x===g);nav.children[i].classList.toggle('is-on',x===g);});try{sessionStorage.setItem(key,g);}catch(e){}}
+		function show(g){names.forEach(function(x,i){panels[x].classList.toggle('is-on',x===g);nav.children[i].classList.toggle('is-on',x===g);nav.children[i].setAttribute('aria-selected',x===g?'true':'false');});try{sessionStorage.setItem(key,g);}catch(e){}}
 		box.insertBefore(nav,box.firstChild);
 		show(names.indexOf(saved)>-1?saved:names[0]);
 	})();

@@ -20,7 +20,7 @@ const ZAD_HUB_PER  = 24;
 /* Which pages are sections                                            */
 /* ------------------------------------------------------------------ */
 
-function zad_hub_pt_hier() { return array_values( array_filter( zad_service_types(), function ( $t ) { return 'zad_service' !== $t && is_post_type_hierarchical( $t ); } ) ); }
+function zad_hub_pt_hier() { return array_values( array_filter( zad_service_types(), function ( $t ) { return is_post_type_hierarchical( $t ); } ) ); } // zad_service too (3.46.0: hierarchical under /services/)
 
 /** id => true for every published page the AUTO rule turns into a section (cached with the city version: refreshed whenever a service page is saved). */
 function zad_hub_auto_map() {
@@ -52,6 +52,7 @@ function zad_page_kind( $id ) {
 	if ( function_exists( 'zad_hood_active' ) && zad_hood_active( $id ) ) { return 'service'; }
 	$m = (string) get_post_meta( $id, ZAD_HUB_KIND, true );
 	if ( 'section' === $m || 'service' === $m ) { return $m; }
+	if ( function_exists( 'zad_catalog_landing_ids' ) && isset( zad_catalog_landing_ids()[ $id ] ) ) { return 'section'; } // a family's own page (/cleaning/tanks/) is a section even while its city pages are drafts
 	return isset( zad_hub_auto_map()[ $id ] ) ? 'section' : 'service';
 }
 
@@ -97,7 +98,10 @@ function zad_hub_taxes() {
 
 function zad_hub_cities_page_id() {
 	static $id = null;
-	if ( null === $id ) { $p = get_page_by_path( 'cities' ); $id = (int) apply_filters( 'zad_hub_cities_page_id', $p ? $p->ID : 0 ); }
+	if ( null === $id ) {
+		$p = get_page_by_path( zad_slug( 'zad_areas_slug', 'areas' ) ) ?: get_page_by_path( 'cities' );   // 3.47.2: the page was renamed cities → areas
+		$id = (int) apply_filters( 'zad_hub_cities_page_id', $p ? $p->ID : 0 );
+	}
 	return $id;
 }
 
@@ -211,7 +215,6 @@ function zad_hub_match_term( $taxonomy, $name, $slug ) {
 	if ( ! $terms || is_wp_error( $terms ) ) { return null; }
 	$probe = (object) array( 'name' => zad_hub_topic( $name ), 'slug' => rawurldecode( (string) $slug ) );
 	foreach ( $terms as $t ) { if ( rawurldecode( $t->slug ) === $probe->slug && '' !== $probe->slug ) { return $t; } }
-	if ( function_exists( 'zad_gm_match_term' ) ) { $m = zad_gm_match_term( $probe, $terms ); if ( $m ) { return $m[0]; } }
 	return null;
 }
 
@@ -234,6 +237,10 @@ function zad_hub_type_h1( $pt ) {
 	list( , $mp ) = zad_hub_type_page( $pt );
 	$h1 = $mp ? zad_hub_clean_name( get_the_title( $mp ) ) : '';
 	if ( '' === $h1 ) { $o = get_post_type_object( $pt ); $h1 = zad_hub_clean_name( $o ? $o->labels->name : '' ); }
+	if ( '' === $h1 ) { // «صفحات الخدمات» cleans to nothing: the short name the admin menu uses (cleaning → التنظيف), never the URL slug
+		$map = apply_filters( 'zad_type_label_map', array( 'cleaning' => 'التنظيف', 'pest_control' => 'مكافحة الحشرات' ) );
+		if ( ! empty( $map[ $pt ] ) ) { $h1 = zad_hub_clean_name( $map[ $pt ] ); }
+	}
 	return '' !== $h1 ? $h1 : 'خدمات ' . str_replace( '-', ' ', zad_type_base( $pt ) );
 }
 
@@ -295,7 +302,7 @@ function zad_hub_data() {
 	if ( '' === $lead ) {
 		$cn = 'cities' === $k ? array() : array_column( $cities, 'name' );
 		if ( 'city' === $k ) { $lead = 'نقدّم في ' . $ctx['term']->name . ' الخدمات الموضحة أدناه، ولكل خدمة صفحتها بتفاصيلها في ' . $ctx['term']->name . '.'; }
-		elseif ( 'cities' === $k ) { $lead = 'اختر مدينتك لتصل إلى خدماتنا فيها.'; }
+		elseif ( 'cities' === $k ) { $lead = 'اختر مدينتك وخدمتك.'; }
 		else { $lead = 'نقدّم ' . $h1 . ( $cn ? ' في ' . zad_hub_cities_text( $cn ) : '' ) . '. اختر الخدمة' . ( $cn ? ' والمدينة' : '' ) . ' المناسبة من القائمة أدناه.'; }
 	}
 	// two link lines: articles + FAQ categories that match this section (none = no link)
@@ -307,6 +314,7 @@ function zad_hub_data() {
 		if ( $ft ) { $u = get_term_link( $ft ); if ( ! is_wp_error( $u ) ) { $links[] = array( 'أسئلة شائعة عن ' . $topic, $u ); } }
 	}
 	$d = array( 'ctx' => $ctx, 'kind' => $k, 'h1' => $h1, 'lead' => $lead, 'url' => $url, 'cards' => $cards, 'all' => $all, 'chips' => $chips, 'paged' => $paged, 'pages' => $pages, 'links' => $links, 'cities' => array_column( $cities, 'name' ), 'topic' => $topic, 'mirror' => $mirror );
+	$d = apply_filters( 'zad_hub_data', $d );
 	return $d;
 }
 
@@ -319,10 +327,8 @@ add_filter( 'template_include', function ( $tpl ) {
 	return $tpl;
 }, 21 );
 
-add_action( 'wp_enqueue_scripts', function () {
-	if ( ! zad_hub_ctx() ) { return; }
-	wp_enqueue_style( 'zad-hub', get_template_directory_uri() . '/assets/css/zad-hub.css', array( 'zad-main' ), zad_asset_ver( 'assets/css/zad-hub.css' ) );
-}, 30 );
+// Frontend assets are registered by inc/core/assets.php.
+
 
 /** /page/2/ of a section that has no second page of cards: back to the first page (301). */
 add_action( 'template_redirect', function () {
@@ -343,19 +349,17 @@ function zad_hub_default_title( $d ) {
 	return $d['h1'] . ' في السعودية | ' . $site;
 }
 
-/** Has the owner written a title for this section (theme field / Yoast / archive-content)? */
+/** Has the owner written a title for this section (theme SEO field / archive-content)? */
 function zad_hub_custom_title( $d ) {
 	$c = $d['ctx'];
 	if ( 'type' === $d['kind'] ) { return '' !== trim( (string) zad_ac_seo( 'title' ) ); }
 	if ( 'term' === $d['kind'] || 'city' === $d['kind'] ) {
-		if ( '' !== trim( (string) get_term_meta( $c['term']->term_id, '_zad_seo_title', true ) ) ) { return true; }
-		if ( class_exists( 'WPSEO_Taxonomy_Meta' ) && '' !== trim( (string) WPSEO_Taxonomy_Meta::get_term_meta( $c['term'], $c['term']->taxonomy, 'title' ) ) ) { return true; }
-		return false;
+		return '' !== trim( (string) zad_seo_term_meta( $c['term'], 'title' ) );
 	}
-	return '' !== trim( (string) get_post_meta( $c['post']->ID, '_yoast_wpseo_title', true ) ) || '' !== trim( (string) get_post_meta( $c['post']->ID, '_zad_seo_title', true ) );
+	return '' !== trim( (string) zad_seo_meta( $c['post']->ID, 'title' ) );
 }
 
-foreach ( array( 'wpseo_title', 'wpseo_opengraph_title', 'wpseo_twitter_title', 'pre_get_document_title' ) as $zad_h ) {
+foreach ( array( 'pre_get_document_title' ) as $zad_h ) {
 	add_filter( $zad_h, function ( $t ) {
 		$d = zad_hub_data();
 		if ( ! $d || zad_hub_custom_title( $d ) ) { return $t; }
@@ -367,9 +371,10 @@ foreach ( array( 'wpseo_title', 'wpseo_opengraph_title', 'wpseo_twitter_title', 
 /** Pages 2+ of a section, a section with nothing to list, and a category page that only repeats the archive of a whole type (/services-category/pest-control/ next to /pest-control/) are noindex,follow. */
 function zad_hub_noindex() {
 	$d = zad_hub_data();
+	if ( $d && 'city' === $d['kind'] && function_exists( 'zad_city_catalog' ) ) { return $d['paged'] > 1 || ! zad_city_catalog( $d['ctx']['term'] ); } // a city page lists the whole catalog of the city, not only the pages tagged with it
 	return $d && ( $d['paged'] > 1 || ! $d['all'] || ( $d['mirror'] && apply_filters( 'zad_hub_mirror_noindex', true, $d ) ) );
 }
-foreach ( array( 'wpseo_robots', 'wpseo_robots_array', 'wp_robots' ) as $zad_h ) {
+foreach ( array( 'wp_robots' ) as $zad_h ) {
 	add_filter( $zad_h, function ( $r ) {
 		if ( ! zad_hub_noindex() ) { return $r; }
 		if ( is_array( $r ) ) { unset( $r['index'], $r['nofollow'] ); $r['noindex'] = true; $r['follow'] = true; return $r; }
@@ -394,6 +399,11 @@ function zad_hub_schema_nodes() {
 		$nodes[0]['mainEntity'] = array( '@id' => $list['@id'] );
 		$nodes[] = $list;
 	}
+	if ( 'page' === $d['kind'] && function_exists( 'zad_sec_own_faq' ) ) { // 3.46.5: the page's own questions are shown on the hub too
+		$ents = array();
+		foreach ( zad_sec_own_faq( $d['ctx']['post']->ID ) as $r ) { $ents[] = array( '@type' => 'Question', 'name' => wp_strip_all_tags( $r['q'] ), 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => trim( wp_strip_all_tags( $r['a'] ) ) ) ); }
+		if ( $ents ) { $nodes[] = array( '@type' => 'FAQPage', '@id' => $url . '#faq', 'isPartOf' => array( '@id' => $url . '#webpage' ), 'mainEntity' => $ents ); }
+	}
 	return array( $url, $nodes );
 }
 
@@ -402,6 +412,7 @@ function zad_hub_schema_nodes() {
 /* ------------------------------------------------------------------ */
 
 add_action( 'add_meta_boxes', function () {
+	if ( ! zad_can_admin_fields() ) { return; }
 	foreach ( zad_hub_pt_hier() as $pt ) { add_meta_box( 'zad-hub-kind', 'نوع الصفحة (خدمة / قسم)', 'zad_hub_box', $pt, 'side', 'high' ); }
 } );
 
@@ -415,7 +426,7 @@ function zad_hub_box( $post ) {
 }
 
 add_action( 'save_post', function ( $id, $post ) {
-	if ( ! isset( $_POST['zad_hub_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['zad_hub_nonce'] ) ), 'zad_hub_kind' ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $id ) || ! in_array( $post->post_type, zad_hub_pt_hier(), true ) ) { return; }
+	if ( ! zad_can_admin_fields() || ! isset( $_POST['zad_hub_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['zad_hub_nonce'] ) ), 'zad_hub_kind' ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $id ) || ! in_array( $post->post_type, zad_hub_pt_hier(), true ) ) { return; }
 	$k = isset( $_POST['zad_hub_kind'] ) ? sanitize_key( wp_unslash( $_POST['zad_hub_kind'] ) ) : 'auto';
 	if ( in_array( $k, array( 'service', 'section' ), true ) ) { update_post_meta( $id, ZAD_HUB_KIND, $k ); } else { delete_post_meta( $id, ZAD_HUB_KIND ); }
 	$h = isset( $_POST['zad_hub_h1'] ) ? sanitize_text_field( wp_unslash( $_POST['zad_hub_h1'] ) ) : '';

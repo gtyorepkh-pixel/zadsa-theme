@@ -40,7 +40,9 @@ function zad_home_defaults() {
 	if ( null !== $d ) {
 		return $d;
 	}
-	$b      = function_exists( 'zsc_defaults' ) ? zsc_defaults()['business'] : array( 'area_served' => array(), 'description' => '' );
+	// zsc_settings() مش zsc_defaults(): الأولى هي الإعدادات الفعلية بعد الفلاتر (جدول المدن)، والتانية قائمة مكتوبة في الكود
+	// فكان رقم «مدن نخدمها» في الرئيسية ثابت على 6 مهما اتغيّر الجدول، بينما areaServed في السكيما بيتحدّث.
+	$b      = function_exists( 'zsc_settings' ) ? zsc_settings()['business'] : ( function_exists( 'zsc_defaults' ) ? zsc_defaults()['business'] : array( 'area_served' => array(), 'description' => '' ) );
 	$cities = wp_list_pluck( array_map( function ( $a ) { return array( 'n' => $a[1] ); }, $b['area_served'] ), 'n' );
 	// main services only: neighbourhood pages are excluded by the global query filter
 	$cq  = new WP_Query( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'posts_per_page' => 1, 'fields' => 'ids' ) );

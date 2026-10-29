@@ -13,7 +13,6 @@ add_action( 'admin_menu', function () {
 } );
 
 function zad_sc_source( $attrs ) {
-	if ( false !== stripos( $attrs, 'yoast-schema-graph' ) ) { return 'Yoast SEO'; }
 	if ( false !== stripos( $attrs, 'rank-math' ) ) { return 'Rank Math'; }
 	if ( false !== stripos( $attrs, 'aioseo' ) ) { return 'All in One SEO'; }
 	if ( false !== stripos( $attrs, 'schema-pro' ) || false !== stripos( $attrs, 'wpsp' ) ) { return 'Schema Pro / WPSP'; }

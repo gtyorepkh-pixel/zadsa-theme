@@ -28,8 +28,8 @@ add_action( 'init', function () {
 	$done = array();
 	foreach ( zad_db_orphan_types() as $k ) {
 		$norm = str_replace( '_', '-', strtolower( $k ) );
-		if ( in_array( $norm, array( 'moving', 'drain-cleaning' ), true ) ) { continue; } // retired for good: never brought back (see inc/zad-purge-types.php)
-		if ( ! in_array( $norm, $want, true ) || ( function_exists( 'zad_faqconv_retired' ) && zad_faqconv_retired() && $k === zad_faqconv_cfg( 'from' ) ) ) {
+		if ( in_array( $norm, array( 'moving', 'drain-cleaning' ), true ) ) { continue; } // retired for good (rows deleted): never brought back
+		if ( ! in_array( $norm, $want, true ) || ( zad_legacy_faq_retired() && 'faq' === $k ) ) {
 			continue;
 		}
 		$lbl = ( apply_filters( 'zad_legacy_type_labels', array( 'pests-library' => 'مدونة الحشرات', 'guide' => 'الأدلة', 'cleaning' => 'التنظيف', 'pest_control' => 'مكافحة الحشرات', 'faq' => 'الأسئلة القديمة' ) )[ $k ] ?? ucwords( str_replace( array( '-', '_' ), ' ', $k ) ) ) . ' (مؤقت)';
@@ -60,7 +60,7 @@ add_action( 'init', function () {
 	$in  = "'" . implode( "','", array_map( 'esc_sql', $zad_legacy_registered ) ) . "'";
 	$tax = $wpdb->get_col( "SELECT DISTINCT tt.taxonomy FROM {$wpdb->posts} p JOIN {$wpdb->term_relationships} tr ON tr.object_id = p.ID JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id WHERE p.post_type IN ($in) AND tt.taxonomy NOT IN ('category','post_tag','nav_menu','link_category','post_format','wp_theme','wp_template_part_area')" ); // phpcs:ignore
 	foreach ( (array) $tax as $t ) {
-		if ( taxonomy_exists( $t ) || 0 === strpos( $t, 'service_' ) || 0 === strpos( $t, 'faq_' ) || ( function_exists( 'zad_faqconv_retired' ) && zad_faqconv_retired() && $t === zad_faqconv_cfg( 'tax' ) ) ) {
+		if ( taxonomy_exists( $t ) || 0 === strpos( $t, 'service_' ) || 0 === strpos( $t, 'faq_' ) || ( zad_legacy_faq_retired() && 'best_faqs' === $t ) ) {
 			continue;
 		}
 		register_taxonomy( $t, $zad_legacy_registered, array(
@@ -73,10 +73,10 @@ add_action( 'init', function () {
 
 add_action( 'admin_notices', function () {
 	global $zad_legacy_registered;
-	if ( empty( $zad_legacy_registered ) || ! current_user_can( 'manage_options' ) || ( isset( $_GET['page'] ) && 'zad-adopt' === $_GET['page'] ) ) { // phpcs:ignore
+	if ( empty( $zad_legacy_registered ) || ! current_user_can( 'manage_options' ) ) { // phpcs:ignore
 		return;
 	}
-	echo '<div class="notice notice-warning"><p><strong>Zad Pro:</strong> سُجّلت أنواع المحتوى التالية تلقائياً لأنها موجودة في قاعدة البيانات وغير مسجّلة (على الأرجح كان الثيم القديم يسجّلها): <code>' . esc_html( implode( '، ', $zad_legacy_registered ) ) . '</code>. للتثبيت الدائم سجّلها في إضافة أو mu-plugin، ثم راجع «الأدوات ← تبنّي المحتوى الحالي».</p></div>';
+	echo '<div class="notice notice-warning"><p><strong>Zad Pro:</strong> سُجّلت أنواع المحتوى التالية تلقائياً لأنها موجودة في قاعدة البيانات وغير مسجّلة (على الأرجح كان الثيم القديم يسجّلها): <code>' . esc_html( implode( '، ', $zad_legacy_registered ) ) . '</code>. للتثبيت الدائم سجّلها في إضافة أو mu-plugin، تُدار أنواع المحتوى الحالية من إعدادات القالب وحقول كل صفحة.</p></div>';
 } );
 
 /** «نقل وتخزين الأثاث» و«تسليك المجاري» أُلغيا نهائياً: لو سجّلهما أي ملف خارج القالب (mu-plugin قديم) يُلغى تسجيلهما هنا فلا يظهران في اللوحة ولا الروابط. */

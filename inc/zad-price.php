@@ -48,9 +48,11 @@ if ( ! function_exists( 'zad_price_offer' ) ) {
 		if ( 'quote' === $pp['kind'] ) { return array(); }
 		$n   = function ( $v ) { return ( floor( $v ) == $v ) ? (int) $v : (float) $v; };
 		$ref = array( '@type' => 'QuantitativeValue', 'value' => 1, 'unitCode' => 'MON' );
-		$f   = array( 'priceCurrency' => 'SAR' );
+		// priceCurrency belongs beside a price, never alone: a bare currency on the Offer is a Search Console error.
+		$f = array();
 		if ( 'fixed' === $pp['kind'] ) {
-			$f['price'] = $n( $pp['min'] );
+			$f['priceCurrency'] = 'SAR';
+			$f['price']         = $n( $pp['min'] );
 			if ( $monthly ) { $f['priceSpecification'] = array( '@type' => 'UnitPriceSpecification', 'price' => $n( $pp['min'] ), 'priceCurrency' => 'SAR', 'referenceQuantity' => $ref ); }
 			return $f;
 		}

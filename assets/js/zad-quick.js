@@ -56,7 +56,7 @@
 
 	/* ---------- (ب) ---------- */
 	$$('[data-dx]').forEach(function (root) {
-		var data = []; try { data = JSON.parse($('[data-dx-json]', root).textContent); } catch (e) {}
+		var data = $$('[data-dx-rule]', root).map(function(row){return {label:row.dataset.label,svc:row.dataset.svc,price:row.dataset.price,url:row.dataset.url};});
 		var bar = $$('.dx__bar i', root), go = $('[data-go]', root), more = $('[data-more]', root), cur = null, size = '';
 		function step(n) { $$('.dx__step', root).forEach(function (s) { s.classList.toggle('on', s.getAttribute('data-s') == n); }); bar.forEach(function (b, i) { b.classList.toggle('on', i < n); }); }
 		$$('.dx__step[data-s="1"] .dx__tile', root).forEach(function (t) { t.addEventListener('click', function () { cur = data[parseInt(t.getAttribute('data-i'), 10)]; step(2); }); });

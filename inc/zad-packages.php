@@ -31,6 +31,10 @@ function zad_pk_style( $id ) {
 function zad_pk_warranty( $text ) {
 	$t = zad_digits_en( trim( (string) $text ) );
 	if ( '' === $t ) { return null; }
+	// Ranges, upper limits, exclusions and unspecified plans are not a fixed duration.
+	if ( preg_match( '/بلا\s*ضمان|بدون\s*ضمان|لا\s*يوجد|حسب|وفق|حتى|إلى|الى|أو|او|[–—-]/u', $t ) ) { return null; }
+	preg_match_all( '/\d+/', $t, $numbers );
+	if ( count( $numbers[0] ) > 1 ) { return null; }
 	$words = array( 'ثلاث' => 3, 'ثلاثة' => 3, 'أربع' => 4, 'أربعة' => 4, 'اربع' => 4, 'اربعة' => 4, 'خمس' => 5, 'خمسة' => 5, 'ست' => 6, 'ستة' => 6, 'سبع' => 7, 'سبعة' => 7, 'ثماني' => 8, 'ثمان' => 8, 'ثمانية' => 8, 'تسع' => 9, 'تسعة' => 9, 'عشر' => 10, 'عشرة' => 10 );
 	$n = 0;
 	if ( preg_match( '/(\d+)/', $t, $m ) ) { $n = (int) $m[1]; }
@@ -67,8 +71,9 @@ function zad_pk_catalog( $id ) {
 		if ( '' !== $p['cat'] ) { $o['category'] = $p['cat']; } // only when the 9th column is filled
 		$o += zad_price_offer( $p, zad_pk_is_monthly( $p['unit'] ) ); // number / range / «من X» / nothing for a quote
 		if ( ! empty( $city['name'] ) && 'default' !== $city['source'] ) { $o['areaServed'] = array( '@type' => 'City', 'name' => $city['name'] ); }
-		$w = zad_warranty_pkg_promise( $p['warranty'], $id );
-		if ( $w ) { $o['warranty'] = array( '@type' => 'WarrantyPromise', 'durationOfWarranty' => array( '@type' => 'QuantitativeValue', 'value' => $w[0], 'unitCode' => $w[1] ) ); }
+		$warranty_text = zad_warranty_pkg( $p['warranty'], $id );
+		$promise = zad_schema_warranty_promise( $warranty_text );
+		if ( $promise ) { $o['warranty'] = $promise; }
 		$items[] = $o;
 	}
 	return array( '@type' => 'OfferCatalog', 'name' => zad_pk_title( $id ), 'itemListElement' => $items );
@@ -117,7 +122,7 @@ function zad_pk_html( $id ) {
 		if ( '' !== $p['desc'] ) { $o .= '<p class="pkgx__d">' . esc_html( $p['desc'] ) . '</p>'; }
 		$o  .= zad_pk_price_html( $p );
 		$pw = zad_warranty_pkg( $p['warranty'], $id );
-		if ( '' !== $pw ) { $o .= '<div class="pkgx__w">' . ( 'pest' === $style ? zad_icon( 'shield', 16 ) . ' ' : '' ) . 'ضمان: ' . esc_html( $pw ) . '</div>'; }
+		if ( '' !== $pw ) { $o .= '<div class="pkgx__w" title="ضمان">' . zad_icon( 'shield', 16 ) . ' ' . esc_html( $pw ) . '</div>'; }
 		if ( $p['feat'] ) { $o .= '<ul class="pkgx__f">'; foreach ( $p['feat'] as $f ) { $o .= '<li>' . zad_icon( 'check', 16 ) . '<span>' . esc_html( $f ) . '</span></li>'; } $o .= '</ul>'; }
 		$msg = 'السلام عليكم، أبغى باقة ' . $p['name'] . ' — ' . $svc . ( ( '' !== $city && false === mb_strpos( $svc, $city ) ) ? ' — ' . $city : '' ); // the city only when the service name does not already say it
 		$at  = zad_wa_attrs( $msg, $id );

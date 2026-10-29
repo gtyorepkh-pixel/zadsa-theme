@@ -50,7 +50,7 @@ function zad_wiz_data() {
 		return $d;
 	}
 	$buckets = array(); $cats = array();
-	foreach ( get_posts( array( 'post_type' => zad_service_types(), 'numberposts' => 600, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) ) as $s ) {
+	foreach ( get_posts( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'has_password' => false, 'numberposts' => 600, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ) ) ) as $s ) {
 		$t = get_the_terms( $s->ID, 'service_cat' );
 		if ( $t && ! is_wp_error( $t ) ) {
 			$nm = zad_wiz_cat_label( $t[0]->name ); $ic = (string) get_term_meta( $t[0]->term_id, 'zad_icon', true );
@@ -86,7 +86,8 @@ add_action( 'wp_footer', function () {
 	$map   = $data['services'];
 	$cats  = zad_wiz_manual();
 	if ( ! $cats ) { $cats = zad_wiz_rename( $data['cats'] ); }
-	$cities = zad_lines( zad_opt( 'zad_wiz_cities', "الرياض\nجدة\nالدمام\nالقصيم\nنجران" ) );
+	// The registry is the default list: a city we publish pages for must be bookable, without editing a settings box.
+	$cities = zad_lines( zad_opt( 'zad_wiz_cities', implode( "\n", zad_city_map() ) ) );
 	$cur   = zad_is_service() ? get_the_ID() : 0;
 	$qid   = is_singular() ? (int) get_queried_object_id() : 0;
 	$hood  = ''; // a neighbourhood page: its district (and city) go into the sheet; every other page leaves both empty
@@ -97,8 +98,14 @@ add_action( 'wp_footer', function () {
 		$hcity = (string) $HD['city'];
 		if ( ! $cur ) { $cur = $qid; } // a page-type neighbourhood page is still «the page's service»
 	}
+	// Any city page preselects its own city, not only neighbourhood pages: the visitor already told us where they are.
+	if ( '' === $hcity && $qid && function_exists( 'zad_current_city' ) && zad_is_service() ) {
+		$c = zad_current_city( $qid );
+		if ( 'default' !== $c['source'] ) { $hcity = $c['name']; }
+	}
+	if ( '' !== $hcity && ! in_array( $hcity, $cities, true ) ) { $cities[] = $hcity; } // never offer a list that omits the page's own city
 	?>
-<div class="wiz" id="zad-wizard" aria-hidden="true" data-current="<?php echo (int) $cur; ?>" data-area="<?php echo esc_attr( $hood ); ?>" data-city="<?php echo esc_attr( $hcity ); ?>" data-services="<?php echo esc_attr( wp_json_encode( array_values( $map ) ) ); ?>"><template id="zad-wizard-tpl">
+<div class="wiz" id="zad-wizard" data-current="<?php echo (int) $cur; ?>" data-area="<?php echo esc_attr( $hood ); ?>" data-city="<?php echo esc_attr( $hcity ); ?>" data-services="<?php echo esc_attr( wp_json_encode( array_values( $map ) ) ); ?>">
 	<div class="wiz__overlay" data-wiz-close></div>
 	<div class="wiz__panel wz" role="dialog" aria-modal="true" aria-labelledby="wiz-title">
 
@@ -129,7 +136,7 @@ add_action( 'wp_footer', function () {
 				<?php if ( $qid ) : ?><input type="hidden" name="page_id" value="<?php echo (int) $qid; ?>"><?php endif; ?>
 				<?php if ( '' !== $hood ) : ?><input type="hidden" name="hood" value="<?php echo esc_attr( $hood ); ?>"><?php endif; ?>
 				<input type="hidden" name="lat" value=""><input type="hidden" name="lng" value="">
-				<input type="hidden" name="service" value="">
+				
 				<input type="hidden" name="svc_label" value=""><input type="hidden" name="wiz" value="1">
 				<div class="qform__hp" aria-hidden="true"><label>لا تملأ هذا الحقل<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
 
@@ -145,13 +152,13 @@ add_action( 'wp_footer', function () {
 							<?php endforeach; ?>
 						</div>
 					<?php endif; ?>
-					<label class="fld wz__sel"><span>الخدمة</span><select data-wiz-service><option value="">اختر الخدمة</option></select></label>
+					<label class="fld wz__sel"><span>الخدمة</span><select name="service" data-wiz-service><option value="">اختر الخدمة</option><?php foreach ( $map as $service ) : ?><option value="<?php echo (int) $service['id']; ?>" data-cat="<?php echo esc_attr( $service['cat'] ); ?>"><?php echo esc_html( $service['name'] ); ?></option><?php endforeach; ?></select></label>
 					<?php if ( $cities ) : ?>
 						<div class="wiz__lbl">المدينة</div>
 						<div class="wz__seg wz__seg--city" data-wiz-city role="group" aria-label="المدينة">
 							<?php foreach ( $cities as $a ) : ?><button type="button" class="chipbtn" data-city="<?php echo esc_attr( $a ); ?>"><?php echo zad_icon( 'pin', 16 ); // phpcs:ignore ?><span><?php echo esc_html( $a ); ?></span></button><?php endforeach; ?>
 						</div>
-						<input type="hidden" name="area" value="">
+						<input type="hidden" name="area" value=""><noscript><label class="fld">المدينة<select name="area"><?php foreach ( $cities as $city ) : ?><option value="<?php echo esc_attr( $city ); ?>"><?php echo esc_html( $city ); ?></option><?php endforeach; ?></select></label></noscript>
 					<?php endif; ?>
 					<p class="wiz__err" data-err="1" hidden></p>
 				</div>
@@ -206,7 +213,10 @@ add_action( 'wp_footer', function () {
 				<a class="btn btn--wa" data-wiz-wa href="#" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> متابعة عبر واتساب</a>
 			</div>
 		</div>
-	</div></template>
+	</div>
 </div>
+<noscript><style>
+.wiz{position:static!important;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}.wiz__panel{position:static!important;transform:none!important;max-height:none!important;width:min(100%,1100px)!important;margin:24px auto!important}.wiz__overlay,.wz__rail,.wz__top,.wz__bar,[data-wiz-next],[data-wiz-back],[data-wiz-geo],.wiz__cats,[data-wiz-city]{display:none!important}.wiz__step[hidden],[data-wiz-submit][hidden],.wz__sel{display:block!important}
+</style></noscript>
 	<?php
 }, 5 ); // before the footer scripts (priority 20), so #zad-wizard exists when they run

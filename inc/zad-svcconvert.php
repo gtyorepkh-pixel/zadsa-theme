@@ -2,7 +2,7 @@
 /**
  * Tool: «تحويل صفحات الخدمات» (Tools menu).
  * Moves pages that are really services (regular posts) into the theme's zad_service:
- *  - only post_type (and, where you edit it, post_name) changes: same ID, dates, content, thumbnail and every meta (Yoast included);
+ *  - only post_type (and, where you edit it, post_name) changes: same ID, dates, content, thumbnail and every meta;
  *  - new URL = /{service base}/{same slug}/ ; the old URL gets a 301 (Redirection plugin when active, plus the theme's own map);
  *  - sections (service_cat) and cities (service_area) are suggested from the old categories and are editable before running;
  *  - emptied old category archives are redirected to the new section;
@@ -129,7 +129,7 @@ function zad_svcc_actions() {
 /** Destination definition of a move action. */
 function zad_svcc_dest( $act ) {
 	$d = array(
-		'service'  => array( 'type' => 'zad_service', 'tax' => 'service_cat', 'area' => 'service_area', 'hier' => false ),
+		'service'  => array( 'type' => 'zad_service', 'tax' => 'service_cat', 'area' => 'service_area', 'hier' => is_post_type_hierarchical( 'zad_service' ) ), // 3.46.0: sections under /services/
 		'cleaning' => array( 'type' => 'cleaning', 'tax' => 'cleaning-sections', 'area' => '', 'hier' => true ),
 		'pest'     => array( 'type' => 'pest_control', 'tax' => 'pest_sections', 'area' => '', 'hier' => true ),
 	);
@@ -227,11 +227,12 @@ function zad_svcc_lab_map( $reset = false ) {
 	return $cache;
 }
 
-/* ---------------- Redirection plugin: every 301 lives there ---------------- */
-function zad_svcc_red_active() { return class_exists( 'Red_Item' ) && class_exists( 'Red_Group' ); }
+/* ---------------- 301s: in the Redirection plugin while it is active, otherwise in the theme map (inc/seo/redirect-engine.php) ---------------- */
+function zad_svcc_red_plugin() { return class_exists( 'Red_Item' ) && class_exists( 'Red_Group' ); }
+function zad_svcc_red_active() { return zad_svcc_red_plugin() || function_exists( 'zad_redirect_set' ); }
 
 function zad_svcc_red_group( $name = 'تحويل الخدمات' ) {
-	if ( ! class_exists( 'Red_Group' ) ) { return 0; }
+	if ( ! zad_svcc_red_plugin() ) { return function_exists( 'zad_redirect_set' ) ? -1 : 0; } // -1 = theme map
 	global $wpdb;
 	$id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}redirection_groups WHERE name = %s LIMIT 1", $name ) ); // phpcs:ignore
 	if ( $id ) { return $id; }
@@ -240,13 +241,15 @@ function zad_svcc_red_group( $name = 'تحويل الخدمات' ) {
 }
 /** Add one 301. Returns the Redirection item id (0 on failure). */
 function zad_svcc_red_add( $group, $from_path, $to ) {
-	if ( ! $group || ! class_exists( 'Red_Item' ) ) { return 0; }
+	if ( -1 === $group || ! zad_svcc_red_plugin() ) { $k = function_exists( 'zad_redirect_set' ) ? zad_redirect_set( $from_path, 301, $to, 'svcconvert' ) : ''; return '' !== $k ? 'z:' . $k : 0; }
+	if ( ! $group ) { return 0; }
 	try {
 		$it = Red_Item::create( array( 'url' => '/' . trim( $from_path, '/' ) . '/', 'match_type' => 'url', 'action_type' => 'url', 'action_code' => 301, 'action_data' => array( 'url' => $to ), 'group_id' => $group, 'regex' => false, 'title' => 'تحويل الخدمات' ) );
 	} catch ( \Throwable $e ) { return 0; }
 	return ( is_object( $it ) && method_exists( $it, 'get_id' ) ) ? (int) $it->get_id() : 0;
 }
 function zad_svcc_red_del( $id ) {
+	if ( is_string( $id ) && 0 === strpos( $id, 'z:' ) ) { if ( function_exists( 'zad_redirect_remove' ) ) { zad_redirect_remove( substr( $id, 2 ) ); } return; }
 	if ( ! $id || ! class_exists( 'Red_Item' ) ) { return; }
 	try { $it = Red_Item::get_by_id( (int) $id ); if ( $it && method_exists( $it, 'delete' ) ) { $it->delete(); } } catch ( \Throwable $e ) {} // phpcs:ignore
 }
@@ -267,7 +270,8 @@ function zad_svcc_red_target( $row ) {
 }
 /** An existing redirect FROM this path (any group, any status) → array( id, group, to, code, status, regex ) or null. Regex rules that match the path count too. */
 function zad_svcc_red_lookup( $path ) {
-	if ( ! zad_svcc_red_active() ) { return null; }
+	if ( function_exists( 'zad_redirect_find' ) ) { $z = zad_redirect_find( '/' . trim( rawurldecode( (string) $path ), '/' ) . '/' ); if ( $z ) { return array( 'id' => 'z:' . zad_redirect_key( $path ), 'group' => -1, 'to' => (string) $z[1], 'code' => (int) $z[0], 'status' => 'enabled', 'regex' => false, 'type' => 410 === (int) $z[0] ? 'error' : 'url' ); } }
+	if ( ! zad_svcc_red_plugin() ) { return null; }
 	global $wpdb;
 	$t = $wpdb->prefix . 'redirection_items';
 	$vars = zad_svcc_red_variants( $path );
@@ -295,10 +299,11 @@ function zad_svcc_red_final( $url ) {
 }
 /** Redirects that already POINT to this URL (they would become a chain once it is redirected). */
 function zad_svcc_red_inbound( $url ) {
-	if ( ! zad_svcc_red_active() ) { return array(); }
+	$k = zad_svcc_path_key( $url ); $out = array();
+	if ( function_exists( 'zad_redirect_rules' ) ) { foreach ( zad_redirect_rules() as $from => $r ) { if ( 301 === (int) $r[0] && zad_svcc_path_key( $r[1] ) === $k ) { $out[] = array( 'z:' . $from, $from ); } } }
+	if ( ! zad_svcc_red_plugin() ) { return $out; }
 	global $wpdb;
 	$t = $wpdb->prefix . 'redirection_items';
-	$k = zad_svcc_path_key( $url ); $out = array();
 	$like = '%' . $wpdb->esc_like( rawurldecode( $k ) ) . '%';
 	$likeE = '%' . $wpdb->esc_like( implode( '/', array_map( 'rawurlencode', explode( '/', $k ) ) ) ) . '%';
 	foreach ( (array) $wpdb->get_results( $wpdb->prepare( "SELECT id, url, action_data FROM $t WHERE action_type = 'url' AND ( action_data LIKE %s OR action_data LIKE %s ) LIMIT 50", $like, $likeE ), ARRAY_A ) as $r ) { // phpcs:ignore
@@ -308,8 +313,11 @@ function zad_svcc_red_inbound( $url ) {
 }
 
 /* ---------------- data ---------------- */
+/** 3.46.7: old draft posts are not listed (they will be neither published nor converted); ?page=zad-svcconv&drafts=1 shows them again. */
+function zad_svcc_show_drafts() { return ! empty( $_GET['drafts'] ); } // phpcs:ignore WordPress.Security.NonceVerification
 function zad_svcc_sources() {
-	return get_posts( array( 'post_type' => zad_svcc_source_types(), 'post_status' => array( 'publish', 'draft', 'private', 'pending', 'future' ), 'numberposts' => -1, 'orderby' => 'ID', 'order' => 'ASC', 'suppress_filters' => true ) );
+	$st = zad_svcc_show_drafts() ? array( 'publish', 'draft', 'private', 'pending', 'future' ) : array( 'publish', 'private', 'pending', 'future' );
+	return get_posts( array( 'post_type' => zad_svcc_source_types(), 'post_status' => $st, 'numberposts' => -1, 'orderby' => 'ID', 'order' => 'ASC', 'suppress_filters' => true ) );
 }
 
 function zad_svcc_old_terms( $post ) {
@@ -454,35 +462,6 @@ function zad_svcc_plan( $rows ) {
 	return $out;
 }
 
-/* ---------------- Yoast helpers ---------------- */
-function zad_svcc_yoast_forget( $ids ) {
-	global $wpdb;
-	if ( ! $ids ) { return; }
-	$t = $wpdb->prefix . 'yoast_indexable';
-	if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $t ) ) !== $t ) { return; } // phpcs:ignore
-	$in = implode( ',', array_map( 'intval', $ids ) );
-	$iids = $wpdb->get_col( "SELECT id FROM {$t} WHERE object_type = 'post' AND object_id IN ($in)" ); // phpcs:ignore
-	if ( $iids ) {
-		$h = $wpdb->prefix . 'yoast_indexable_hierarchy';
-		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $h ) ) === $h ) { $wpdb->query( "DELETE FROM {$h} WHERE indexable_id IN (" . implode( ',', array_map( 'intval', $iids ) ) . ')' ); } // phpcs:ignore
-		$wpdb->query( "DELETE FROM {$t} WHERE id IN (" . implode( ',', array_map( 'intval', $iids ) ) . ')' ); // phpcs:ignore — rebuilt by Yoast on demand with the new type and URL
-	}
-}
-/** Freeze the title/description Yoast shows now, when the page has none of its own (the new type would otherwise switch templates). */
-function zad_svcc_yoast_freeze( $id ) {
-	$added = array();
-	if ( ! function_exists( 'YoastSEO' ) ) { return $added; }
-	try {
-		$m = YoastSEO()->meta->for_post( $id );
-		if ( ! $m ) { return $added; }
-		foreach ( array( '_yoast_wpseo_title' => $m->title, '_yoast_wpseo_metadesc' => $m->description ) as $k => $v ) {
-			$v = trim( (string) $v );
-			if ( '' === trim( (string) get_post_meta( $id, $k, true ) ) && '' !== $v ) { update_post_meta( $id, $k, $v ); $added[] = $k; }
-		}
-	} catch ( \Throwable $e ) {} // phpcs:ignore
-	return $added;
-}
-
 /* ---------------- run ---------------- */
 /** Term id (created when missing). New terms are logged as array( taxonomy, id ) so the undo knows where to look. */
 function zad_svcc_term_id( $name, $tax, $parent = 0, &$created = array() ) {
@@ -523,18 +502,15 @@ function zad_svcc_run( $rows, $freeze ) {
 		$p = get_post( (int) $id );
 		if ( ! $p || ! in_array( $p->post_type, $types, true ) ) { $report['skip'][ $id ] = 'تغيّرت حالة المقالة'; continue; }
 		$r = zad_svcc_row_defaults( $rows[ $id ] );
-		$old_url = $res['old_url']; $old_key = $res['redir']['from']; $item = array( 'type' => $p->post_type, 'name' => $p->post_name, 'parent' => (int) $p->post_parent, 'act' => $res['act'], 'old_url' => $old_url, 'terms' => array(), 'yoast' => array() );
+		$old_url = $res['old_url']; $old_key = $res['redir']['from']; $item = array( 'type' => $p->post_type, 'name' => $p->post_name, 'parent' => (int) $p->post_parent, 'act' => $res['act'], 'old_url' => $old_url, 'terms' => array() );
 		if ( 'trash' === $res['act'] ) {
 			$log['trash'][ $id ] = array( 'status' => $p->post_status, 'name' => $p->post_name, 'type' => $p->post_type );
-			if ( $freeze ) { $item['yoast'] = array(); }
 			$ok = wp_trash_post( (int) $id );
 			if ( ! $ok || 'trash' !== get_post_status( $id ) ) { unset( $log['trash'][ $id ] ); $report['skip'][ $id ] = 'تعذّر نقلها لسلة المهملات'; continue; }
-			zad_svcc_yoast_forget( array( $id ) );
 			$report['trashed']++; $final = $res['new_url'];
 			$report['lines'][ $id ] = array( $res['title'], 'trash', 'نُقلت لسلة المهملات، وتحويل 301 إلى ' . urldecode( $final ) );
 		} else {
 			$d = zad_svcc_dest( $res['act'] );
-			if ( $freeze ) { $item['yoast'] = zad_svcc_yoast_freeze( $id ); }
 			$cats = zad_svcc_old_terms( $p );
 			$set = array( 'post_type' => $d['type'], 'post_parent' => (int) $res['parent'] );
 			if ( $res['slug'] !== $p->post_name ) { $set['post_name'] = $res['slug']; }
@@ -555,7 +531,6 @@ function zad_svcc_run( $rows, $freeze ) {
 			foreach ( (array) $mi as $mid ) {
 				if ( 'post_type' === get_post_meta( $mid, '_menu_item_type', true ) && $p->post_type === get_post_meta( $mid, '_menu_item_object', true ) ) { update_post_meta( $mid, '_menu_item_object', $d['type'] ); $log['menu'][ $mid ] = $p->post_type; }
 			}
-			zad_svcc_yoast_forget( array( $id ) );
 			$new_url = get_permalink( $id );
 			if ( $res['new_url'] !== $new_url && rawurldecode( $res['new_url'] ) !== rawurldecode( $new_url ) ) { $report['urlbad'][ $id ] = $new_url; }
 			$item['new_url'] = $new_url; $final = $res['final'] ?? $new_url; $report['moved']++;
@@ -603,7 +578,6 @@ function zad_svcc_run( $rows, $freeze ) {
 		}
 	}
 	update_option( 'zad_svcc_log', $log, false );
-	if ( class_exists( 'WPSEO_Sitemaps_Cache' ) && method_exists( 'WPSEO_Sitemaps_Cache', 'clear' ) ) { WPSEO_Sitemaps_Cache::clear(); }
 	return $report;
 }
 
@@ -640,20 +614,17 @@ function zad_svcc_undo() {
 		if ( ! empty( $log['trash'][ $id ] ) ) { continue; } // handled above
 		if ( get_post_type( $id ) === $it['type'] ) { continue; }
 		foreach ( (array) ( $it['terms'] ?? array() ) as $tax => $ids ) { if ( $ids ) { wp_remove_object_terms( $id, array_map( 'intval', $ids ), $tax ); } }
-		foreach ( (array) ( $it['yoast'] ?? array() ) as $k ) { delete_post_meta( $id, $k ); }
 		$back = array( 'post_type' => $it['type'], 'post_name' => $it['name'] );
 		if ( array_key_exists( 'parent', $it ) ) { $back['post_parent'] = (int) $it['parent']; }
 		$wpdb->update( $wpdb->posts, $back, array( 'ID' => $id ) ); // phpcs:ignore
 		clean_post_cache( $id );
 		$r['posts']++;
 	}
-	zad_svcc_yoast_forget( array_map( 'intval', array_keys( $log['items'] ) ) );
 	foreach ( (array) $log['created'] as $c ) {
 		$pairs = is_array( $c ) ? array( $c ) : array_map( function ( $tax ) use ( $c ) { return array( $tax, (int) $c ); }, array( 'service_cat', 'service_area' ) ); // legacy log: bare ids
 		foreach ( $pairs as $pr ) { $t = get_term( (int) $pr[1], $pr[0] ); if ( $t && ! is_wp_error( $t ) && 0 === (int) $t->count ) { wp_delete_term( (int) $pr[1], $pr[0] ); } }
 	}
 	delete_option( 'zad_svcc_log' );
-	if ( class_exists( 'WPSEO_Sitemaps_Cache' ) && method_exists( 'WPSEO_Sitemaps_Cache', 'clear' ) ) { WPSEO_Sitemaps_Cache::clear(); }
 	return $r;
 }
 
@@ -705,12 +676,16 @@ function zad_svcc_redir_label( $r ) {
 function zad_svcc_page() {
 	if ( ! current_user_can( 'manage_options' ) ) { return; }
 	echo '<div class="wrap" dir="rtl"><h1>تحويل صفحات الخدمات</h1>';
+	$ndr = (int) ( wp_count_posts( 'post' )->draft ?? 0 );
+	if ( $ndr ) { echo '<p class="description">' . ( zad_svcc_show_drafts() ? 'المسودات القديمة (' . $ndr . ') ظاهرة الآن. <a href="' . esc_url( remove_query_arg( 'drafts' ) ) . '">إخفاؤها</a>' : 'مخفية من القائمة: ' . $ndr . ' مسودة قديمة في المقالات (لن تُنشر ولن تُحوَّل). <a href="' . esc_url( add_query_arg( 'drafts', 1 ) ) . '">إظهارها</a>' ) . '</p>'; }
 	$act  = ! empty( $_POST['zad_sv'] ) && check_admin_referer( 'zad_sv' ) ? sanitize_key( wp_unslash( $_POST['zad_sv'] ) ) : '';
 	$rows_posted = $act ? zad_svcc_posted_rows() : array();
 	if ( ! post_type_exists( 'zad_service' ) ) { echo '<div class="notice notice-error"><p>نوع <code>zad_service</code> غير مسجّل.</p></div></div>'; return; }
 	$red = zad_svcc_red_active();
 	if ( ! $red ) { echo '<div class="notice notice-error"><p><b>إضافة Redirection غير مفعّلة.</b> كل تحويلات 301 لهذه الأداة تُسجَّل فيها (مجموعة «تحويل الخدمات») ولن يُنفَّذ أي شيء قبل تفعيلها. خريطة الثيم احتياط فقط وليست بديلاً.</p></div>'; }
 
+	if ( 'mksec' === $act ) { echo '<div class="notice notice-success"><p>' . esc_html( zad_svcc_make_sections() ) . '</p></div>'; }
+	zad_svcc_sections_box();
 	if ( 'undo' === $act ) {
 		$r = zad_svcc_undo();
 		echo '<div class="notice notice-warning"><p>تم التراجع: ' . (int) $r['posts'] . ' صفحة أُعيدت لنوعها ورابطها، و' . (int) $r['trash'] . ' أُخرجت من سلة المهملات، و' . (int) $r['red'] . ' تحويلاً أُزيل من Redirection، و' . (int) $r['links'] . ' محتوى أُعيدت روابطه' . ( $r['kept'] ? '، و' . (int) $r['kept'] . ' محتوى عُدّل بعد التحويل فتُرك كما هو' : '' ) . '.</p></div>';
@@ -761,7 +736,6 @@ function zad_svcc_preview_html( $plan, $rows, $freeze ) {
 	}
 	echo '</tbody></table><form method="post" style="margin-top:16px">'; wp_nonce_field( 'zad_sv' );
 	foreach ( $rows as $id => $r ) { foreach ( array( 'act', 'slug', 'sec', 'city', 'parent', 'to' ) as $k ) { echo '<input type="hidden" name="' . esc_attr( $k ) . '[' . (int) $id . ']" value="' . esc_attr( $r[ $k ] ) . '">'; } }
-	echo '<p><label><input type="checkbox" name="freeze" value="1"' . ( $freeze ? ' checked' : '' ) . '> ثبّت عنوان ووصف Yoast الحاليين للصفحات المنقولة التي بلا عنوان/وصف خاص</label></p>';
 	echo '<p><button class="button button-primary button-hero" name="zad_sv" value="run" onclick="return confirm(\'تنفيذ فعلي: نقل ' . ( (int) array_sum( array_diff_key( $plan['counts'], array( 'none' => 1 ) ) ) ) . ' صفحة وإضافة تحويلات 301؟ يمكن التراجع عن الكل بعده.\');">تنفيذ فعلي</button> <button class="button" name="zad_sv" value="back">رجوع للتعديل</button></p></form>';
 }
 
@@ -770,8 +744,8 @@ function zad_svcc_table_html( $posted, $red ) {
 	echo '<p>أداة واحدة لنقل الصفحات التي هي خدمات فعلاً (المقالات العادية) إلى <code>zad_service</code> أو <code>cleaning</code> أو <code>pest_control</code>، أو حذفها (إلى سلة المهملات) مع تحويل 301. الإجراء المقترح <b>اقتراح فقط</b> وأنت تغيّره. كل التحويلات في Redirection (مجموعة «تحويل الخدمات»)، وأي شيء تفعله مُسجَّل ويُرجَع بـ«تراجع عن الكل». <b>خذ نسخة احتياطية من قاعدة البيانات قبل أي تنفيذ.</b></p>';
 	if ( ! $posts ) { echo '<p><b>لا توجد صفحات من أنواع المصدر.</b></p>'; return; }
 	$cities = zad_svcc_known_cities(); $lab = zad_svcc_lab_map(); $acts = zad_svcc_actions();
-	$parents = array( 'cleaning' => array(), 'pest' => array() );
-	foreach ( array( 'cleaning' => 'cleaning', 'pest' => 'pest_control' ) as $k => $t ) { if ( post_type_exists( $t ) ) { foreach ( zad_svcc_candidates( $t ) as $pid => $title ) { $parents[ $k ][] = array( $pid, urldecode( (string) get_page_uri( $pid ) ) ?: $title ); } } }
+	$parents = array( 'cleaning' => array(), 'pest' => array(), 'service' => array() );
+	foreach ( array( 'cleaning' => 'cleaning', 'pest' => 'pest_control', 'service' => 'zad_service' ) as $k => $t ) { if ( post_type_exists( $t ) ) { foreach ( zad_svcc_candidates( $t ) as $pid => $title ) { $parents[ $k ][] = array( $pid, urldecode( (string) get_page_uri( $pid ) ) ?: $title ); } } }
 	$ptitles = array(); foreach ( $parents as $k => $l ) { foreach ( $l as $x ) { $ptitles[ $k ][ $x[0] ] = get_the_title( $x[0] ); } }
 	$tt = zad_svcc_candidates( zad_svcc_target_types() );
 	$secs = array();
@@ -788,6 +762,7 @@ function zad_svcc_table_html( $posted, $red ) {
 		if ( in_array( $sug, array( 'cleaning', 'pest' ), true ) ) { $parent = zad_svcc_best( $p->post_title, $ptitles[ $sug ] ?? array(), $city ); }
 		if ( 'trash' === $sug && '' === $to ) { $b = zad_svcc_best( $p->post_title, $tt, $city ); $to = $b ? (string) $b : ''; }
 		$row = array( 'act' => $sug, 'slug' => zad_svcc_slug_default( $p ), 'sec' => $sec, 'city' => $city, 'parent' => $parent, 'to' => $to );
+		$pre = zad_svcc_preset_row( $p ); if ( $pre ) { $row = array_merge( $row, $pre ); }
 		if ( isset( $posted[ $p->ID ] ) ) { $row = array_merge( $row, $posted[ $p->ID ] ); } elseif ( $posted ) { $row['act'] = 'none'; }
 		$state[ $p->ID ] = $row; if ( 'none' !== $row['act'] ) { $plan_in[ $p->ID ] = $row; }
 	}
@@ -800,10 +775,9 @@ function zad_svcc_table_html( $posted, $red ) {
 	$cnt = array_fill_keys( array_keys( $acts ), 0 );
 	foreach ( $posts as $p ) {
 		$s = $state[ $p->ID ]; $id = (int) $p->ID; $cnt[ $s['act'] ]++; $names = wp_list_pluck( zad_svcc_old_terms( $p ), 'name' ); $lb = $lab[ $id ] ?? null;
-		$ycust = '' !== trim( (string) get_post_meta( $id, '_yoast_wpseo_title', true ) ) ? 'عنوان Yoast مخصّص' : 'قالب Yoast';
 		$r = $plan['rows'][ $id ] ?? null; $tlabel = ctype_digit( $s['to'] ) && $s['to'] ? ( '#' . $s['to'] . ' ' . get_the_title( (int) $s['to'] ) ) : $s['to'];
 		echo '<tr data-act="' . esc_attr( $s['act'] ) . '" data-city="' . esc_attr( $s['city'] ) . '" data-lab="' . ( $lb ? 1 : 0 ) . '"><td><input type="checkbox" class="zadsv-sel"></td>';
-		echo '<td><a href="' . esc_url( get_edit_post_link( $id ) ) . '">' . esc_html( $p->post_title ) . '</a>' . ( $lb ? ' <span style="background:#e3f5f1;border:1px solid #0d7f70;border-radius:10px;padding:1px 8px;font-size:11px">ليها صفحة جديدة' . ( $lb['new'] ? ' #' . (int) $lb['new'] . ' (' . esc_html( get_post_status( $lb['new'] ) ?: '؟' ) . ')' : '' ) . '</span>' : '' ) . '<br><small>' . esc_html( $p->post_type . ' · #' . $id . ' · ' . $p->post_status . ' · ' . $ycust . ( $names ? ' · ' . implode( '، ', $names ) : '' ) ) . '</small></td>';
+		echo '<td><a href="' . esc_url( get_edit_post_link( $id ) ) . '">' . esc_html( $p->post_title ) . '</a>' . ( $lb ? ' <span style="background:#e3f5f1;border:1px solid #0d7f70;border-radius:10px;padding:1px 8px;font-size:11px">ليها صفحة جديدة' . ( $lb['new'] ? ' #' . (int) $lb['new'] . ' (' . esc_html( get_post_status( $lb['new'] ) ?: '؟' ) . ')' : '' ) . '</span>' : '' ) . '<br><small>' . esc_html( $p->post_type . ' · #' . $id . ' · ' . $p->post_status . ' · ' . ( $names ? implode( '، ', $names ) : '' ) ) . '</small></td>';
 		echo '<td><code dir="ltr">' . esc_html( urldecode( (string) wp_parse_url( get_permalink( $p ), PHP_URL_PATH ) ) ) . '</code></td>';
 		echo '<td><select class="zadsv-act" name="act[' . $id . ']">'; foreach ( $acts as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $s['act'], $k, false ) . '>' . esc_html( $l ) . '</option>'; } echo '</select></td>';
 		echo '<td class="zadsv-c-move"><input type="text" dir="ltr" name="slug[' . $id . ']" value="' . esc_attr( $s['slug'] ) . '" style="width:170px"></td>';
@@ -814,7 +788,6 @@ function zad_svcc_table_html( $posted, $red ) {
 		echo '<td class="zadsv-prev">' . ( $r ? zad_svcc_status_label( $r ) . '<br>' . zad_svcc_redir_label( $r ) : '' ) . '</td></tr>';
 	}
 	echo '</tbody></table><p>' . count( $posts ) . ' صفحة. الاقتراح: ' . implode( '، ', array_map( function ( $k ) use ( $cnt, $acts ) { return $acts[ $k ] . ' ' . (int) $cnt[ $k ]; }, array_keys( $cnt ) ) ) . '. المعاينة في الجدول بحسب الاقتراح الحالي؛ بعد تعديلك اضغط «معاينة قبل التنفيذ» لتحديثها.</p>';
-	echo '<p><label><input type="checkbox" name="freeze" value="1" checked> ثبّت عنوان ووصف Yoast الحاليين للصفحات المنقولة التي بلا عنوان/وصف خاص</label></p>';
 	echo '<p><button class="button button-primary" name="zad_sv" value="preview"' . ( $red ? '' : ' disabled' ) . '>معاينة قبل التنفيذ</button></p></form>';
 	$data = array( 'parents' => $parents, 'ajax' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'zad_svcc_search' ) );
 	echo '<script>var ZADSV=' . wp_json_encode( $data, JSON_UNESCAPED_UNICODE ) . ';' . zad_svcc_admin_js() . '</script>';
@@ -824,11 +797,11 @@ function zad_svcc_admin_js() {
 	return <<<'JS'
 (function(){
  var $=function(s,c){return (c||document).querySelector(s)},$$=function(s,c){return [].slice.call((c||document).querySelectorAll(s))};
- function fillParent(tr){var a=$('.zadsv-act',tr).value,sel=$('.zadsv-parent',tr),want=sel.getAttribute('data-val')||sel.value,key=a==='cleaning'?'cleaning':(a==='pest'?'pest':'');
+ function fillParent(tr){var a=$('.zadsv-act',tr).value,sel=$('.zadsv-parent',tr),want=sel.getAttribute('data-val')||sel.value,key=a==='cleaning'?'cleaning':(a==='pest'?'pest':(a==='service'?'service':''));
   sel.innerHTML='<option value="0">— بلا أم —</option>';(key?ZADSV.parents[key]||[]:[]).forEach(function(p){var o=document.createElement('option');o.value=p[0];o.textContent=p[1]+' (#'+p[0]+')';sel.appendChild(o)});sel.value=want;if(sel.value!==want){sel.value='0'}}
  function apply(tr){var a=$('.zadsv-act',tr).value,mv=['service','cleaning','pest'].indexOf(a)>=0;
   $$('.zadsv-c-move',tr).forEach(function(c){c.style.visibility=mv?'visible':'hidden'});
-  $('.zadsv-c-parent',tr).style.visibility=(a==='cleaning'||a==='pest')?'visible':'hidden';
+  $('.zadsv-c-parent',tr).style.visibility=(a==='cleaning'||a==='pest'||a==='service')?'visible':'hidden';
   $('.zadsv-c-city',tr).style.visibility=a==='service'?'visible':'hidden';
   $('.zadsv-c-to',tr).style.visibility=a==='trash'?'visible':'hidden';
   var inp=$('.zadsv-sec',tr);inp.setAttribute('list','zadsv-secs-'+(a==='cleaning'?'cleaning':(a==='pest'?'pest':'service')));
@@ -845,4 +818,101 @@ function zad_svcc_admin_js() {
  $('#zadsv-form').addEventListener('submit',function(e){if(e.submitter&&e.submitter.value==='preview'){var bad=0;$$('#zadsv-tbl tbody tr').forEach(function(tr){if($('.zadsv-act',tr).value==='trash'&&!/^\d+$/.test($('.zadsv-to',tr).value.trim())&&$('.zadsv-to',tr).value.trim()===''){bad++}});if(bad&&!confirm(bad+' صف بإجراء «حذف مع تحويل» بلا وجهة وسيُتخطّى. متابعة المعاينة؟')){e.preventDefault()}}});
 })();
 JS;
+}
+
+/* ---------------- 3.46.0: moving / storage / drain articles → /services/{section}/{city}/ (short English URLs) ---------------- */
+/** The three sections under /services/: slug => title. */
+function zad_svcc_sections() {
+	return apply_filters( 'zad_svcc_sections', array( 'furniture-moving' => 'نقل العفش', 'furniture-storage' => 'تخزين الأثاث', 'drain-cleaning' => 'تسليك المجاري', 'tile-polishing' => 'جلي البلاط' ) );
+}
+
+/**
+ * Ready rows for the articles: post id => array( parent path under /services/, new slug, city ). Rows whose parent does not exist yet as a zad_service page
+ * (the city page of step 1) stay «لا شيء» with a note, so the district pages are moved in a second run, under the Riyadh page.
+ */
+function zad_svcc_preset_map() {
+	return apply_filters( 'zad_svcc_preset_map', array(
+		// نقل العفش
+		390 => array( 'furniture-moving', 'riyadh', 'الرياض' ), 23541 => array( 'furniture-moving', 'jeddah', 'جدة' ), 23542 => array( 'furniture-moving', 'mecca', 'مكة' ),
+		23530 => array( 'furniture-moving', 'qatif', 'القطيف' ), 23506 => array( 'furniture-moving', 'dammam', 'الدمام' ),
+		21899 => array( 'furniture-moving/riyadh', 'south', 'الرياض' ), 21894 => array( 'furniture-moving/riyadh', 'west', 'الرياض' ),
+		21893 => array( 'furniture-moving/riyadh', 'east', 'الرياض' ), 21835 => array( 'furniture-moving/riyadh', 'north', 'الرياض' ),
+		// تخزين الأثاث
+		75 => array( 'furniture-storage', 'riyadh', 'الرياض' ), 23575 => array( 'furniture-storage/riyadh', 'east', 'الرياض' ),
+		23577 => array( 'furniture-storage/riyadh', 'north', 'الرياض' ), 23576 => array( 'furniture-storage/riyadh', 'warehouses', 'الرياض' ),
+		// تسليك المجاري
+		81 => array( 'drain-cleaning', 'riyadh', 'الرياض' ), 22737 => array( 'drain-cleaning', 'qatif', 'القطيف' ), 22556 => array( 'drain-cleaning', 'kharj', 'الخرج' ),
+		22477 => array( 'drain-cleaning', 'dammam', 'الدمام' ), 22478 => array( 'drain-cleaning', 'qassim', 'القصيم' ),
+		20853 => array( 'drain-cleaning', 'acid', 'الرياض' ), 20821 => array( 'drain-cleaning', 'pressure', 'الرياض' ), 20800 => array( 'drain-cleaning', 'bathroom', 'الرياض' ),
+		20781 => array( 'drain-cleaning', 'kitchen', 'الرياض' ), 1015 => array( 'drain-cleaning', 'septic-tank', 'الرياض' ),
+		20782 => array( 'drain-cleaning/riyadh', 'north', 'الرياض' ), 20780 => array( 'drain-cleaning/riyadh', 'east', 'الرياض' ), 20987 => array( 'drain-cleaning/riyadh', 'plumber', 'الرياض' ),
+		// جلي البلاط («كم سعر جلي بلاط الحوش» 20753 مقال: يبقى مقال)
+		20430 => array( 'tile-polishing', 'riyadh', 'الرياض' ), 22627 => array( 'tile-polishing', 'jeddah', 'جدة' ), 22636 => array( 'tile-polishing', 'dammam', 'الدمام' ),
+		22817 => array( 'tile-polishing', 'qatif', 'القطيف' ), 22652 => array( 'tile-polishing', 'qassim', 'القصيم' ),
+		20662 => array( 'tile-polishing/riyadh', 'north', 'الرياض' ), 20745 => array( 'tile-polishing/riyadh', 'south', 'الرياض' ),
+		20660 => array( 'tile-polishing/riyadh', 'east', 'الرياض' ), 22757 => array( 'tile-polishing/riyadh', 'west', 'الرياض' ),
+		20669 => array( 'tile-polishing/riyadh', 'pakistani-technicians', 'الرياض' ),
+	) );
+}
+
+/** zad_service page at a path under /services/ (any status but trash), 0 when none. */
+function zad_svcc_service_at( $path ) {
+	$p = get_page_by_path( trim( $path, '/' ), OBJECT, 'zad_service' );
+	return ( $p && 'trash' !== $p->post_status ) ? (int) $p->ID : 0;
+}
+
+/** Table defaults for one article from the preset (null = no preset). */
+function zad_svcc_preset_row( $post ) {
+	$m = zad_svcc_preset_map();
+	if ( ! isset( $m[ $post->ID ] ) || 'post' !== $post->post_type ) { return null; }
+	list( $path, $slug, $city ) = $m[ $post->ID ];
+	$parent = zad_svcc_service_at( $path );
+	if ( ! $parent ) { return array( 'act' => 'none' ); } // the parent (section / Riyadh page) is not there yet: next run
+	return array( 'act' => 'service', 'slug' => $slug, 'parent' => $parent, 'sec' => '', 'city' => $city );
+}
+
+/** The section page at a path under /services/ (marked «قسم»), 0 when none — a city page sitting on the section's slug does not count. */
+function zad_svcc_section_at( $slug ) {
+	$id = zad_svcc_service_at( $slug );
+	return ( $id && 'section' === get_post_meta( $id, defined( 'ZAD_HUB_KIND' ) ? ZAD_HUB_KIND : '_zad_hub_kind', true ) ) ? $id : 0;
+}
+
+/**
+ * Creates the missing section pages (drafts, marked «قسم»). A page already on the section's slug that is not a section
+ * (a city page made before its section, e.g. «شركة جلي بلاط بالرياض» on /services/tile-polishing/) is first moved under the
+ * new section with its city's slug (/services/tile-polishing/riyadh/), so nothing is lost and the section gets its address.
+ */
+function zad_svcc_make_sections() {
+	$made = array(); $moved = array();
+	$kk = defined( 'ZAD_HUB_KIND' ) ? ZAD_HUB_KIND : '_zad_hub_kind';
+	foreach ( zad_svcc_sections() as $slug => $title ) {
+		if ( zad_svcc_section_at( $slug ) ) { continue; }
+		$squat = zad_svcc_service_at( $slug );
+		$id = wp_insert_post( array( 'post_type' => 'zad_service', 'post_status' => 'draft', 'post_title' => $title, 'post_name' => $slug . '-section-tmp', 'post_content' => '' ), true );
+		if ( is_wp_error( $id ) || ! $id ) { continue; }
+		update_post_meta( $id, $kk, 'section' );
+		if ( $squat ) {
+			$city = function_exists( 'zad_catalog_city_in' ) ? zad_catalog_city_in( get_the_title( $squat ) ) : '';
+			$cs   = '' !== $city && function_exists( 'zad_city_norm_slug' ) ? zad_city_norm_slug( $city ) : '';
+			if ( '' === $cs || preg_match( '/%/', $cs ) ) { $cs = 'city-' . $squat; }
+			update_option( 'zad_svcc_moved_' . $squat, array( 'name' => get_post_field( 'post_name', $squat ), 'parent' => (int) wp_get_post_parent_id( $squat ) ), false ); // for undo by hand
+			wp_update_post( array( 'ID' => $squat, 'post_parent' => $id, 'post_name' => $cs ) );
+			$moved[] = get_the_title( $squat ) . ' → /' . zad_type_base( 'zad_service' ) . '/' . $slug . '/' . $cs . '/';
+		}
+		wp_update_post( array( 'ID' => $id, 'post_name' => $slug ) );
+		$made[] = $title;
+	}
+	if ( ! $made ) { return 'الأقسام كلها موجودة بالفعل.'; }
+	return 'اتعملت مسودات: ' . implode( '، ', $made ) . '. اكتب مقدمة كل قسم وانشره، وبعدها نفّذ النقل.' . ( $moved ? ' واتنقلت تحت القسم: ' . implode( '، ', $moved ) . '.' : '' );
+}
+
+function zad_svcc_sections_box() {
+	$rows = array();
+	foreach ( zad_svcc_sections() as $slug => $title ) {
+		$id = zad_svcc_section_at( $slug );
+		$rows[] = '<li><b>' . esc_html( $title ) . '</b> <code dir="ltr">/' . esc_html( zad_type_base( 'zad_service' ) . '/' . $slug ) . '/</code> — ' . ( $id ? '<a href="' . esc_url( get_edit_post_link( $id ) ) . '">' . esc_html( 'publish' === get_post_status( $id ) ? 'منشور' : 'مسودة: انشره بعد كتابة المقدمة' ) . '</a>' : 'غير موجود' ) . '</li>';
+	}
+	echo '<div class="notice notice-info" style="padding:10px 14px"><p><b>أقسام النقل والتخزين والتسليك وجلي البلاط (روابط إنجليزي قصيرة):</b></p><ol>' . implode( '', $rows ) . '</ol>';
+	echo '<p>1) اعمل الأقسام وانشرها. 2) نفّذ النقل (صفحات المدن تحت الأقسام جاهزة في الجدول). 3) افتح الأداة تاني: صفحات أحياء الرياض هتظهر جاهزة تحت صفحة الرياض، ونفّذ النقل مرة تانية.</p>';
+	echo '<form method="post">' . wp_nonce_field( 'zad_sv', '_wpnonce', true, false ) . '<button class="button" name="zad_sv" value="mksec">اعمل الأقسام الناقصة (مسودات)</button></form></div>';
 }

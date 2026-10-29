@@ -2,7 +2,6 @@
 /**
  * Internal-link components (all manual or strict; nothing is auto-created, nothing falls back to «latest»):
  *  - anchor bank per service page (`_zad_anchors`) + zad_anchor_for(): one fixed wording per source page, never random
- *  - «البطاقة الفنية» (visible table + Service.additionalProperty) from the page's own `_zad_spec` lines only
  *  - «أدلة تهمّك» (hand-picked guides, optional strict same-category match), «نفس الخدمة في مدن أخرى» (hand-picked)
  *  - «الخدمة المرتبطة» box + button for FAQ / guide / article pages (uses the existing link fields)
  *  - footer link lists
@@ -11,12 +10,13 @@
  */
 
 defined( 'ABSPATH' ) || exit;
+require_once __DIR__ . '/zad-link-context.php';
 
 /* ================= 1) anchor bank ================= */
 
-/** Short wording of a page: Yoast breadcrumb title, else the title without «|» and what follows, without phone numbers. */
+/** Short wording of a page: its breadcrumb label, else the title without «|» and what follows, without phone numbers. */
 function zad_anchor_base( $id ) {
-	$bc = trim( wp_strip_all_tags( (string) get_post_meta( $id, '_yoast_wpseo_bctitle', true ) ) );
+	$bc = trim( wp_strip_all_tags( (string) get_post_meta( $id, '_zad_breadcrumb_label', true ) ) );
 	$t  = '' !== $bc ? $bc : (string) preg_split( '/\s*\|\s*/u', wp_strip_all_tags( html_entity_decode( get_the_title( $id ), ENT_QUOTES, 'UTF-8' ) ), 2 )[0];
 	$t  = zad_strip_phones( $t );
 	$t  = preg_replace( '/^[\s\-–—|،,:·]+|[\s\-–—|،,:·]+$/u', '', preg_replace( '/\s+/u', ' ', $t ) ); // not trim(): its byte list would corrupt Arabic
@@ -50,11 +50,11 @@ function zad_links_box( $post_id ) {
 	$sel = array_map( 'intval', (array) get_post_meta( $post_id, '_zad_cities_svc', true ) );
 	echo '<h4>الجمهور المستهدف <small>(اختياري؛ يظهر في بيانات Google فقط)</small></h4>';
 	echo '<p><input type="text" name="zad[audience]" value="' . esc_attr( (string) get_post_meta( $post_id, '_zad_audience', true ) ) . '" style="width:100%"></p>';
-	echo '<h4>نفس الخدمة في مدن أخرى <small>(اختيار يدوي، حتى 8؛ فارغ = لا يظهر القسم)</small></h4><input type="hidden" name="zad[cities_svc_present]" value="1"><select name="zad[cities_svc][]" multiple size="8" style="width:100%">';
+	echo '<h4>نفس الخدمة في مدن أخرى <small>(اختيار يدوي، حتى 8؛ فارغ = اقتراحات مطابقة للخدمة في مدن أخرى)</small></h4><input type="hidden" name="zad[cities_svc_present]" value="1"><select name="zad[cities_svc][]" multiple size="8" style="width:100%">';
 	foreach ( get_posts( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => 400, 'orderby' => 'title', 'order' => 'ASC', 'post__not_in' => array( $post_id ) ) ) as $s ) {
 		echo '<option value="' . (int) $s->ID . '"' . ( in_array( (int) $s->ID, $sel, true ) ? ' selected' : '' ) . '>' . esc_html( $s->post_title ) . '</option>';
 	}
-	echo '</select>';
+	echo '</select><p class="description">تُعرض الصفحات المنشورة غير المحمية المطابقة لنفس الخدمة وفي مدينة أخرى محددة فقط. الاختيارات غير المطابقة تبقى محفوظة ولا تظهر في هذا القسم.</p>';
 }
 
 function zad_links_save( $post_id, $in ) {
@@ -64,34 +64,6 @@ function zad_links_save( $post_id, $in ) {
 		$ids = isset( $in['cities_svc'] ) ? array_values( array_unique( array_filter( array_map( 'absint', (array) $in['cities_svc'] ) ) ) ) : array();
 		update_post_meta( $post_id, '_zad_cities_svc', array_slice( array_diff( $ids, array( (int) $post_id ) ), 0, 8 ) );
 	}
-}
-
-/* ================= 3) technical card (visible table + schema) ================= */
-
-/** Rows of «البطاقة الفنية»: only what the page's own `_zad_spec` lines say («الاسم | القيمة»). Empty = no section, no schema. */
-function zad_spec_rows( $id ) {
-	$rows = array();
-	foreach ( zad_lines( (string) get_post_meta( $id, '_zad_spec', true ) ) as $l ) {
-		$c = array_map( 'trim', explode( '|', $l, 2 ) );
-		if ( 2 === count( $c ) && '' !== $c[0] && '' !== $c[1] ) { $rows[] = array( $c[0], $c[1] ); }
-	}
-	$fixed = zad_warranty_bare( $id ); // a service with a fixed warranty policy: its «الضمان» row always shows the policy (without the repeated word «ضمان»)
-	if ( '' !== $fixed ) {
-		$done = false;
-		foreach ( $rows as $i => $r ) {
-			if ( preg_match( '/^(مدة\s+)?الضمان/u', $r[0] ) ) { $rows[ $i ][1] = $fixed; $done = true; }
-		}
-		if ( ! $done && $rows ) { $rows[] = array( 'الضمان', $fixed ); }
-	}
-	return $rows;
-}
-
-function zad_spec_html( $id ) {
-	$rows = zad_spec_rows( $id );
-	if ( ! $rows ) { return ''; }
-	$o = '<section class="sec sec--mint"><div class="wrap wrap--narrow">' . zad_sec_head( $id, 'spec', 'check' ) . '<div class="tbl"><table><tbody>';
-	foreach ( $rows as $r ) { $o .= '<tr><th scope="row">' . esc_html( $r[0] ) . '</th><td>' . esc_html( $r[1] ) . '</td></tr>'; }
-	return $o . '</tbody></table></div></div></section>';
 }
 
 /* ================= 4) guides (hand-picked, optional strict match) ================= */
@@ -114,19 +86,6 @@ function zad_guides_html( $id ) {
 }
 
 /* ================= 5) same service in other cities (hand-picked) ================= */
-
-function zad_other_cities_html( $id ) {
-	$items = array();
-	foreach ( array_slice( array_filter( array_map( 'intval', (array) get_post_meta( $id, '_zad_cities_svc', true ) ) ), 0, 8 ) as $t ) {
-		if ( $t === (int) $id || 'publish' !== get_post_status( $t ) || ! in_array( get_post_type( $t ), zad_service_types(), true ) ) { continue; }
-		$a    = zad_anchor_for( $t, $id );
-		$city = zad_current_city( $t )['name'];
-		if ( '' !== $city && false === mb_strpos( $a, $city ) ) { $a .= ' في ' . $city; } // wording of the service + the city name
-		$items[ $t ] = '<a href="' . esc_url( get_permalink( $t ) ) . '"><span>' . esc_html( $a ) . '</span>' . zad_icon( 'arrow', 18 ) . '</a>';
-	}
-	if ( ! $items ) { return ''; }
-	return '<section class="sec"><div class="wrap wrap--narrow"><header class="sec__head"><span class="eyebrow">مدن أخرى</span><h2>نفس الخدمة في مدن أخرى</h2></header><div class="faqlinks">' . implode( '', $items ) . '</div></div></section>';
-}
 
 /* ================= 6) «الخدمة المرتبطة» on FAQ / guide / article pages ================= */
 
@@ -180,7 +139,7 @@ function zad_footer_important_fallback() {
 	$out = array();
 	if ( zad_has_posts( zad_service_types() ) ) { $out[] = array( 'الخدمات', zad_services_url() ); }
 	if ( zad_has_posts( zad_faq_types() ) ) { $out[] = array( 'الأسئلة الشائعة', zad_faq_url() ); }
-	foreach ( array( array( 'خريطة الموقع', 'temp/zad-sitemap.php', array( 'site-map' ) ), array( 'من نحن', 'temp/memo-about.php', array( 'about' ) ), array( 'اتصل بنا', 'temp/memo-contact.php', array( 'contact' ) ) ) as $p ) {
+	foreach ( array( array( 'خريطة الموقع', 'temp/zad-sitemap.php', array( 'site-map' ) ), array( 'من نحن', 'temp/zad-about.php', array( 'about' ) ), array( 'اتصل بنا', 'temp/zad-contact.php', array( 'contact' ) ) ) as $p ) {
 		$u = zad_page_url( $p[1], $p[2] );
 		if ( $u ) { $out[] = array( $p[0], $u ); }
 	}
@@ -193,7 +152,15 @@ function zad_footer_important_fallback() {
 }
 
 /** «المدن» when no menu is assigned: the top-level cities (service_area) that have published pages. */
+/**
+ * The footer's cities column (3.47.2): one link to the cities page, not a city per link.
+ * A list of 8 cities repeated on every page spreads the weight evenly instead of pointing it at the pages that matter,
+ * and it left out any city whose term carries no page yet. The cities page itself links them all.
+ * Without a cities page the city terms are listed, so the column is never empty.
+ */
 function zad_footer_cities_fallback() {
+	$id = function_exists( 'zad_hub_cities_page_id' ) ? zad_hub_cities_page_id() : 0;
+	if ( $id && 'publish' === get_post_status( $id ) ) { return array( array( 'كل مدن التغطية', get_permalink( $id ) ) ); }
 	$out = array();
 	$ts  = get_terms( array( 'taxonomy' => 'service_area', 'hide_empty' => true, 'parent' => 0, 'number' => 12 ) );
 	if ( $ts && ! is_wp_error( $ts ) ) {

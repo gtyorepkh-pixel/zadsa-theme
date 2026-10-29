@@ -2,6 +2,8 @@
 	'use strict';
 	var $ = function (s, c) { return (c || document).querySelector(s); };
 	var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
+	/* digits of a phone typed with Arabic-Indic (٠-٩) or Persian (۰-۹) numerals count too */
+	var digits = function (v) { return String(v || '').replace(/[\u0660-\u0669]/g, function (d) { return d.charCodeAt(0) - 0x0660; }).replace(/[\u06F0-\u06F9]/g, function (d) { return d.charCodeAt(0) - 0x06F0; }).replace(/\D/g, ''); };
 
 	/* The booking sheet is printed in the footer (after this script may run): open it by delegation, always. */
 	document.addEventListener('click', function (e) {
@@ -27,20 +29,7 @@
 	document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setNav(false); });
 	$$('.submenu-toggle').forEach(function (b) {
 		b.addEventListener('click', function () {
-			var sub = b.parentNode.querySelector('.sub-menu');
-			var mega = !sub && b.parentNode.querySelector('.mega');
-			if (mega) { /* mobile list of the mega item: built from the desktop mega menu on the first tap */
-				sub = document.createElement('ul'); sub.className = 'sub-menu';
-				$$('.mega__col', mega).forEach(function (col) {
-					var li = document.createElement('li'), cat = $('.mega__cat', col), ul = document.createElement('ul');
-					if (cat) { var ca = document.createElement('a'); ca.href = cat.href; ca.textContent = cat.textContent.trim(); li.appendChild(ca); }
-					$$('.mega__list a', col).forEach(function (x) { var l = document.createElement('li'), a = document.createElement('a'); a.href = x.href; a.textContent = x.textContent; l.appendChild(a); ul.appendChild(l); });
-					li.appendChild(ul); sub.appendChild(li);
-				});
-				var all = $('.mega__all', mega);
-				if (all) { var al = document.createElement('li'), aa = document.createElement('a'); aa.href = all.href; aa.textContent = all.textContent.trim(); al.appendChild(aa); sub.appendChild(al); }
-				b.parentNode.appendChild(sub);
-			}
+			var sub = b.parentNode.querySelector('.sub-menu') || b.parentNode.querySelector('.mega');
 			if (!sub) return;
 			var on = sub.classList.toggle('active');
 			b.setAttribute('aria-expanded', on ? 'true' : 'false');
@@ -50,12 +39,11 @@
 	/* Booking wizard */
 	var wiz = $('#zad-wizard');
 	if (wiz) {
-		/* The sheet is printed as a <template> (no DOM cost): it is built on the first open. */
-		var wizTpl = $('#zad-wizard-tpl'), wizReal = null, wizBuilt = false;
-		window.zadOpenWizard = function (note) {
-			if (!wizBuilt) { wizBuilt = true; if (wizTpl) { wiz.appendChild(wizTpl.content.cloneNode(true)); } setupWizard(); }
-			if (wizReal) { wizReal(note); }
-		};
+		wiz.setAttribute('aria-hidden', 'true');
+		/* The complete booking form is already in the HTML response. */
+		var wizReal = null;
+		window.zadOpenWizard = function (note) { if (wizReal) { wizReal(note); } };
+		setupWizard();
 		function setupWizard() {
 		var form = $('[data-wiz-form]', wiz), svcs = [], steps = $$('.wiz__step', wiz), cur = 1;
 		try { svcs = JSON.parse(wiz.getAttribute('data-services') || '[]'); } catch (e) {}
@@ -64,13 +52,11 @@
 		function setLabel() { if (form.elements.svc_label) form.elements.svc_label.value = catName(); }
 		function fillServices() {
 			var keep = hidSvc.value;
-			sel.innerHTML = '<option value="">اختر الخدمة</option>';
-			svcs.forEach(function (s) {
-				if (cat && String(s.cat) !== cat) return;
-				var o = document.createElement('option'); o.value = s.id; o.textContent = s.name;
-				if (String(s.id) === String(keep)) o.selected = true;
-				sel.appendChild(o);
+			Array.from(sel.options).forEach(function (option) {
+				var matches = !cat || cat.charAt(0) === 'm' || !option.value || option.dataset.cat === cat;
+				option.hidden = !matches; option.disabled = !matches;
 			});
+			if (keep && Array.from(sel.options).some(function (o) { return o.value === keep && !o.disabled; })) sel.value = keep;
 			renderSvcs(keep);
 		}
 		function renderSvcs(keep) {
@@ -189,7 +175,7 @@
 		});
 		$('[data-wiz-back]', wiz).addEventListener('click', function () { go(cur - 1); });
 		form.addEventListener('submit', function (e) {
-			var ph = (form.elements.phone.value || '').replace(/\D/g, '');
+			var ph = digits(form.elements.phone.value);
 			if (ph.length < 8) { e.preventDefault(); err(3, 'أدخل رقم جوال صحيح.'); form.elements.phone.focus(); return; }
 			if (!window.fetch || !window.ZAD) return;
 			e.preventDefault(); err(3, '');
@@ -303,7 +289,7 @@
 
 	/* Reveal on scroll */
 	if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-		var targets = $$('.sec:not(.cov) .sec__head, .icard, .scard, .hsteps li, .pkg, .wrow, .faq__item, .tcard, .b2b__s, .client, .cat, .stat, .featgrid li, .ctximg, .faqlinks a');
+		var targets = $$('.sec:not(.cov) .sec__head, .icard, .scard, .hsteps li, .pkg, .faq__item, .tcard, .b2b__s, .client, .cat, .stat, .featgrid li, .ctximg, .faqlinks a');
 		var io = new IntersectionObserver(function (es) {
 			es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
 		}, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
@@ -380,7 +366,7 @@
 				var el = form.elements[n];
 				if (!el) return;
 				var v = (el.value || '').trim();
-				var invalid = !v || (n === 'phone' && v.replace(/\D/g, '').length < 8);
+				var invalid = !v || (n === 'phone' && digits(v).length < 8);
 				el.setAttribute('aria-invalid', invalid ? 'true' : 'false');
 				if (invalid && !bad) bad = el;
 			});

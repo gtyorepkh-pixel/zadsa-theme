@@ -1,4 +1,6 @@
-<?php defined( 'ABSPATH' ) || exit; /* Template Name: تعرّف على الآفة */
+<?php
+/* Template Name: تعرّف على الآفة */
+defined( 'ABSPATH' ) || exit;
 get_header();
 get_template_part( 'template-parts/page-hero', null, array( 'sub' => '<p>أجب عن سؤالين ونقترح عليك الآفة المرجّحة والحل المناسب.</p>', 'crumbs' => array( array( 'الرئيسية', home_url( '/' ) ), array( get_the_title(), '' ) ) ) );
 $where = zad_lines( zad_opt( 'zad_identify_where' ) );
@@ -7,6 +9,7 @@ $rules = array();
 foreach ( (array) zad_opt( 'zad_identify_rules', array() ) as $r ) {
 	if ( empty( $r['title'] ) ) { continue; }
 	$sid = ! empty( $r['service'] ) ? (int) $r['service'] : 0;
+	if ( $sid && ( 'publish' !== get_post_status( $sid ) || get_post_field( 'post_password', $sid ) ) ) { $sid = 0; }
 	$rules[] = array( 'where' => $r['where'] ?? '', 'kind' => $r['kind'] ?? '', 'title' => $r['title'], 'text' => $r['text'] ?? '', 'url' => $sid ? get_permalink( $sid ) : '', 'service' => $sid ? get_the_title( $sid ) : '', 'wa' => zad_wa_link( 'مرحباً، لدي مشكلة: ' . $r['title'], $sid ) );
 }
 ?>
@@ -26,6 +29,9 @@ foreach ( (array) zad_opt( 'zad_identify_rules', array() ) as $r ) {
 			<h2 data-id-title></h2><p data-id-text></p>
 			<div class="hero__btns"><a class="btn btn--primary" data-id-service href="#"></a><a class="btn btn--wa" data-id-wa href="#" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 20 ); // phpcs:ignore ?> اسأل عبر واتساب</a><button type="button" class="btn btn--ghost-dark" data-id-reset>ابدأ من جديد</button></div>
 		</div>
+		<details class="idt__guide"><summary>دليل العلامات والآفات المحتملة</summary>
+		<?php foreach ( $rules as $rule ) : ?><article><h3><?php echo esc_html( $rule['title'] ); ?></h3><p><?php echo esc_html( $rule['where'] . ' — ' . $rule['kind'] ); ?></p><p><?php echo esc_html( $rule['text'] ); ?></p><?php if ( $rule['url'] ) : ?><p><a href="<?php echo esc_url( $rule['url'] ); ?>"><?php echo esc_html( $rule['service'] ); ?></a></p><?php endif; ?></article><?php endforeach; ?>
+		</details><noscript><style>.idt__step,.idt__res{display:none!important}</style><p>افتح دليل العلامات أعلاه لمقارنة الحالة، أو <a href="#zad-wizard">اطلب فحصًا</a>.</p></noscript>
 		<p class="meta-line">النتيجة تقريبية للإرشاد، والفحص الميداني هو ما يحسم نوع الآفة.</p>
 	</div>
 	<div class="prose entry-content"><?php while ( have_posts() ) { the_post(); the_content(); } ?></div>

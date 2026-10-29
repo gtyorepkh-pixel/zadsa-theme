@@ -32,13 +32,22 @@ function zad_wpsp_blocks( $html ) {
 
 function zad_wpsp_pairs( $html ) {
 	$pairs = array(); $seen = array();
+	$add = function ( $q, $a ) use ( &$pairs, &$seen ) {
+		$q = trim( html_entity_decode( wp_strip_all_tags( (string) $q ), ENT_QUOTES, 'UTF-8' ) ); $a = trim( (string) $a ); $k = mb_strtolower( $q );
+		if ( '' !== $q && '' !== trim( wp_strip_all_tags( $a ) ) && ! isset( $seen[ $k ] ) ) { $seen[ $k ] = 1; $pairs[] = array( 'q' => $q, 'a' => wp_kses_post( $a ) ); }
+	};
+	// 1) the block attributes: <!-- wp:wpsp/faq-child {"question":"…","answer":"…"} --> (works whatever HTML the plugin version saved)
+	if ( preg_match_all( '/<!--\s*wp:wpsp\/faq-child\s+(\{.*?\})\s*\/?-->/s', $html, $mm ) ) {
+		foreach ( $mm[1] as $json ) {
+			$at = json_decode( $json, true );
+			if ( is_array( $at ) && isset( $at['question'], $at['answer'] ) ) { $add( $at['question'], wpautop( (string) $at['answer'] ) ); }
+		}
+	}
+	// 2) the saved HTML (question in <hN> or <span class="wpsp-question">)
 	foreach ( zad_wpsp_blocks( $html ) as $b ) {
 		$blk = substr( $html, $b[0], $b[1] );
-		if ( preg_match_all( '#class="wpsp-question"[^>]*>(.*?)</h[1-6]>.*?class="wpsp-faq-content"[^>]*>\s*(?:<span>)?(.*?)(?:</span>)?\s*</div>#su', $blk, $m, PREG_SET_ORDER ) ) {
-			foreach ( $m as $x ) {
-				$q = trim( wp_strip_all_tags( $x[1] ) ); $a = trim( $x[2] ); $k = mb_strtolower( $q );
-				if ( '' !== $q && '' !== trim( wp_strip_all_tags( $a ) ) && ! isset( $seen[ $k ] ) ) { $seen[ $k ] = 1; $pairs[] = array( 'q' => $q, 'a' => wp_kses_post( $a ) ); }
-			}
+		if ( preg_match_all( '#class="wpsp-question"[^>]*>(.*?)</(?:h[1-6]|span)>.*?class="wpsp-faq-content"[^>]*>\s*(?:<span>)?(.*?)(?:</span>)?\s*</div>#su', $blk, $m, PREG_SET_ORDER ) ) {
+			foreach ( $m as $x ) { $add( $x[1], $x[2] ); }
 		}
 	}
 	return $pairs;
@@ -75,39 +84,7 @@ function zad_faqm_cta( $c ) {
 	return array( $c, $n );
 }
 
-/* ---------- [zad_cta] ---------- */
-add_shortcode( 'zad_cta', function ( $atts ) {
-	$a  = shortcode_atts( array( 'call' => '1', 'wa' => '1', 'price' => '' ), $atts, 'zad_cta' );
-	$id = get_the_ID();
-	$ph = zad_phone( $id ); $wa = zad_wa_link( 'مرحباً، أرغب بطلب خدمة: ' . get_the_title( $id ), $id );
-	$o  = '<div class="zad-cta">';
-	if ( '0' !== $a['call'] && $ph ) { $o .= '<a class="btn btn--primary" href="' . esc_url( zad_tel_href( $ph ) ) . '">' . zad_icon( 'phone', 20 ) . ' اتصل الآن</a>'; }
-	if ( '0' !== $a['wa'] && $wa ) { $o .= '<a class="btn btn--wa" href="' . esc_url( $wa ) . '" target="_blank" rel="noopener">' . zad_icon( 'whatsapp', 20 ) . ' تواصل عبر واتساب</a>'; }
-	if ( $a['price'] ) { $o .= '<a class="btn btn--accent" href="' . esc_url( $a['price'] ) . '">' . zad_icon( 'bolt', 20 ) . ' احصل على سعر مبدئي</a>'; }
-	return $o . '</div>';
-} );
-
-/* ---------- Pages/Posts that carry theme FAQ data ---------- */
-add_filter( 'the_content', function ( $c ) {
-	if ( ! is_singular() || ! in_the_loop() || ! is_main_query() ) { return $c; }
-	$id = get_the_ID();
-	if ( in_array( get_post_type( $id ), zad_service_types(), true ) || ( function_exists( 'zad_hood_active' ) && zad_hood_active( $id ) ) ) { return $c; }
-	$f = array_filter( (array) get_post_meta( $id, '_zad_faq', true ), function ( $r ) { return ! empty( $r['q'] ); } );
-	if ( ! $f ) { return $c; }
-	ob_start(); echo '<section class="zad-faq"><h2>الأسئلة الشائعة</h2>'; zad_render_faq( $f ); echo '</section>';
-	return $c . ob_get_clean();
-}, 30 );
-
-add_action( 'wp_head', function () {
-	if ( ! is_singular() || 'theme' !== zad_schema_owner() ) { return; }
-	$id = get_queried_object_id();
-	if ( in_array( get_post_type( $id ), zad_service_types(), true ) || ( function_exists( 'zad_hood_active' ) && zad_hood_active( $id ) ) ) { return; }
-	$f = array_values( array_filter( (array) get_post_meta( $id, '_zad_faq', true ), function ( $r ) { return ! empty( $r['q'] ) && ! empty( $r['a'] ); } ) );
-	if ( ! $f ) { return; }
-	$ents = array();
-	foreach ( $f as $r ) { $ents[] = array( '@type' => 'Question', 'name' => $r['q'], 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => trim( wp_strip_all_tags( $r['a'] ) ) ) ); }
-	zad_print_schema( array( '@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $ents ) );
-}, 15 );
+/* [zad_cta] and the FAQ display / FAQPage schema of pages and articles live in inc/zad-content-faq.php (loaded for visitors too). */
 
 /* ---------- Admin tool ---------- */
 add_action( 'admin_menu', function () {
@@ -118,9 +95,9 @@ function zad_faqm_target_key( $id ) { return ( function_exists( 'zad_hood_active
 
 function zad_faqm_scan() {
 	global $wpdb;
-	$types = array_values( array_unique( array_merge( zad_service_types(), array( 'page', 'post' ) ) ) );
+	$types = array_values( array_unique( array_merge( zad_service_types(), zad_article_types(), function_exists( 'zad_faq_types' ) ? zad_faq_types() : array(), array( 'page', 'post' ) ) ) ); // articles (sections…) too
 	$in = "'" . implode( "','", array_map( 'esc_sql', $types ) ) . "'";
-	$ids = $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_status IN ('publish','draft','private') AND post_type IN ({$in}) AND (post_content LIKE '%wp-block-wpsp-faq%' OR post_content LIKE '%wp:wpsp/faq%' OR (post_content LIKE '%wp:html%' AND post_content LIKE '%wa.me%' AND post_content LIKE '%tel:%')) ORDER BY post_title LIMIT 600" ); // phpcs:ignore
+	$ids = $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_status IN ('publish','draft','private') AND post_type IN ({$in}) AND (post_content LIKE '%wp-block-wpsp-faq%' OR post_content LIKE '%wp:wpsp/faq%' OR (post_content LIKE '%wp:html%' AND post_content LIKE '%wa.me%' AND post_content LIKE '%tel:%')) ORDER BY post_title LIMIT 1000" ); // phpcs:ignore
 	$rows = array();
 	foreach ( $ids as $id ) {
 		$p = get_post( $id ); if ( ! $p ) { continue; }

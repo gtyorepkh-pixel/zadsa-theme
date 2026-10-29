@@ -54,7 +54,6 @@ function hs_bundle_services() {
 }
 
 /* ---------------- includes ---------------- */
-require_once HS_TOOLS_DIR . 'settings.php';
 require_once HS_TOOLS_DIR . 'leads.php';
 require_once HS_TOOLS_DIR . 'tools/pest-method.php';
 require_once HS_TOOLS_DIR . 'tools/moving-bundle.php';
@@ -77,15 +76,8 @@ function hs_register_assets() {
 		wp_register_script( 'hs-' . $t, $u . $t . '.js', array( 'hs-lead' ), hs_asset_ver( $t . '.js' ), array( 'in_footer' => true, 'strategy' => 'defer' ) );
 	}
 }
-add_action( 'wp_enqueue_scripts', function () {
-	hs_register_assets();
-	if ( ! is_singular() ) { return; }
-	$p = get_post();
-	if ( ! $p ) { return; }
-	foreach ( hs_tool_map() as $t => $sc ) {
-		if ( has_shortcode( $p->post_content, $sc ) ) { hs_enqueue( $t ); }
-	}
-} );
+// Frontend assets are registered by inc/core/assets.php.
+
 function hs_enqueue( $tool ) {
 	if ( ! wp_style_is( 'hs-tools-base', 'registered' ) ) { hs_register_assets(); }
 	wp_enqueue_style( 'hs-' . $tool );

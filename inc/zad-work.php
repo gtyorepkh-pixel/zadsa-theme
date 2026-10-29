@@ -5,7 +5,7 @@
  */
 
 add_action( 'add_meta_boxes_page', function ( $post ) {
-	if ( 'temp/memo-gallery.php' !== get_post_meta( $post->ID, '_wp_page_template', true ) ) {
+	if ( 'temp/zad-gallery.php' !== zad_tpl_norm( (string) get_post_meta( $post->ID, '_wp_page_template', true ) ) ) {
 		return;
 	}
 	add_meta_box( 'zad_work_box', 'أعمال إضافية (صور)', function ( $p ) {
@@ -82,7 +82,7 @@ function zad_work_items() {
 		if ( $wc ) { $items[] = $wm + array( 'type' => 'img', 'ids' => array( $wc ), 'title' => wp_strip_all_tags( get_the_title( $wk ) ) ); }
 	}
 	// 3. extra photos on the work page(s)
-	foreach ( get_posts( array( 'post_type' => 'page', 'meta_key' => '_wp_page_template', 'meta_value' => 'temp/memo-gallery.php', 'numberposts' => 5 ) ) as $pg ) {
+	foreach ( get_posts( array( 'post_type' => 'page', 'meta_query' => array( array( 'key' => '_wp_page_template', 'value' => zad_tpl_names( 'temp/zad-gallery.php' ), 'compare' => 'IN' ) ), 'numberposts' => 5 ) ) as $pg ) {
 		foreach ( array_filter( array_map( 'intval', explode( ',', (string) get_post_meta( $pg->ID, '_zad_work_gallery', true ) ) ) ) as $aid ) {
 			$cap = wp_get_attachment_caption( $aid ) ?: get_post_meta( $aid, '_wp_attachment_image_alt', true );
 			$items[] = array( 'type' => 'img', 'ids' => array( $aid ), 'title' => $cap, 'link' => '', 'service' => '', 'cat' => 'أعمال أخرى', 'cat_slug' => 'other', 'city' => '' );

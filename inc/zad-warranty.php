@@ -23,8 +23,21 @@ function zad_warranty_policy() {
 	$p = array(
 		'termite' => array( '/نمل\s*(?:ال)?[أا]بيض|[أا]رضة|termite|white-?ant/iu', 'ضمان مكتوب 15 عاماً', 180 ),
 		'bedbug'  => array( '/بق\s*الفراش|(?<![\p{L}])البق(?![\p{L}])|bed-?bug/iu', 'ضمان مكتوب 3 أشهر', 3 ),
-		'roach'   => array( '/صراصير|صرصور|cockroach|(?<![a-z])roach/iu', 'ضمان مكتوب 3 أو 6 أشهر حسب الاتفاق', 0 ),
+		'roach'   => array( '/صراصير|صرصور|حشرات|مبيد|عقارب|فئران|قوارض|cockroach|pest/iu', 'ضمان مكتوب 3 أو 6 أشهر حسب الباقة والسعر المتفق عليهما لنفس الآفة ونطاق العمل', 0 ),
+		'ac'      => array( '/مكيف|سبليت|شباك|دكت|فريون|ac-clean|air-condition/iu', 'ضمان مراجعة مجانية ضد التسرب أو ضعف التصريف بعد الغسيل', 1 ),
+		'tank'    => array( '/خزان|تنظيف خزانات|عزل خزانات|tank/iu', 'ضمان مكتوب على نظافة وتعقيم وعزل الخزانات', 12 ),
+		'sofa'    => array( '/كنب|مجالس|موكيت|سجاد|مفروشات|مراتب|sofa/iu', 'ضمان سلامة الأقمشة وثبات الألوان وإزالة الروائح', 1 ),
+		'clean'   => array( '/تنظيف منازل|تنظيف فلل|تنظيف شقق|تنظيف قصور|house-clean/iu', 'ضمان إعادة التنظيف الفوري لأي ملاحظة قبل استلام المكان', 1 ),
 	);
+	foreach ( (array) zad_opt( 'zad_warranty_builder', array() ) as $wb ) {
+		$wk = $wb['service_key'] ?? '';
+		if ( $wk && isset( $p[ $wk ] ) && ! empty( $wb['text'] ) ) {
+			$p[ $wk ][1] = trim( (string) $wb['text'] );
+			if ( isset( $wb['months'] ) && is_numeric( $wb['months'] ) ) {
+				$p[ $wk ][2] = (int) $wb['months'];
+			}
+		}
+	}
 	foreach ( zad_lines( (string) zad_opt( 'zad_warranty_policy', '' ) ) as $l ) { // optional override
 		$c = array_map( 'trim', explode( '|', $l ) );
 		if ( isset( $p[ $c[0] ] ) && ! empty( $c[1] ) ) {
@@ -77,21 +90,16 @@ function zad_warranty_bare( $id ) {
 	return preg_replace( '/^ضمان\s+/u', '', zad_warranty_fixed( $id ) );
 }
 
-/** A package's warranty cell: a policy service replaces any cell that states a duration; «ضمان موثق» and the like stay. */
+/** The package is authoritative. The service policy is only a fallback for an empty cell. */
 function zad_warranty_pkg( $text, $id ) {
-	if ( zad_warranty_key( $id ) && function_exists( 'zad_pk_warranty' ) && zad_pk_warranty( $text ) ) {
-		return zad_warranty_bare( $id );
-	}
-	return $text;
+	$text = trim( (string) $text );
+	return '' !== $text ? $text : zad_warranty_bare( $id );
 }
 
 /** WarrantyPromise-ready array( value, 'MON'|'ANN' ) for a package, or null (policy without a number, or no clear number). */
 function zad_warranty_pkg_promise( $text, $id ) {
-	if ( zad_warranty_key( $id ) ) {
-		$m = zad_warranty_months( $id );
-		if ( ! $m ) { return null; }
-		return 0 === $m % 12 ? array( $m / 12, 'ANN' ) : array( $m, 'MON' );
-	}
+	$text = trim( (string) $text );
+	if ( '' === $text ) { $text = zad_warranty_bare( $id ); }
 	return function_exists( 'zad_pk_warranty' ) ? zad_pk_warranty( $text ) : null;
 }
 

@@ -71,7 +71,7 @@ function zad_q30_html( $id, $src = 'hero-a' ) {
 		}
 		$o .= '</div></div>';
 	}
-	$o .= '<a class="btn btn--wa btn--block" data-go href="#" target="_blank" rel="noopener">' . ( $wa ? zad_icon( 'whatsapp', 20 ) . ' أرسل الطلب عبر واتساب' : zad_icon( 'bolt', 20 ) . ' أرسل الطلب' ) . '</a><p class="q30__note">نرد عليك خلال دقائق</p></div>';
+	$o .= '<a class="btn btn--wa btn--block" data-go href="' . esc_url( zad_wa_link( 'مرحباً، أرغب بطلب خدمة: ' . get_the_title( $id ), $id ) ?: '#zad-wizard' ) . '" target="_blank" rel="noopener">' . ( $wa ? zad_icon( 'whatsapp', 20 ) . ' أرسل الطلب عبر واتساب' : zad_icon( 'bolt', 20 ) . ' أرسل الطلب' ) . '</a><p class="q30__note">نرد عليك خلال دقائق</p></div>';
 	return $o . '</div>';
 }
 
@@ -88,7 +88,9 @@ function zad_dx_html( $id, $src = 'hero-b', $page_only = false ) {
 	foreach ( array( array( 'شقة', '🏢' ), array( 'دور في فيلا', '🏠' ), array( 'فيلا كاملة', '🏡' ), array( 'منشأة تجارية', '🏬' ) ) as $z ) { $o .= '<button type="button" class="dx__tile" data-size="' . esc_attr( $z[0] ) . '"><span>' . $z[1] . '</span>' . esc_html( $z[0] ) . '</button>'; }
 	$o .= '</div><button type="button" class="dx__back" data-back>→ رجوع</button></div>';
 	$o .= '<div class="dx__step" data-s="3"><div class="dx__res"><small>الخدمة المقترحة لك</small><h3 data-rsv></h3><div class="dx__price" data-rpr hidden></div><div class="dx__sum" data-rsm></div><a class="btn btn--wa btn--block" data-go href="#" target="_blank" rel="noopener">' . ( $wa ? zad_icon( 'whatsapp', 20 ) . ' أرسل نتيجتي عبر واتساب' : zad_icon( 'bolt', 20 ) . ' أرسل نتيجتي' ) . '</a><a class="dx__more" data-more href="#" hidden>تفاصيل الخدمة ←</a><p class="dx__why">السعر تقريبي ويُؤكَّد بعد المعاينة.</p></div><button type="button" class="dx__back" data-reset>↺ ابدأ من جديد</button></div>';
-	$o .= '</div><script type="application/json" data-dx-json>' . wp_json_encode( $data, JSON_UNESCAPED_UNICODE ) . '</script></div>';
+	$o .= '<details class="dx__guide"><summary>دليل الأعراض والخدمات المقترحة</summary><ul>';
+	foreach ( $data as $row ) { $o .= '<li data-dx-rule data-label="' . esc_attr( $row['label'] ) . '" data-svc="' . esc_attr( $row['svc'] ) . '" data-price="' . esc_attr( $row['price'] ) . '" data-url="' . esc_url( $row['url'] ) . '"><strong>' . esc_html( $row['label'] ) . '</strong>: ' . esc_html( $row['svc'] ) . ( $row['price'] ? ' — ' . esc_html( $row['price'] ) : '' ) . ( $row['url'] ? ' <a href="' . esc_url( $row['url'] ) . '">تفاصيل الخدمة</a>' : '' ) . '</li>'; }
+	$o .= '</ul></details><noscript><style>.dx__step,.dx__bar{display:none!important}.dx__guide{display:block}</style><p>راجع الخدمات المقترحة من الدليل، أو <a href="#zad-wizard">املأ نموذج الحجز</a>.</p></noscript></div></div>';
 	return $o;
 }
 
@@ -103,10 +105,8 @@ function zad_dx_section( $id = 0, $src = 'sec-b', $title = '', $sub = '' ) {
 }
 
 /* ---------------- assets ---------------- */
-add_action( 'wp_enqueue_scripts', function () {
-	if ( ! ( is_front_page() || zad_is_service() ) ) { return; }
-	wp_enqueue_script( 'zad-quick', get_template_directory_uri() . '/assets/js/zad-quick.js', array(), zad_asset_ver( 'assets/js/zad-quick.js' ), true );
-}, 110 );
+// Frontend assets are registered by inc/core/assets.php.
+
 
 /* ---------------- WhatsApp click counter (aggregate only, no personal data) ---------------- */
 function zad_wa_click_handler() {
@@ -133,11 +133,9 @@ add_action( 'wp_ajax_nopriv_zad_wa_click', 'zad_wa_click_handler' );
 /* ---------------- editor fields (service pages) ---------------- */
 function zad_quick_box( $post_id ) {
 	$g = function ( $k ) use ( $post_id ) { return get_post_meta( $post_id, '_zad_' . $k, true ); };
-	$hc = $g( 'hero_card' ); $fin = $g( 'final_req' ); $sec = $g( 'dx_sec' );
+	$hc = $g( 'hero_card' ); $sec = $g( 'dx_sec' );
 	echo '<h4>بطاقة الهيرو وطلب الخدمة</h4><div class="zad-grid">';
-	echo '<p class="description" style="grid-column:1/-1">بطاقة الهيرو موحّدة في كل الموقع: «تذكرة الحجز» (أيقوناتها ثابتة بحسب اسم الباقة، وتختار الخدمة فقط).</p><p><label>قسم الطلب الأخير في آخر الصفحة<select name="zad[final_req]">';
-	foreach ( array( '' => 'نموذج الطلب (الحالي)', 'q30' => 'اطلب في 30 ثانية (أ)' ) as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $fin, $k, false ) . '>' . esc_html( $l ) . '</option>'; }
-	echo '</select></label></p><p><label>قسم «شخّص مشكلتك» بعد التعريف<select name="zad[dx_sec]">';
+	echo '<p class="description" style="grid-column:1/-1">بطاقة الهيرو موحّدة في كل الموقع: «تذكرة الحجز» (أيقوناتها ثابتة بحسب اسم الباقة، وتختار الخدمة فقط).</p><p><label>قسم «شخّص مشكلتك» بعد التعريف<select name="zad[dx_sec]">';
 	foreach ( array( '' => 'يظهر إن وُجدت أعراض', 'off' => 'مخفي في هذه الصفحة' ) as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $sec, $k, false ) . '>' . esc_html( $l ) . '</option>'; }
 	echo '</select></label></p></div>';
 	echo '<p><label>خيارات «الخدمة» في (أ) <small>(سطر لكل خيار، حتى 4؛ فارغ = أنواع الخدمة الفرعية)</small><textarea name="zad[q_svcs]" rows="3" style="width:100%">' . esc_textarea( (string) $g( 'q_svcs' ) ) . '</textarea></label></p>';
@@ -148,8 +146,7 @@ function zad_quick_box( $post_id ) {
 }
 
 function zad_quick_save( $post_id, $in ) {
-	if ( ! array_key_exists( 'final_req', $in ) ) { return; } // (the hero card is one for the whole site now; _zad_hero_card is left as it was)
-	update_post_meta( $post_id, '_zad_final_req', 'q30' === ( $in['final_req'] ?? '' ) ? 'q30' : '' );
+	if ( ! array_key_exists( 'dx_sec', $in ) ) { return; } // (the hero card is one for the whole site now; _zad_hero_card is left as it was)
 	update_post_meta( $post_id, '_zad_dx_sec', 'off' === ( $in['dx_sec'] ?? '' ) ? 'off' : '' );
 	foreach ( array( 'q_svcs', 'q_hoods', 'dx', 'hero_tiles' ) as $k ) { update_post_meta( $post_id, '_zad_' . $k, sanitize_textarea_field( $in[ $k ] ?? '' ) ); }
 }

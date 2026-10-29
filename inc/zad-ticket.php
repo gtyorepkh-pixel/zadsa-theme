@@ -191,7 +191,5 @@ function zad_ticket_render( $tiles, $x ) {
 	return $o;
 }
 
-add_action( 'wp_enqueue_scripts', function () {
-	if ( ! zad_is_service() ) { return; }
-	wp_enqueue_script( 'zad-ticket', get_template_directory_uri() . '/assets/js/zad-ticket.js', array(), zad_asset_ver( 'assets/js/zad-ticket.js' ), true );
-}, 110 );
+// Frontend assets are registered by inc/core/assets.php.
+

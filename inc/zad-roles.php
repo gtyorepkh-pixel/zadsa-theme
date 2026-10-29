@@ -97,10 +97,10 @@ function zad_is_faq_archive() {
 
 /** URL of "all services": native archive, a hub page, or the first service type archive. */
 function zad_services_url() {
-	if ( post_type_exists( 'zad_service' ) && ! zad_existing_types( 'service' ) ) {
-		return get_post_type_archive_link( 'zad_service' );
+	if ( post_type_exists( 'zad_service' ) && get_post_type_archive_link( 'zad_service' ) ) {
+		return get_post_type_archive_link( 'zad_service' ); // /services/: every service of the site
 	}
-	$q = get_posts( array( 'post_type' => 'page', 'numberposts' => 1, 'meta_key' => '_wp_page_template', 'meta_value' => 'temp/memo-services.php', 'fields' => 'ids' ) );
+	$q = get_posts( array( 'post_type' => 'page', 'numberposts' => 1, 'meta_query' => array( array( 'key' => '_wp_page_template', 'value' => zad_tpl_names( 'temp/zad-services.php' ), 'compare' => 'IN' ) ), 'fields' => 'ids' ) );
 	if ( $q ) {
 		return get_permalink( $q[0] );
 	}
@@ -213,84 +213,6 @@ add_filter( 'get_post_metadata', function ( $v, $id, $key, $single ) {
 /* Admin: "Adopt existing content"                                     */
 /* ------------------------------------------------------------------ */
 
-add_action( 'admin_menu', function () {
-	add_management_page( 'تبنّي المحتوى الحالي', 'تبنّي المحتوى الحالي', 'manage_options', 'zad-adopt', 'zad_adopt_page' );
-} );
-
-function zad_adopt_page() {
-	echo '<div class="wrap"><h1>تبنّي المحتوى الحالي</h1>';
-	if ( isset( $_POST['zad_adopt_go'] ) && check_admin_referer( 'zad_adopt' ) && current_user_can( 'manage_options' ) ) {
-		$res = zad_adopt_run( isset( $_POST['zad_cities'] ) ? sanitize_textarea_field( wp_unslash( $_POST['zad_cities'] ) ) : '' );
-		flush_rewrite_rules( false );
-		echo '<div class="notice notice-success"><p>تم: تصنيف ' . (int) $res['cats'] . ' خدمة بحسب نوعها، وربط ' . (int) $res['areas'] . ' خدمة بالمدن. الروابط لم تتغير.</p></div>';
-	}
-	$rows = array( 'service' => 'خدمات (تصميم الخدمة)', 'faq' => 'أسئلة (تصميم السؤال)', 'article' => 'مقالات (تصميم المقال)' );
-	$mu = defined( 'WPMU_PLUGIN_DIR' ) ? WPMU_PLUGIN_DIR : WP_CONTENT_DIR . '/mu-plugins';
-	$muf = array_filter( array( 'zad-schema.php', 'zad-cleanup.php', 'zad-core-cpt.php' ), function ( $f ) use ( $mu ) { return file_exists( $mu . '/' . $f ); } );
-	if ( $muf ) {
-		echo '<div class="notice notice-info inline"><p><strong>ملفات mu-plugins مكتشفة:</strong> <code>' . esc_html( implode( '، ', $muf ) ) . '</code>. سكيما الثيم: <strong>' . ( 'theme' === zad_schema_owner() ? 'مفعّلة' : 'متنحّية للإضافة القديمة (لا تكرار)' ) . '</strong>. للتحكم: إعدادات القالب ← الهوية والألوان ← «سكيما وSEO الثيم».</p></div>';
-	}
-	global $zad_legacy_registered;
-	if ( ! empty( $zad_legacy_registered ) ) {
-		echo '<div class="notice notice-warning inline"><p><strong>شبكة الأمان فعّالة:</strong> سجّل القالب تلقائياً هذه الأنواع لأنها غير مسجّلة من أي مصدر آخر: <code>' . esc_html( implode( '، ', $zad_legacy_registered ) ) . '</code>. هذا يعني أن الثيم القديم أو كوداً قديماً كان يسجّلها. حافظ على نسخة احتياطية قبل أي تعديل آخر.</p></div>';
-	}
-	$orph = function_exists( 'zad_db_orphan_types' ) ? zad_db_orphan_types() : array();
-	if ( $orph ) {
-		echo '<div class="notice notice-info inline"><p>أنواع موجودة في قاعدة البيانات وغير مسجّلة (لم تُطابق أي رابط مضبوط): <code>' . esc_html( implode( '، ', $orph ) ) . '</code>. إن كانت من أنواعك، أضف روابطها في إعدادات القالب ← الهوية والألوان.</p></div>';
-	}
-	echo '<p>القالب يطبّق التصميم الجديد على الأنواع الموجودة في موقعك <strong>دون تغيير أي رابط</strong>. يتم الربط بحسب رابط كل نوع، وتعدّله من إعدادات القالب ← الهوية والألوان.</p>';
-	echo '<table class="widefat striped" style="max-width:820px"><thead><tr><th>الدور</th><th>الأنواع المكتشفة</th><th>الروابط</th><th>عدد المنشورات</th></tr></thead><tbody>';
-	foreach ( $rows as $role => $label ) {
-		$types = 'article' === $role ? zad_existing_types( 'article' ) : zad_existing_types( $role );
-		if ( ! $types ) {
-			echo '<tr><td>' . esc_html( $label ) . '</td><td colspan="3">— لا يوجد نوع قائم (سيُستخدم نوع القالب الخاص به إن لزم)</td></tr>';
-			continue;
-		}
-		foreach ( $types as $k => $name ) {
-			$cnt = wp_count_posts( $k );
-			$link = get_post_type_archive_link( $k );
-			echo '<tr><td>' . esc_html( $label ) . '</td><td>' . esc_html( $name ) . ' <code>' . esc_html( $k ) . '</code></td><td>' . ( $link ? '<a href="' . esc_url( $link ) . '" target="_blank">' . esc_html( $link ) . '</a>' : '—' ) . '</td><td>' . (int) ( $cnt->publish ?? 0 ) . '</td></tr>';
-		}
-	}
-	echo '</tbody></table>';
-	$ar = zad_area_page_ids();
-	echo '<h2>صفحات الأحياء المكتشفة (تُستثنى من القوائم)</h2>';
-	if ( $ar ) {
-		echo '<p>' . count( $ar ) . ' صفحة. أول عشر صفحات للتأكد:</p><ul style="list-style:disc;padding-inline-start:20px">';
-		foreach ( array_slice( $ar, 0, 10 ) as $i ) { echo '<li><a href="' . esc_url( get_edit_post_link( $i ) ) . '">' . esc_html( get_the_title( $i ) ) . '</a> <code>' . esc_html( urldecode( get_post_field( 'post_name', $i ) ) ) . '</code></li>'; }
-		echo '</ul>';
-	} else {
-		echo '<p>لم تُكتشف صفحات أحياء. إن كانت لديك، عدّل «كلمات تدل على صفحات الأحياء» في إعدادات القالب، أو حدّد الصفحة يدوياً من شاشة تحريرها (صندوق «نوع الصفحة»).</p>';
-	}
-	echo '<form method="post" style="margin-top:20px">';
-	wp_nonce_field( 'zad_adopt' );
-	echo '<h2>الخطوة التالية</h2><p>يضيف تصنيف «القسم» لكل خدمة (باسم نوعها: مكافحة، تنظيف، نقل…)، ويربط الخدمات التي بلا مدن بالمدن التالية لتظهر صفحات «خدمة + مدينة» والمناطق. لا يحذف شيئاً ولا يغيّر الروابط.</p>';
-	echo '<p><label><strong>المدن (مدينة في كل سطر)</strong><br><textarea name="zad_cities" rows="4" cols="40" placeholder="الرياض&#10;جدة"></textarea></label></p>';
-	echo '<p><button class="button button-primary" name="zad_adopt_go" value="1">تنفيذ</button></p></form></div>';
-}
-
-function zad_adopt_run( $cities_text ) {
-	$res = array( 'cats' => 0, 'areas' => 0 );
-	$city_ids = array();
-	foreach ( zad_lines( $cities_text ) as $c ) {
-		$t = term_exists( $c, 'service_area' );
-		if ( ! $t ) { $t = wp_insert_term( $c, 'service_area' ); }
-		if ( ! is_wp_error( $t ) ) { $city_ids[] = (int) ( is_array( $t ) ? $t['term_id'] : $t ); }
-	}
-	$ids = get_posts( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids' ) );
-	foreach ( $ids as $id ) {
-		if ( ! has_term( '', 'service_cat', $id ) ) {
-			zad_type_category( $id );
-			$res['cats']++;
-		}
-		if ( $city_ids && ! has_term( '', 'service_area', $id ) ) {
-			wp_set_object_terms( $id, $city_ids, 'service_area' );
-			$res['areas']++;
-		}
-	}
-	return $res;
-}
-
 /* ------------------------------------------------------------------ */
 /* Main services vs neighbourhood (district) pages                      */
 /* ------------------------------------------------------------------ */
@@ -373,6 +295,7 @@ add_action( 'pre_get_posts', function ( $q ) {
 
 /* Page kind meta box (service types) */
 add_action( 'add_meta_boxes', function () {
+	if ( ! zad_can_admin_fields() ) { return; }
 	add_meta_box( 'zad_page_kind', 'نوع الصفحة (رئيسية / حي)', function ( $post ) {
 		wp_nonce_field( 'zad_page_kind', 'zad_pk_nonce' );
 		$v = get_post_meta( $post->ID, '_zad_page_kind', true );
@@ -380,7 +303,7 @@ add_action( 'add_meta_boxes', function () {
 	}, zad_service_types(), 'side', 'default' );
 } );
 add_action( 'save_post', function ( $id ) {
-	if ( ! isset( $_POST['zad_pk_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['zad_pk_nonce'] ) ), 'zad_page_kind' ) || ! current_user_can( 'edit_post', $id ) ) {
+	if ( ! zad_can_admin_fields() || ! isset( $_POST['zad_pk_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['zad_pk_nonce'] ) ), 'zad_page_kind' ) || ! current_user_can( 'edit_post', $id ) ) {
 		return;
 	}
 	$v = isset( $_POST['zad_page_kind'] ) ? sanitize_key( wp_unslash( $_POST['zad_page_kind'] ) ) : '';

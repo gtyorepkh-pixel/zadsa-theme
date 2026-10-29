@@ -2,24 +2,22 @@
 /**
  * Structured data (JSON-LD): ONE printer (the wp_head callback below) builds one @graph per request:
  *  Organization, WebSite(+SearchAction), LocalBusiness + the page's own nodes (Service / AboutPage / ContactPage / CollectionPage+ItemList /
- *  Article / ProfilePage…) + BreadcrumbList. Node builders: inc/zad-sc.php and inc/zad-schema-extra.php.
- *  FAQPage (service pages, home, question pages) stays a separate script.
+ *  Article / ProfilePage…) + BreadcrumbList + FAQPage. Node builders: inc/zad-sc.php and inc/zad-schema-extra.php.
  */
 
 function zad_current_url() {
-	if ( is_singular() ) {
-		return get_permalink();
-	}
-	if ( is_tax() || is_category() || is_tag() ) {
-		return get_term_link( get_queried_object() );
-	}
-	if ( is_post_type_archive() ) {
-		return get_post_type_archive_link( zad_query_pt() );
-	}
-	if ( is_author() ) {
-		return get_author_posts_url( get_queried_object_id() );
-	}
-	return home_url( '/' );
+ if ( is_singular() ) { return get_permalink(); }
+ if ( is_tax() || is_category() || is_tag() ) { $url = get_term_link( get_queried_object() ); }
+ elseif ( is_post_type_archive() ) { $url = get_post_type_archive_link( zad_query_pt() ); }
+ elseif ( is_author() ) { $url = get_author_posts_url( get_queried_object_id() ); }
+ elseif ( is_home() && get_option( 'page_for_posts' ) ) { $url = get_permalink( (int) get_option( 'page_for_posts' ) ); }
+ elseif ( is_day() ) { $url = get_day_link( (int) get_query_var( 'year' ), (int) get_query_var( 'monthnum' ), (int) get_query_var( 'day' ) ); }
+ elseif ( is_month() ) { $url = get_month_link( (int) get_query_var( 'year' ), (int) get_query_var( 'monthnum' ) ); }
+ elseif ( is_year() ) { $url = get_year_link( (int) get_query_var( 'year' ) ); }
+ else { $url = home_url( '/' ); }
+ if ( is_wp_error( $url ) || ! $url ) { return ''; }
+ $paged = max( 1, (int) get_query_var( 'paged' ) );
+ return $paged > 1 ? ( get_option( 'permalink_structure' ) ? trailingslashit( $url ) . 'page/' . $paged . '/' : add_query_arg( 'paged', $paged, $url ) ) : $url;
 }
 
 /** Breadcrumb trail for the current request: [ [label, url|''], ... ]. */
@@ -87,7 +85,7 @@ function zad_current_crumbs_base() {
 
 /** URL of the first page using a template (e.g. contact), or of a page by slug. */
 function zad_page_url( $template, $slugs = array() ) {
-	$q = get_posts( array( 'post_type' => 'page', 'numberposts' => 1, 'meta_key' => '_wp_page_template', 'meta_value' => $template, 'fields' => 'ids' ) );
+	$q = get_posts( array( 'post_type' => 'page', 'numberposts' => 1, 'meta_query' => array( array( 'key' => '_wp_page_template', 'value' => zad_tpl_names( $template ), 'compare' => 'IN' ) ), 'fields' => 'ids' ) );
 	if ( $q ) {
 		return get_permalink( $q[0] );
 	}
@@ -115,18 +113,34 @@ add_action( 'wp_head', function () {
 
 	if ( is_front_page() ) {
 		$nodes = array_merge( $site, zsc_home_nodes() );
+		$faq   = array_filter( (array) zad_opt( 'zad_faq', array() ), function ( $f ) { return ! empty( $f['q'] ); } );
+		if ( $faq ) {
+			$ents = array();
+			foreach ( $faq as $f ) {
+				$ents[] = array( '@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => $f['a'] ?? '' ) );
+			}
+			$nodes[] = array( '@type' => 'FAQPage', '@id' => home_url( '/#faq' ), 'isPartOf' => array( '@id' => home_url( '/#webpage' ) ), 'mainEntity' => $ents );
+		}
 		zad_print_graph( $nodes );
-	} elseif ( function_exists( 'zad_hub_ctx' ) && zad_hub_ctx() ) { // section page (hub): CollectionPage + ItemList of the cards + breadcrumb. No Service / Offer / FAQPage / AggregateRating.
+	} elseif ( function_exists( 'zad_hub_ctx' ) && zad_hub_ctx() ) {
 		list( $hub_url, $hub_nodes ) = zad_hub_schema_nodes();
 		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), $hub_nodes ), $hub_url ) );
 	} elseif ( $id && in_array( $ptype, zad_service_types(), true ) && 'none' !== zsc_meta( $id, 'mode' ) ) {
 		$nodes = zsc_service_nodes( $id );
-		$kids  = zsc_hub_children( $id ); // a hub page (pillar / city with published children): CollectionPage whose list is the children; the Service node stays (about)
+		$kids  = zsc_hub_children( $id );
 		$list  = zsc_itemlist_node( get_permalink( $id ), get_the_title( $id ), $kids, 'service' );
 		if ( $list ) {
 			$nodes[0]['@type']      = 'CollectionPage';
 			$nodes[0]['mainEntity'] = array( '@id' => $list['@id'] );
 			$nodes[]                = $list;
+		}
+		$faq_rows = array_filter( (array) get_post_meta( $id, '_zad_faq', true ), function ( $f ) { return ! empty( $f['q'] ); } );
+		if ( $faq_rows && ! ( function_exists( 'zad_hood_active' ) && zad_hood_active( $id ) ) ) {
+			$ents = array();
+			foreach ( $faq_rows as $f ) {
+				$ents[] = array( '@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => $f['a'] ) );
+			}
+			$nodes[] = array( '@type' => 'FAQPage', '@id' => get_permalink( $id ) . '#faq', 'isPartOf' => array( '@id' => get_permalink( $id ) . '#webpage' ), 'mainEntity' => $ents );
 		}
 		zad_print_graph( zsc_with_breadcrumb( array_merge( $site, $nodes ), get_permalink( $id ) ) );
 	} elseif ( is_author() ) {
@@ -138,7 +152,7 @@ add_action( 'wp_head', function () {
 		$nodes = array_merge( array_slice( $site, 0, 2 ), array( $page ) );
 		if ( $person ) { $nodes[] = $person; }
 		zad_print_graph( zsc_with_breadcrumb( $nodes, $aurl ) );
-	} elseif ( $id && 'zad_work' === $ptype ) { // «أعمالنا»: WebPage + ImageObject + VideoObject (+ Clip parts) + FAQPage + breadcrumb
+	} elseif ( $id && 'zad_work' === $ptype ) {
 		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), zsc_work_nodes( $id ) ), get_permalink( $id ) ) );
 	} elseif ( $id && zsc_is_article_page( $id ) ) {
 		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), zsc_article_nodes( $id ) ), get_permalink( $id ) ) );
@@ -147,9 +161,9 @@ add_action( 'wp_head', function () {
 		$role = zad_page_role( $id );
 		$name = wp_strip_all_tags( get_the_title( $id ) );
 		$nodes = array_slice( $site, 0, 2 );
-		if ( 'about' === $role ) { // mainEntity: the organization
+		if ( 'about' === $role ) {
 			$wp = zsc_page_node( 'AboutPage', $u, $name, $id ); $wp['mainEntity'] = array( '@id' => home_url( '/#organization' ) ); $nodes = array_merge( $nodes, array( $wp ) );
-		} elseif ( 'contact' === $role ) { // mainEntity: the business (its node is in the graph, so the @id resolves)
+		} elseif ( 'contact' === $role ) {
 			$wp = zsc_page_node( 'ContactPage', $u, $name, $id ); $wp['mainEntity'] = array( '@id' => home_url( '/#localbusiness' ) ); $nodes = array_merge( $site, array( $wp ) );
 		} elseif ( 'services' === $role ) {
 			$wp   = zsc_page_node( 'CollectionPage', $u, $name, $id );
@@ -165,33 +179,11 @@ add_action( 'wp_head', function () {
 		} else {
 			$nodes = array_merge( $nodes, array( zsc_page_node( 'WebPage', $u, $name, $id ) ) );
 		}
-		$nodes = apply_filters( 'zad_schema_page_nodes', $nodes, $id, $role ); // extra nodes of this page (the zad-tools plugin adds WebApplication + FAQPage here)
+		$nodes = apply_filters( 'zad_schema_page_nodes', $nodes, $id, $role );
 		zad_print_graph( zsc_with_breadcrumb( $nodes, $u ) );
 	} elseif ( $arch = zsc_archive_nodes() ) {
 		zad_print_graph( zsc_with_breadcrumb( array_merge( array_slice( $site, 0, 2 ), $arch ), $arch[0]['url'] ) );
 	} else {
 		zad_print_graph( zsc_with_breadcrumb( array_slice( $site, 0, 2 ), zad_current_url() ) );
-	}
-
-	if ( zad_is_service() && ! ( function_exists( 'zad_hub_ctx' ) && zad_hub_ctx() ) && ! ( function_exists( 'zad_hood_active' ) && zad_hood_active( get_queried_object_id() ) ) ) {
-		$id = get_queried_object_id();
-		$faq = array_filter( (array) get_post_meta( $id, '_zad_faq', true ), function ( $f ) { return ! empty( $f['q'] ); } );
-		if ( $faq ) {
-			$ents = array();
-			foreach ( $faq as $f ) {
-				$ents[] = array( '@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => $f['a'] ) );
-			}
-			zad_print_schema( array( '@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $ents ) );
-		}
-	}
-	if ( is_front_page() ) {
-		$faq = array_filter( (array) zad_opt( 'zad_faq', array() ), function ( $f ) { return ! empty( $f['q'] ); } );
-		if ( $faq ) {
-			$ents = array();
-			foreach ( $faq as $f ) {
-				$ents[] = array( '@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => $f['a'] ?? '' ) );
-			}
-			zad_print_schema( array( '@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $ents ) );
-		}
 	}
 }, 20 );

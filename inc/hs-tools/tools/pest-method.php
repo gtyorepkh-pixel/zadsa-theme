@@ -32,7 +32,7 @@ add_shortcode( 'hs_pest_method', function () {
 	$h .= $opts( 'sens', 'هل يوجد شخص حساس من الروائح أو مريض ربو؟', array( 'yes' => 'نعم', 'no' => 'لا' ) );
 	$h .= $opts( 'sev', 'ما حجم المشكلة؟', array( '1' => 'أرى حشرة أحياناً', '2' => 'أراها يومياً', '3' => 'أراها في النهار وبأعداد كبيرة' ) );
 	$h .= '<button type="button" class="hs-btn hs-btn--main" data-go disabled>اعرض الطريقة الأنسب</button></div></div>';
-	$h .= '<div class="hs-result" aria-live="polite"></div>';
+	$h .= '<div class="hs-result" aria-live="polite"><details><summary>تفاصيل طرق المكافحة</summary>' . hs_pest_html_guide() . '</details></div>' . hs_pest_fallback_form();
 	$h .= hs_lead_form( 'اطلب هذه الطريقة', 'أرسل الطلب عبر واتساب' );
 	$h .= '<p class="hs-fine">الأسعار تقديرية — السعر النهائي بعد المعاينة. المعلومات إرشادية ولا تغني عن معاينة فني مرخّص.</p>';
 	return hs_wrap( 'pest-method', 'أي طريقة مكافحة تناسبك؟', $h, array( 'pests' => $d['pests'], 'methods' => $d['methods'], 'matrix' => $d['matrix'], 'tips' => $d['tips'], 'prices' => $prices ) );

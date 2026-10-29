@@ -2,15 +2,15 @@
 /** Diagnostics: build id, home sections status, one-click home seed (fills only EMPTY options). */
 
 function zad_build_id() {
-	$head = MEMO_THEME_DIR . '.git/HEAD';
+	$head = ZAD_THEME_DIR . '.git/HEAD';
 	if ( is_readable( $head ) ) {
 		$h = trim( (string) file_get_contents( $head ) );
 		if ( 0 === strpos( $h, 'ref:' ) ) {
-			$ref = MEMO_THEME_DIR . '.git/' . trim( substr( $h, 4 ) );
+			$ref = ZAD_THEME_DIR . '.git/' . trim( substr( $h, 4 ) );
 			if ( is_readable( $ref ) ) {
 				return substr( trim( (string) file_get_contents( $ref ) ), 0, 7 );
 			}
-			$packed = MEMO_THEME_DIR . '.git/packed-refs';
+			$packed = ZAD_THEME_DIR . '.git/packed-refs';
 			if ( is_readable( $packed ) && preg_match( '/^([0-9a-f]{40}) ' . preg_quote( trim( substr( $h, 4 ) ), '/' ) . '$/m', (string) file_get_contents( $packed ), $m ) ) {
 				return substr( $m[1], 0, 7 );
 			}
@@ -34,13 +34,6 @@ add_action( 'admin_menu', function () {
 
 function zad_home_status_page() {
 	echo '<div class="wrap"><h1>حالة الصفحة الرئيسية</h1>';
-	if ( isset( $_POST['zad_home_seed'] ) && check_admin_referer( 'zad_home' ) && current_user_can( 'manage_options' ) ) {
-		if ( function_exists( 'zad_demo_options' ) ) {
-			zad_demo_options();
-		}
-		delete_transient( 'zad_area_ids' );
-		echo '<div class="notice notice-success"><p>تمت تهيئة الإعدادات الفارغة فقط. لم يُستبدل أي شيء كتبتَه، ولم يُنشأ أي محتوى.</p></div>';
-	}
 	$theme = wp_get_theme();
 	echo '<p><strong>الثيم المُفعَّل:</strong> ' . esc_html( $theme->get( 'Name' ) ) . ' — <strong>نسخة الكود (commit):</strong> <code>' . esc_html( zad_build_id() ) . '</code>';
 	echo ' — <strong>الرئيسية:</strong> ' . ( 'page' === get_option( 'show_on_front' ) ? 'صفحة ثابتة' : 'آخر المقالات' ) . ' (القالب front-page.php يُطبَّق في الحالتين)</p>';
@@ -73,8 +66,5 @@ function zad_home_status_page() {
 		echo '<tr><td>' . esc_html( $r[0] ) . '</td><td>' . ( $r[1] ? '<span style="color:#12683a">✔ يظهر</span>' : '<span style="color:#a12622">✖ مخفي (لا بيانات)</span>' ) . '</td><td>' . esc_html( $r[2] ) . '</td></tr>';
 	}
 	echo '</tbody></table>';
-	echo '<form method="post" style="margin-top:18px">';
-	wp_nonce_field( 'zad_home' );
-	echo '<p>الزر التالي يملأ <strong>الإعدادات الفارغة فقط</strong> بقيم افتراضية قابلة للتعديل (أرقام ونصوص تجريبية)، ولا ينشئ خدمات أو صفحات.</p>';
-	echo '<p><button class="button button-primary" name="zad_home_seed" value="1">تهيئة الرئيسية بقيم افتراضية</button></p></form></div>';
+	echo '</div>';
 }

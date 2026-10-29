@@ -21,7 +21,7 @@ get_template_part( 'template-parts/page-hero', null, array( 'title' => $term ? $
 	</div>
 	<?php if ( have_posts() ) : ?>
 		<div class="faqlinks faqlinks--grid"><?php while ( have_posts() ) { the_post(); echo '<a href="' . esc_url( get_permalink() ) . '"><span>' . esc_html( get_the_title() ) . '</span>' . zad_icon( 'arrow', 18 ) . '</a>'; } // phpcs:ignore ?></div>
-		<?php echo memo_pagination(); // phpcs:ignore ?>
+		<?php echo zad_pagination(); // phpcs:ignore ?>
 	<?php else : ?><p class="empty">لا توجد أسئلة مطابقة.</p><?php endif; ?>
 </div></main>
 <section class="sec sec--tint" id="quote"><div class="wrap wrap--narrow"><?php echo zad_quote_form( array( 'id' => 'fa', 'title' => 'لم تجد إجابتك؟ اسألنا' ) ); // phpcs:ignore ?></div></section>

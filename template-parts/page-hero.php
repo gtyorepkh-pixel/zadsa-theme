@@ -1,6 +1,6 @@
 <?php defined( 'ABSPATH' ) || exit;
 /** args: title, sub, crumbs (array) */
-$title = $args['title'] ?? get_the_title();
+$title = $args['title'] ?? ( is_singular() ? zad_h1_title( get_queried_object_id() ) : get_the_title() );
 ?>
 <section class="phero">
 	<div class="wrap">

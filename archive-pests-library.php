@@ -9,7 +9,7 @@ get_template_part( 'template-parts/page-hero', null, array(
 <main id="main" class="sec">
 	<div class="wrap">
 		<div class="sgrid"><?php while ( have_posts() ) { the_post(); get_template_part( 'template-parts/post-card' ); } ?></div>
-		<?php echo memo_pagination(); // phpcs:ignore ?>
+		<?php echo zad_pagination(); // phpcs:ignore ?>
 	</div>
 </main>
 <?php get_footer(); ?>

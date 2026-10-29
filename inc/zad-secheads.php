@@ -18,28 +18,23 @@ function zad_brand_short() {
 function zad_sec_defaults() {
 	$brand = zad_brand_short();
 	return array(
-		'why'       => array( 'لماذا نحن',          'لماذا نحن',        'ما الذي يجعل خدمة {svc} تدوم؟', '' ),
 		'subs'      => array( 'أنواع الخدمة',       'خدماتنا',          'أساليب {svc} التي نستخدمها', '' ),
 		'steps'     => array( 'خطوات التنفيذ',      'خطوة بخطوة',       'كيف تتم زيارة {svc} خطوة بخطوة', '' ),
 		'factors'   => array( 'عوامل السعر',        'تسعير شفاف',       'ما الذي يحدد سعر {svc}؟', '' ),
-		'spec'      => array( 'البطاقة الفنية',     'نظرة سريعة',       'المواد والمدة والضمان باختصار', '' ),
 		'signs'     => array( 'العلامات',           'علامات الإصابة',   'علامات تخبرك أنك تحتاج {svc}', 'إذا لاحظت أياً منها، تواصل معنا لفحص مجاني.' ),
 		'harms'     => array( 'الأضرار',            'الأضرار المحتملة', 'ماذا يحدث إذا أجّلت {svc}؟', '' ),
-		'safety'    => array( 'الأمان',             'الأمان أولاً',     'كيف نحمي أسرتك أثناء {svc}؟', '' ),
-		'warranty'  => array( 'الضمان',             'الضمان',           $brand ? 'ماذا يشمل ضمان {brand} على {svc}؟' : 'ماذا يشمل ضماننا على {svc}؟', '' ),
 		'gallery'   => array( 'معرض الصور',         'من أعمالنا',       'صور من زيارات {svc}', '' ),
 		'faq'       => array( 'الأسئلة الشائعة',    'الأسئلة الشائعة',  'أسئلة يطرحها عملاؤنا عن {svc}', '' ),
 		'related'   => array( 'خدمات مكملة',         'خدمات مكملة',      'خدمات مكملة قد تحتاجها', '' ),
-		'final_cta' => array( 'الطلب الأخير',       'اطلب الآن',        'احجز معاينة مجانية {l_svc} اليوم', '' ),
 	);
 }
 
-/** Short name of the service for {svc}: Yoast breadcrumb title, else the page's own short name, else the title without «شركة» and numbers. */
+/** Short name of the service for {svc}: breadcrumb label, else the page's own short name, else the title without «شركة» and numbers. */
 function zad_svc_label( $id ) {
 	static $memo = array();
 	if ( isset( $memo[ $id ] ) ) { return $memo[ $id ]; }
 	$t = '';
-	foreach ( array( '_yoast_wpseo_bctitle', '_zad_breadcrumb_label', '_zad_base_name' ) as $k ) {
+	foreach ( array( '_zad_breadcrumb_label', '_zad_base_name' ) as $k ) {
 		$v = trim( wp_strip_all_tags( (string) get_post_meta( $id, $k, true ) ) );
 		if ( '' !== $v ) { $t = zad_strip_phones( $v ); break; }
 	}
@@ -86,7 +81,7 @@ function zad_sec_head( $id, $key, $icon = '' ) {
 function zad_sec_box( $post_id ) {
 	$own = (array) get_post_meta( $post_id, '_zad_sec', true );
 	echo '<details class="zad-secbox" style="margin:16px 0"><summary style="cursor:pointer;font-weight:700">عناوين الأقسام <small>(اختياري — فارغ = العنوان الافتراضي، وفيه {svc} = اسم الخدمة المختصر)</small></summary>';
-	echo '<p class="description">الاسم المختصر: عنوان مسار التنقل في Yoast إن وُجد، وإلا اسم الخدمة بلا «شركة» وبلا أرقام: <b>' . esc_html( zad_svc_label( $post_id ) ) . '</b></p>';
+	echo '<p class="description">الاسم المختصر: تسمية مسار التنقل إن وُجدت، وإلا اسم الخدمة بلا «شركة» وبلا أرقام: <b>' . esc_html( zad_svc_label( $post_id ) ) . '</b></p>';
 	echo '<table class="widefat striped"><thead><tr><th>القسم</th><th>الوسم الصغير</th><th>العنوان</th><th>السطر تحت العنوان</th></tr></thead><tbody>';
 	foreach ( zad_sec_defaults() as $k => $d ) {
 		$v = isset( $own[ $k ] ) && is_array( $own[ $k ] ) ? $own[ $k ] : array();

@@ -50,7 +50,7 @@ function zad_audit_scan() {
 
 	$map = array(); $info = array();
 	foreach ( $posts as $p ) {
-		if ( get_post_meta( $p->ID, '_zad_seo_noindex', true ) || '1' === (string) get_post_meta( $p->ID, '_yoast_wpseo_meta-robots-noindex', true ) ) { continue; }
+		if ( zad_seo_meta( $p->ID, 'noindex' ) ) { continue; }
 		$map[ zad_audit_path( get_permalink( $p ) ) ] = $p->ID;
 		$info[ $p->ID ] = $p;
 	}
@@ -83,11 +83,11 @@ function zad_audit_scan() {
 	$rows = array();
 	foreach ( $info as $id => $p ) {
 		$t = trim( (string) get_post_meta( $id, '_zad_seo_title', true ) );
-		if ( '' === $t ) { $t = trim( (string) get_post_meta( $id, '_yoast_wpseo_title', true ) ); }
+		if ( '' === $t ) { $t = trim( (string) zad_seo_meta( $id, 'title' ) ); }
 		if ( '' === $t || false !== strpos( $t, '%%' ) ) { $t = get_the_title( $p ); }
 		$d = trim( (string) get_post_meta( $id, '_zad_seo_desc', true ) );
 		if ( '' === $d ) { $d = trim( (string) get_post_meta( $id, '_zad_seo_description', true ) ); }
-		if ( '' === $d ) { $d = trim( (string) get_post_meta( $id, '_yoast_wpseo_metadesc', true ) ); }
+		if ( '' === $d ) { $d = trim( (string) zad_seo_meta( $id, 'desc' ) ); }
 		if ( false !== strpos( $d, '%%' ) ) { $d = ''; }
 		$titles[ mb_strtolower( $t ) ][] = $id;
 		if ( '' !== $d ) { $descs[ mb_strtolower( $d ) ][] = $id; }
@@ -150,19 +150,4 @@ function zad_audit_page() {
 	echo '<p class="description">ملاحظات: «يتيمة» تعني أن لا صفحة منشورة ولا قائمة تربط إليها (الصفحة الفرعية تُحسب مرتبطة بأمها). «محتوى قليل» يحسب النص وحقول الخدمة/الحي معاً. الروابط التي يولّدها القالب تلقائياً (البطاقات والأحياء المجاورة) غير محسوبة في «الصادرة».</p></div>';
 }
 
-/* ------------------------------------------------------------------ */
-/* Optional noindex for low-value archives (all OFF by default)         */
-/* ------------------------------------------------------------------ */
-add_filter( 'wp_robots', function ( $r ) {
-	$hit = ( zad_opt( 'zad_noindex_tag', false ) && is_tag() )
-		|| ( zad_opt( 'zad_noindex_cat', false ) && is_category() )
-		|| ( zad_opt( 'zad_noindex_author', false ) && is_author() )
-		|| ( zad_opt( 'zad_noindex_date', false ) && is_date() )
-		|| ( zad_opt( 'zad_noindex_paged', false ) && is_paged() && ( is_archive() || is_home() ) );
-	if ( $hit ) {
-		$r['noindex'] = true;
-		$r['follow']  = true;
-		unset( $r['index'], $r['max-image-preview'], $r['max-snippet'], $r['max-video-preview'] );
-	}
-	return $r;
-}, 30 );
+// Public archive indexing rules live in inc/seo/policy.php, independent of admin audit tools.

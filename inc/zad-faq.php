@@ -88,17 +88,32 @@ function zad_faq_words( $t ) {
 /** Published/draft posts of the given types as [id => title] (a currently selected one is always kept). */
 function zad_faq_pick_list( $types, $selected = 0 ) {
 	$out = array();
-	foreach ( get_posts( array( 'post_type' => $types, 'post_status' => array( 'publish', 'draft', 'pending', 'future' ), 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC', 'suppress_filters' => true ) ) as $p ) {
-		$out[ $p->ID ] = $p->post_title . ( 'publish' === $p->post_status ? '' : ' (' . ( 'draft' === $p->post_status ? 'مسودة' : 'غير منشور' ) . ')' );
+	foreach ( get_posts( array( 'post_type' => $types, 'post_status' => 'publish', 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC', 'suppress_filters' => true ) ) as $p ) { // 3.46.9: published only
+		$out[ $p->ID ] = $p->post_title;
 	}
-	if ( $selected && ! isset( $out[ $selected ] ) && get_post( $selected ) ) { $out[ $selected ] = get_the_title( $selected ); }
+	// a link chosen before that is no longer published stays visible (marked) so saving the question does not drop it silently
+	if ( $selected && ! isset( $out[ $selected ] ) && get_post( $selected ) ) { $out[ $selected ] = get_the_title( $selected ) . ' (غير منشور — لن يظهر)'; }
+	return $out;
+}
+
+/** 3.46.9: the services of «كل الخدمات» (/services/) too — the service pages that are still old articles (post) until they are converted. */
+function zad_faq_service_pick_list( $selected = 0 ) {
+	$out = zad_faq_pick_list( zad_service_types(), $selected );
+	if ( function_exists( 'zad_catalog' ) ) {
+		foreach ( (array) zad_catalog() as $f ) {
+			$ids = array_column( (array) ( $f['items'] ?? array() ), 'id' );
+			foreach ( (array) ( $f['hoods'] ?? array() ) as $hs ) { foreach ( (array) $hs as $h ) { if ( ! empty( $h[2] ) ) { $ids[] = $h[2]; } } }
+			foreach ( $ids as $id ) { $id = (int) $id; if ( $id && ! isset( $out[ $id ] ) && 'publish' === get_post_status( $id ) ) { $out[ $id ] = get_the_title( $id ); } }
+		}
+	}
+	asort( $out, SORT_STRING );
 	return $out;
 }
 
 /** The service page a question card points to: its own link, else the first published service of «ربط السؤال بالخدمات». */
 function zad_faq_service_for( $id ) {
 	$sid = (int) get_post_meta( $id, '_zad_faq_service_link', true );
-	if ( $sid && 'publish' === get_post_status( $sid ) && in_array( get_post_type( $sid ), zad_service_types(), true ) ) { return $sid; }
+	if ( $sid && 'publish' === get_post_status( $sid ) && ( in_array( get_post_type( $sid ), zad_service_types(), true ) || ( function_exists( 'zad_catalog_locate' ) && zad_catalog_locate( $sid ) ) ) ) { return $sid; }
 	return function_exists( 'zad_linked_service' ) ? (int) zad_linked_service( $id ) : 0;
 }
 
@@ -127,10 +142,10 @@ function zad_faq_answer_box( $post ) {
 	echo '<textarea name="zad_faq_answer" id="zad-fa-text" rows="4" style="width:100%;line-height:1.9">' . esc_textarea( $ans ) . '</textarea>';
 	echo '<p class="zad-fa-meta"><span>عدد الكلمات: <b id="zad-fa-count">' . (int) $n . '</b> / 60</span> <span id="zad-fa-warn" style="color:#b32d2e;font-weight:600">' . ( 0 === $n ? 'الإجابة فارغة — ستظهر الصفحة بدون إجابة مباشرة.' : ( $n > 60 ? 'الإجابة أطول من 60 كلمة؛ الأفضل اختصارها (تحذير فقط، يمكنك الحفظ).' : '' ) ) . '</span></p>';
 	echo '<hr><div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">';
-	echo '<div><p><b>رابط الخدمة</b> (اختياري)</p>' . zad_faq_pick_html( 'zad_faq_service_link', zad_faq_pick_list( zad_service_types(), $sv ), $sv, 'ابحث في الخدمات…' );
+	echo '<div><p><b>رابط الخدمة</b> (اختياري)</p>' . zad_faq_pick_html( 'zad_faq_service_link', zad_faq_service_pick_list( $sv ), $sv, 'ابحث في الخدمات…' );
 	echo '<p><input type="text" name="zad_faq_service_lbl" value="' . esc_attr( (string) get_post_meta( $post->ID, '_zad_faq_service_lbl', true ) ) . '" placeholder="عنوان الزر (افتراضي: تعرّف على الخدمة)" style="width:100%"></p>';
 	echo '<p class="description">إن تُرك فارغاً تُستخدم أول خدمة منشورة من «ربط السؤال بالخدمات»' . ( ! $sv && $eff ? ': <b>' . esc_html( get_the_title( $eff ) ) . '</b>' : '' ) . '.</p></div>';
-	echo '<div><p><b>رابط من المدونة</b> (اختياري)</p>' . zad_faq_pick_html( 'zad_faq_article', zad_faq_pick_list( zad_article_types(), $art ), $art, 'ابحث في المقالات…' );
+	echo '<div><p><b>رابط من المدونة</b> (اختياري)</p>' . zad_faq_pick_html( 'zad_faq_article', zad_faq_pick_list( post_type_exists( 'sections' ) ? array( 'sections' ) : zad_article_types(), $art ), $art, 'ابحث في المقالات…' );
 	echo '<p><input type="text" name="zad_faq_article_lbl" value="' . esc_attr( (string) get_post_meta( $post->ID, '_zad_faq_article_lbl', true ) ) . '" placeholder="عنوان الزر (افتراضي: اقرأ الدليل كاملاً)" style="width:100%"></p></div>';
 	echo '</div></div>';
 	?>
@@ -274,7 +289,7 @@ function zad_tokens( $text ) {
 	return array_keys( $out );
 }
 
-/** Best matching service for a FAQ (id, or 0). Score: title tokens x3, tagline/features/base x1. */
+/** Best matching service for a FAQ (id, or 0). Score: title tokens x3, tagline/base x1. */
 function zad_faq_match_service( $faq_id ) {
 	static $cache = null;
 	if ( null === $cache ) {
@@ -282,7 +297,7 @@ function zad_faq_match_service( $faq_id ) {
 		foreach ( get_posts( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => -1 ) ) as $sv ) {
 			$cache[ $sv->ID ] = array(
 				'title' => array_flip( zad_tokens( $sv->post_title . ' ' . get_post_meta( $sv->ID, '_zad_base_name', true ) ) ),
-				'body'  => array_flip( zad_tokens( get_post_meta( $sv->ID, '_zad_tagline', true ) . ' ' . get_post_meta( $sv->ID, '_zad_features', true ) . ' ' . $sv->post_excerpt ) ),
+				'body'  => array_flip( zad_tokens( get_post_meta( $sv->ID, '_zad_tagline', true ) . ' ' . $sv->post_excerpt ) ),
 			);
 		}
 	}
@@ -327,50 +342,3 @@ add_action( 'save_post', function ( $id ) {
 	zad_faq_autolink( $id );
 }, 40 );
 
-add_action( 'admin_menu', function () {
-	add_management_page( 'ربط الأسئلة بالخدمات', 'ربط الأسئلة بالخدمات', 'manage_options', 'zad-faqlink', 'zad_faqlink_page' );
-} );
-
-function zad_faqlink_page() {
-	$faqs     = get_posts( array( 'post_type' => zad_faq_types(), 'post_status' => 'publish', 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
-	$services = get_posts( array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
-	echo '<div class="wrap"><h1>ربط الأسئلة بالخدمات</h1>';
-
-	if ( ! empty( $_POST['zad_fl_action'] ) && check_admin_referer( 'zad_fl' ) && current_user_can( 'manage_options' ) ) {
-		$act = sanitize_key( wp_unslash( $_POST['zad_fl_action'] ) );
-		$n   = 0;
-		if ( 'auto' === $act ) {
-			foreach ( $faqs as $f ) { if ( zad_faq_autolink( $f->ID ) ) { $n++; } }
-		} elseif ( 'all' === $act && ! empty( $_POST['zad_fl_service'] ) ) {
-			foreach ( $faqs as $f ) { if ( ! zad_faq_linked( $f->ID ) ) { update_post_meta( $f->ID, '_zad_faq_services', array( (string) absint( $_POST['zad_fl_service'] ) ) ); $n++; } }
-		} elseif ( 'selected' === $act && ! empty( $_POST['zad_fl_service'] ) && ! empty( $_POST['zad_fl_faqs'] ) ) {
-			foreach ( array_map( 'absint', (array) $_POST['zad_fl_faqs'] ) as $fid ) { update_post_meta( $fid, '_zad_faq_services', array( (string) absint( $_POST['zad_fl_service'] ) ) ); $n++; }
-		} elseif ( 'clear' === $act ) {
-			foreach ( $faqs as $f ) { delete_post_meta( $f->ID, '_zad_faq_services' ); $n++; }
-		}
-		echo '<div class="notice notice-success"><p>تم تحديث ' . (int) $n . ' سؤالاً.</p></div>';
-	}
-
-	$unlinked = 0;
-	foreach ( $faqs as $f ) { if ( ! zad_faq_linked( $f->ID ) ) { $unlinked++; } }
-	echo '<p>عدد الأسئلة: <strong>' . count( $faqs ) . '</strong> — غير مربوطة بخدمة: <strong>' . (int) $unlinked . '</strong>. الربط يجعل السؤال يعرض «الخدمة المرتبطة»، ويظهر في «أسئلة تفصيلية ذات صلة» داخل صفحة الخدمة.</p>';
-
-	echo '<form method="post">';
-	wp_nonce_field( 'zad_fl' );
-	echo '<h2>1) ربط تلقائي بالكلمات المتشابهة</h2><p>يقارن عنوان السؤال ونصه بعناوين الخدمات ومميزاتها، ويربط كل سؤال غير مربوط بأقرب خدمة. الأسئلة غير المطابقة تذهب للخدمة الافتراضية إن اخترتها من الإعدادات.</p>';
-	echo '<p><button class="button button-primary" name="zad_fl_action" value="auto">تطبيق الربط التلقائي على غير المربوطة</button></p>';
-
-	echo '<h2>2) ربط بخدمة محددة</h2><p><select name="zad_fl_service"><option value="">— اختر الخدمة —</option>';
-	foreach ( $services as $s ) { echo '<option value="' . (int) $s->ID . '">' . esc_html( $s->post_title ) . '</option>'; }
-	echo '</select> <button class="button" name="zad_fl_action" value="all">اربط كل الأسئلة غير المربوطة بهذه الخدمة</button> <button class="button" name="zad_fl_action" value="selected">اربط الأسئلة المحددة أدناه بها</button></p>';
-
-	echo '<h2>الأسئلة</h2><table class="widefat striped" style="max-width:980px"><thead><tr><th style="width:30px"></th><th>السؤال</th><th>مربوط حالياً بـ</th><th>الاقتراح التلقائي</th></tr></thead><tbody>';
-	foreach ( $faqs as $f ) {
-		$cur = array_map( 'intval', zad_faq_linked( $f->ID ) );
-		$cl  = $cur ? implode( '، ', array_map( 'get_the_title', $cur ) ) : '—';
-		$sg  = ( ! $cur ) ? zad_faq_match_service( $f->ID ) : 0;
-		echo '<tr><td><input type="checkbox" name="zad_fl_faqs[]" value="' . (int) $f->ID . '"></td><td><a href="' . esc_url( get_edit_post_link( $f->ID ) ) . '">' . esc_html( $f->post_title ) . '</a></td><td>' . esc_html( $cl ) . '</td><td>' . ( $sg ? esc_html( get_the_title( $sg ) ) : '—' ) . '</td></tr>';
-	}
-	echo '</tbody></table>';
-	echo '<p style="margin-top:16px"><button class="button" name="zad_fl_action" value="clear" onclick="return confirm(\'إزالة كل الروابط بين الأسئلة والخدمات؟\');">إزالة كل الروابط</button></p></form></div>';
-}

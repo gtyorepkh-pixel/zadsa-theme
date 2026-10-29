@@ -1,0 +1,3 @@
+(function(){'use strict';var box=document.querySelector('[data-zad-quality-live]');if(!box)return;
+ function check(){var input=document.querySelector('textarea[name="zad[packages]"]');if(!input)return;box.replaceChildren();input.value.split(/\r?\n/).forEach(function(line){var fields=line.split('|').map(function(v){return v.trim()});if(fields.length<5)return;var text=fields[4];if(/[0-9٠-٩]/.test(text)&&/حسب|حتى|وفق|إلى|الى|أو|او|[–—-]/.test(text)){var p=document.createElement('p');p.textContent='ضمان «'+fields[0]+'» متغير؛ قسّم الباقات إذا أردت مقارنة مدد محددة.';box.appendChild(p);}});}
+ document.addEventListener('input',function(e){if(e.target.name==='zad[packages]')check()});check();})();

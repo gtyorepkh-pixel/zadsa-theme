@@ -4,6 +4,6 @@ $zpt = zad_query_pt();
 if ( is_string( $zpt ) && 'zad_service' !== $zpt ) {
 	get_template_part( 'template-parts/hub-service' ); // adopted type: category hub / pillar page
 } else {
-	get_template_part( 'template-parts/service-archive' );
+	get_template_part( 'template-parts/services-index' ); // /services/: every section of the site (3.46.0)
 }
 get_footer();

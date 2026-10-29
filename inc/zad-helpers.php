@@ -3,6 +3,17 @@
  * Helpers: options, contact data, icons, schema.
  */
 
+/** inc/core/settings-defaults.json (after rokn settings-defaults.json). */
+function zad_settings_defaults() {
+	static $d = null;
+	if ( null === $d ) {
+		$f = get_template_directory() . '/inc/core/settings-defaults.json';
+		$d = is_readable( $f ) ? json_decode( (string) file_get_contents( $f ), true ) : array();
+		$d = is_array( $d ) ? $d : array();
+	}
+	return $d;
+}
+
 function zad_opt( $key, $default = '' ) {
 	static $opts = null;
 	if ( null === $opts ) {
@@ -13,6 +24,13 @@ function zad_opt( $key, $default = '' ) {
 	}
 	if ( isset( $opts[ $key ] ) && '' !== $opts[ $key ] && array() !== $opts[ $key ] ) {
 		return $opts[ $key ];
+	}
+	// Business data from inc/core/settings-defaults.json, only when the key was never saved (e.g. the settings were wiped). A field saved empty stays empty.
+	if ( ! array_key_exists( $key, $opts ) ) {
+		$sd = zad_settings_defaults();
+		if ( isset( $sd[ $key ] ) && '_note' !== $key ) {
+			return $sd[ $key ];
+		}
 	}
 	// Home-page content that is true for any site on this theme (computed live; see zad-home-defaults.php).
 	if ( function_exists( 'zad_home_default' ) ) {
@@ -51,7 +69,13 @@ function zad_intl_number( $num ) {
 function zad_phone( $post_id = 0 ) {
 	$post_id = $post_id ? $post_id : get_the_ID();
 	$v       = $post_id ? get_post_meta( $post_id, '_zad_phone', true ) : '';
-	return $v ? trim( $v ) : trim( (string) zad_opt( 'memopt_phone' ) );
+	if ( $v ) { return trim( $v ); }
+	// A city with its own line answers on it; everywhere else the company-wide number stands.
+	if ( $post_id && function_exists( 'zad_city_row' ) && function_exists( 'zad_current_city' ) ) {
+		$row = zad_city_row( zad_current_city( $post_id )['slug'] );
+		if ( $row && ! empty( $row['phone'] ) ) { return $row['phone']; }
+	}
+	return trim( (string) zad_opt( 'memopt_phone' ) );
 }
 
 function zad_whatsapp( $post_id = 0 ) {
@@ -289,11 +313,38 @@ function zad_strip_phones( $s ) {
 	return preg_replace( '/^[\s\-–—|،,:·]+|[\s\-–—|،,:·]+$/u', '', $t ); // not trim(): its byte list would corrupt Arabic
 }
 
-/** Title to show for ANOTHER page in a card / link: Yoast breadcrumb title if set, else the page title; phone numbers removed. */
+/** Visible title (H1 / card): phones removed, SEO tail after « | » dropped. «أفضل شركة X بالرياض | 055… غسيل…» → «أفضل شركة X بالرياض». */
+function zad_title_head( $s ) {
+	$t   = zad_strip_phones( wp_strip_all_tags( html_entity_decode( (string) $s, ENT_QUOTES, 'UTF-8' ) ) );
+	$seg = array_values( array_filter( array_map( 'zad_strip_phones', preg_split( '~\s*[|｜]\s*~u', $t ) ), 'strlen' ) );
+	return $seg ? $seg[0] : $t;
+}
+
+/** H1 of a page: optional override (_zad_h1), else the clean head of the title. */
+function zad_h1_title( $id = 0 ) {
+	$id = $id ? $id : get_the_ID();
+	$o  = trim( (string) get_post_meta( $id, '_zad_h1', true ) );
+	if ( '' !== $o ) { return $o; }
+	$t = zad_title_head( get_the_title( $id ) );
+	return '' !== $t ? $t : wp_strip_all_tags( get_the_title( $id ) );
+}
+
+/** Link text: cut the tail that starts at the brand name, a price («150 ريال»), an offer («خصم 20%») or «اتصل», when at least 3 words stay before it. */
+function zad_anchor_trim( $t ) {
+	$t = (string) $t;
+	if ( preg_match( '/(?::\s|\s(?:(?:مع\s+)?زاد\s+السعودية|اتصل|ضمان|بضمان|احجز|\d+\s*ريال|خصم\s*\d+|ب?\d+\s*%|[–—ـ-]\s))/u', $t, $m, PREG_OFFSET_CAPTURE ) ) {
+		$head = trim( substr( $t, 0, $m[0][1] ) );
+		if ( count( preg_split( '/\s+/u', $head ) ) >= 3 ) { $t = $head; }
+	}
+	return preg_replace( '/[\s:،,]+$/u', '', $t );
+}
+
+/** Title to show for ANOTHER page in a card / link: the page's breadcrumb label (_zad_breadcrumb_label) if set, else the page title; phone numbers removed. */
 function zad_card_title( $id = 0 ) {
 	$id = $id ? $id : get_the_ID();
-	$bc = trim( (string) get_post_meta( $id, '_yoast_wpseo_bctitle', true ) );
-	$t  = zad_strip_phones( '' !== $bc ? wp_strip_all_tags( $bc ) : wp_strip_all_tags( html_entity_decode( get_the_title( $id ), ENT_QUOTES, 'UTF-8' ) ) );
+	$bc = trim( (string) get_post_meta( $id, '_zad_breadcrumb_label', true ) );
+	$t  = zad_title_head( '' !== $bc ? $bc : get_the_title( $id ) );
+	if ( '' === $bc ) { $t = zad_anchor_trim( $t ); } // a breadcrumb label is used as written
 	if ( '' === $t ) {
 		$o = get_post_type_object( get_post_type( $id ) );
 		$t = $o ? $o->labels->singular_name : 'صفحة';
@@ -421,27 +472,15 @@ function zad_hours_text() {
 }
 
 
-/**
- * SEO mode: 'theme' (theme prints schema + meta) | 'yoast' (theme prints schema only; Yoast prints meta + sitemap)
- *           | 'other' (a mu-plugin owns schema) | 'off'.
- * 'auto': mu-plugin zad-schema.php present → other; Yoast active → yoast; otherwise theme.
- */
+/** Native SEO ownership. Historical mode values resolve to the theme; saved data stays readable. */
 function zad_seo_mode() {
-	$mode = zad_opt( 'zad_schema_mode', 'auto' );
-	if ( in_array( $mode, array( 'off', 'theme', 'yoast' ), true ) ) {
-		return $mode;
-	}
-	$mu = defined( 'WPMU_PLUGIN_DIR' ) ? WPMU_PLUGIN_DIR : WP_CONTENT_DIR . '/mu-plugins';
-	if ( file_exists( $mu . '/zad-schema.php' ) ) {
-		return 'other';
-	}
-	return defined( 'WPSEO_VERSION' ) ? 'yoast' : 'theme';
+ return 'off' === zad_opt( 'zad_schema_mode', 'theme' ) ? 'off' : 'theme';
 }
 
-/** Who outputs schema: 'theme' (also in yoast mode: the theme owns the schema) or 'other' or 'off'. */
+/** Who outputs schema: 'theme' or 'off'. */
 function zad_schema_owner() {
 	$m = zad_seo_mode();
-	return ( 'theme' === $m || 'yoast' === $m ) ? 'theme' : $m;
+	return 'theme' === $m ? 'theme' : $m;
 }
 
 /** Current post-type query var as a single string (WordPress returns an array for multi-type archives). */

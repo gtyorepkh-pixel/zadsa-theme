@@ -286,7 +286,7 @@ function zad_hood_render( $id ) {
 	$D    = zad_hood_data( $id );
 	$g    = $D['g'];
 	$lib  = function ( $k ) use ( $D ) { return $D['hid'] ? get_post_meta( $D['hid'], '_zad_hd_' . $k, true ) : ''; };
-	$title = get_the_title( $id );
+	$title = zad_h1_title( $id );
 	$phone = zad_phone( $id );
 	$tpl   = trim( (string) $g( 'wa' ) ) ?: 'أحتاج {الخدمة} في حي {الحي}';
 	$msg   = str_replace( array( '{الخدمة}', '{الحي}' ), array( $D['svc'] ?: $title, $D['hood'] ), $tpl );

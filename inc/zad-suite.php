@@ -25,196 +25,32 @@ const ZAD_AC_SINGULAR    = '_zad_archive_content_source_page';
 const ZAD_BC_LABEL       = '_zad_breadcrumb_label';
 const ZAD_BC_PARENT      = '_zad_breadcrumb_parent_path';
 
+/** The mapped «محتوى الأرشيف» page (draft allowed, trash not): array( id, post|null ). */
+function zad_hr_mapped( $map_opt, $keys ) {
+	$m = (array) get_option( $map_opt, array() );
+	foreach ( $keys as $k ) { $m = is_array( $m ) && isset( $m[ $k ] ) ? $m[ $k ] : null; }
+	$id = absint( is_array( $m ) ? 0 : $m );
+	$p  = $id ? get_post( $id ) : null;
+	$ok = $p && 'page' === $p->post_type && ! in_array( $p->post_status, array( 'trash', 'auto-draft' ), true );
+	return array( $id, $ok ? $p : null );
+}
+
 function zad_suite_has( $mod ) {
 	$c = array( 'archive' => 'ZAD_ARCHIVE_CONTENT_VERSION', 'bc' => 'ZAD_SITE_BC_VERSION', 'map' => 'ZAD_SMART_SITEMAP_VERSION', 'toc' => 'ZAD_CONTENT_TOC_VERSION' );
 	return isset( $c[ $mod ] ) && defined( $c[ $mod ] );
 }
 
 /* =====================================================================
- * 1. ARCHIVE CONTENT
+ * 1. ARCHIVE CONTENT — removed (2026-10). The old module showed a draft page inside an archive and fed SEO titles to the
+ *    SEO plugin; its mappings were cleared and the drafts trashed. The helpers keep their names so the templates still work.
  * ===================================================================== */
 
-function zad_ac_taxes() {
-	$t = get_taxonomies( array( 'public' => true, '_builtin' => false ), 'objects' );
-	$c = get_taxonomy( 'category' );
-	return $c ? array_merge( array( 'category' => $c ), $t ) : $t;
-}
-
-/** Page ID mapped to the current archive (0 = none). */
-function zad_ac_source_id() {
-	static $cache = array();
-	$key = (string) get_queried_object_id() . '|' . zad_query_pt();
-	if ( isset( $cache[ $key ] ) ) {
-		return $cache[ $key ];
-	}
-	$id = 0;
-	if ( is_post_type_archive() ) {
-		$pt  = zad_query_pt();
-		$pt  = is_array( $pt ) ? reset( $pt ) : $pt;
-		$map = (array) get_option( ZAD_AC_MAP, array() );
-		$id  = isset( $map[ $pt ] ) ? absint( $map[ $pt ] ) : 0;
-	} elseif ( is_author() ) {
-		$map = (array) get_option( ZAD_AC_AUTHOR_MAP, array() );
-		$id  = isset( $map[ get_queried_object_id() ] ) ? absint( $map[ get_queried_object_id() ] ) : 0;
-	} elseif ( is_tax() || is_category() ) {
-		$t = get_queried_object();
-		if ( $t instanceof WP_Term ) {
-			$map = (array) get_option( ZAD_AC_TERM_MAP, array() );
-			$id  = isset( $map[ $t->taxonomy ][ $t->term_id ] ) ? absint( $map[ $t->taxonomy ][ $t->term_id ] ) : 0;
-		}
-	}
-	if ( $id ) {
-		$p = get_post( $id );
-		if ( ! $p || 'page' !== $p->post_type || in_array( $p->post_status, array( 'trash', 'auto-draft' ), true ) ) {
-			$id = 0;
-		}
-	}
-	$cache[ $key ] = $id;
-	return $id;
-}
-
-/** Title of the mapped page (or the fallback). */
-function zad_ac_title( $fallback ) {
-	if ( is_admin() || zad_suite_has( 'archive' ) ) {
-		return $fallback;
-	}
-	$id = zad_ac_source_id();
-	if ( $id && ! is_author() ) {
-		$t = trim( get_the_title( $id ) );
-		return '' !== $t ? $t : $fallback;
-	}
-	return $fallback;
-}
-
-add_filter( 'get_the_archive_title', function ( $t ) {
-	return zad_ac_title( $t );
-}, 20 );
-
-/** Rendered body of the mapped page; echoes a section. Renders once per request, first page only. */
-function zad_archive_source( $echo = true ) {
-	static $done = false;
-	if ( $done || zad_suite_has( 'archive' ) || is_paged() ) {
-		return '';
-	}
-	$id = zad_ac_source_id();
-	if ( ! $id ) {
-		return '';
-	}
-	$page = get_post( $id );
-	if ( is_author() ) {
-		remove_filter( 'the_content', 'wpautop' );
-	}
-	$html = apply_filters( 'the_content', $page->post_content );
-	if ( is_author() ) {
-		add_filter( 'the_content', 'wpautop' );
-	}
-	if ( '' === trim( wp_strip_all_tags( $html ) ) ) {
-		return '';
-	}
-	$done = true;
-	$out  = '<section class="zad-archive-content wrap" aria-label="محتوى القسم"><div class="prose">' . $html . '</div></section>';
-	if ( $echo ) {
-		echo $out; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	}
-	return $out;
-}
-
-/** Custom or inherited (Yoast fields of the mapped page) SEO field. */
-function zad_ac_seo( $field ) {
-	if ( is_admin() || zad_suite_has( 'archive' ) || is_singular() || is_front_page() ) {
-		return '';
-	}
-	$custom = '';
-	if ( is_post_type_archive() ) {
-		$pt     = zad_query_pt();
-		$pt     = is_array( $pt ) ? reset( $pt ) : $pt;
-		$seo    = (array) get_option( ZAD_AC_SEO, array() );
-		$custom = $seo[ $pt ][ $field ] ?? '';
-	} elseif ( is_tax() || is_category() ) {
-		$t = get_queried_object();
-		if ( $t instanceof WP_Term ) {
-			$seo    = (array) get_option( ZAD_AC_TERM_SEO, array() );
-			$custom = $seo[ $t->taxonomy ][ $t->term_id ][ $field ] ?? '';
-		}
-	}
-	$custom = trim( (string) $custom );
-	if ( '' !== $custom ) {
-		return $custom;
-	}
-	$id = zad_ac_source_id();
-	if ( ! $id ) {
-		return '';
-	}
-	$v = trim( (string) get_post_meta( $id, 'title' === $field ? '_yoast_wpseo_title' : '_yoast_wpseo_metadesc', true ) );
-	if ( '' !== $v && function_exists( 'wpseo_replace_vars' ) ) {
-		$v = wpseo_replace_vars( $v, get_post( $id ) );
-	}
-	$v = trim( wp_strip_all_tags( $v ) );
-	if ( '' === $v && 'title' === $field ) {
-		$v = trim( get_the_title( $id ) ) . ' | ' . get_bloginfo( 'name' );
-	}
-	return $v;
-}
-
-foreach ( array( 'wpseo_title', 'wpseo_opengraph_title', 'wpseo_twitter_title', 'pre_get_document_title' ) as $zad_h ) {
-	add_filter( $zad_h, function ( $t ) {
-		$v = zad_ac_seo( 'title' );
-		return '' !== $v ? $v : $t;
-	}, 25 );
-}
-foreach ( array( 'wpseo_metadesc', 'wpseo_opengraph_desc', 'wpseo_twitter_description' ) as $zad_h ) {
-	add_filter( $zad_h, function ( $d ) {
-		$v = zad_ac_seo( 'description' );
-		return '' !== $v ? $v : $d;
-	}, 25 );
-}
-
-/* Author profiles approved for indexing */
-function zad_ac_author_indexable() {
-	if ( ! is_author() || ! zad_ac_source_id() ) {
-		return false;
-	}
-	$s = (array) get_option( ZAD_AC_AUTHOR_IDX, array() );
-	return ! empty( $s[ get_queried_object_id() ] );
-}
-foreach ( array( 'wpseo_robots', 'wpseo_robots_array', 'wp_robots' ) as $zad_h ) {
-	add_filter( $zad_h, function ( $r ) {
-		if ( zad_suite_has( 'archive' ) || ! zad_ac_author_indexable() ) {
-			return $r;
-		}
-		if ( is_array( $r ) ) {
-			unset( $r['noindex'], $r['nofollow'] );
-			$r['index']  = true;
-			$r['follow'] = true;
-			return $r;
-		}
-		$p = array_filter( array_map( 'trim', explode( ',', (string) $r ) ), function ( $x ) { return ! in_array( strtolower( $x ), array( 'noindex', 'nofollow' ), true ); } );
-		return implode( ', ', array_unique( array_merge( array( 'index', 'follow' ), $p ) ) );
-	}, 25 );
-}
-
-/* Hide the automatic list on a mapped archive */
-function zad_ac_loop_hidden() {
-	if ( zad_suite_has( 'archive' ) || ! zad_ac_source_id() ) {
-		return false;
-	}
-	if ( is_post_type_archive() ) {
-		$pt = zad_query_pt();
-		$pt = is_array( $pt ) ? reset( $pt ) : $pt;
-		$s  = (array) get_option( ZAD_AC_HIDE, array() );
-		return ! empty( $s[ $pt ] );
-	}
-	if ( is_tax() || is_category() ) {
-		$t = get_queried_object();
-		$s = (array) get_option( 'zad_archive_content_term_hide_loop', array() );
-		return $t instanceof WP_Term && ! empty( $s[ $t->taxonomy ][ $t->term_id ] );
-	}
-	if ( is_author() ) {
-		$s = (array) get_option( 'zad_archive_content_author_hide_loop', array() );
-		return ! empty( $s[ get_queried_object_id() ] );
-	}
-	return false;
-}
+function zad_ac_source_id() { return 0; }
+function zad_ac_title( $fallback ) { return $fallback; }
+function zad_archive_source( $echo = true ) { return ''; }
+function zad_ac_seo( $field ) { return ''; }
+function zad_ac_loop_hidden() { return false; }
+function zad_ac_author_indexable() { return false; }
 
 /* Page as the body source of a single service ("pillar") */
 add_action( 'add_meta_boxes', function () {
@@ -266,101 +102,6 @@ add_filter( 'the_content', function ( $content ) {
 	return ( $p && 'page' === $p->post_type && 'trash' !== $p->post_status ) ? $p->post_content : $content;
 }, 5 );
 
-/* Settings page: Settings → محتوى الأرشيف */
-add_action( 'admin_menu', function () {
-	if ( zad_suite_has( 'archive' ) ) {
-		return;
-	}
-	add_options_page( 'محتوى الأرشيف', 'محتوى الأرشيف (زاد)', 'manage_options', 'zad-archive-content', 'zad_ac_settings' );
-} );
-
-function zad_ac_pages_select( $name, $sel ) {
-	static $pages = null;
-	if ( null === $pages ) {
-		$pages = get_posts( array( 'post_type' => 'page', 'post_status' => array( 'publish', 'draft', 'private', 'pending' ), 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
-	}
-	echo '<select name="' . esc_attr( $name ) . '" style="max-width:100%"><option value="0">— لا شيء —</option>';
-	foreach ( $pages as $p ) {
-		echo '<option value="' . (int) $p->ID . '"' . selected( (int) $sel, $p->ID, false ) . '>' . esc_html( $p->post_title . ' (' . $p->post_status . ')' ) . '</option>';
-	}
-	echo '</select>';
-}
-
-function zad_ac_settings() {
-	if ( ! current_user_can( 'manage_options' ) ) {
-		return;
-	}
-	$map  = (array) get_option( ZAD_AC_MAP, array() );
-	$seo  = (array) get_option( ZAD_AC_SEO, array() );
-	$hide = (array) get_option( ZAD_AC_HIDE, array() );
-	$tmap = (array) get_option( ZAD_AC_TERM_MAP, array() );
-	$tseo = (array) get_option( ZAD_AC_TERM_SEO, array() );
-	$amap = (array) get_option( ZAD_AC_AUTHOR_MAP, array() );
-
-	if ( isset( $_POST['zad_ac_save'] ) && check_admin_referer( 'zad_ac_save' ) ) {
-		$p = wp_unslash( $_POST );
-		foreach ( (array) ( $p['map'] ?? array() ) as $pt => $id ) {
-			$pt = sanitize_key( $pt );
-			if ( absint( $id ) ) { $map[ $pt ] = absint( $id ); } else { unset( $map[ $pt ] ); }
-			$seo[ $pt ] = array( 'title' => sanitize_text_field( $p['seo'][ $pt ]['title'] ?? '' ), 'description' => sanitize_textarea_field( $p['seo'][ $pt ]['description'] ?? '' ) );
-			if ( empty( $p['hide'][ $pt ] ) ) { unset( $hide[ $pt ] ); } else { $hide[ $pt ] = 1; }
-		}
-		foreach ( (array) ( $p['tmap'] ?? array() ) as $tx => $terms ) {
-			$tx = sanitize_key( $tx );
-			foreach ( (array) $terms as $tid => $id ) {
-				$tid = absint( $tid );
-				if ( absint( $id ) ) { $tmap[ $tx ][ $tid ] = absint( $id ); } else { unset( $tmap[ $tx ][ $tid ] ); }
-				$tseo[ $tx ][ $tid ] = array( 'title' => sanitize_text_field( $p['tseo'][ $tx ][ $tid ]['title'] ?? '' ), 'description' => sanitize_textarea_field( $p['tseo'][ $tx ][ $tid ]['description'] ?? '' ) );
-			}
-		}
-		foreach ( (array) ( $p['amap'] ?? array() ) as $uid => $id ) {
-			$uid = absint( $uid );
-			if ( absint( $id ) ) { $amap[ $uid ] = absint( $id ); } else { unset( $amap[ $uid ] ); }
-		}
-		update_option( ZAD_AC_MAP, $map );
-		update_option( ZAD_AC_SEO, $seo );
-		update_option( ZAD_AC_HIDE, $hide );
-		update_option( ZAD_AC_TERM_MAP, $tmap );
-		update_option( ZAD_AC_TERM_SEO, $tseo );
-		update_option( ZAD_AC_AUTHOR_MAP, $amap );
-		echo '<div class="updated"><p>تم الحفظ.</p></div>';
-	}
-
-	$types = get_post_types( array( 'public' => true ), 'objects' );
-	unset( $types['attachment'], $types['page'] );
-	echo '<div class="wrap" dir="rtl"><h1>محتوى الأرشيف</h1><p>اربط صفحة (مسودة) بأي رابط أرشيف أو قسم فيظهر محتواها داخل الرابط الثابت نفسه. العنوان والـSEO يؤخذان من الصفحة ما لم تكتب قيماً هنا.</p><form method="post">';
-	wp_nonce_field( 'zad_ac_save' );
-	echo '<h2>أرشيفات الأنواع</h2><table class="widefat striped"><thead><tr><th>النوع</th><th>الصفحة</th><th>عنوان SEO</th><th>وصف SEO</th><th>إخفاء القائمة</th></tr></thead><tbody>';
-	foreach ( $types as $pt => $o ) {
-		if ( ! $o->has_archive ) { continue; }
-		echo '<tr><td><strong>' . esc_html( $o->labels->name ) . '</strong><br><code>' . esc_html( $pt ) . '</code></td><td>';
-		zad_ac_pages_select( 'map[' . $pt . ']', $map[ $pt ] ?? 0 );
-		echo '</td><td><input type="text" class="regular-text" name="seo[' . esc_attr( $pt ) . '][title]" value="' . esc_attr( $seo[ $pt ]['title'] ?? '' ) . '"></td><td><textarea rows="2" name="seo[' . esc_attr( $pt ) . '][description]">' . esc_textarea( $seo[ $pt ]['description'] ?? '' ) . '</textarea></td><td><input type="checkbox" name="hide[' . esc_attr( $pt ) . ']" value="1"' . checked( ! empty( $hide[ $pt ] ), true, false ) . '></td></tr>';
-	}
-	echo '</tbody></table>';
-	foreach ( zad_ac_taxes() as $tx => $o ) {
-		$terms = get_terms( array( 'taxonomy' => $tx, 'hide_empty' => false ) );
-		if ( ! $terms || is_wp_error( $terms ) ) { continue; }
-		echo '<h2>' . esc_html( $o->labels->name ) . '</h2><table class="widefat striped"><thead><tr><th>القسم</th><th>الصفحة</th><th>عنوان SEO</th><th>وصف SEO</th></tr></thead><tbody>';
-		foreach ( $terms as $t ) {
-			echo '<tr><td>' . esc_html( $t->name ) . '</td><td>';
-			zad_ac_pages_select( 'tmap[' . $tx . '][' . $t->term_id . ']', $tmap[ $tx ][ $t->term_id ] ?? 0 );
-			echo '</td><td><input type="text" class="regular-text" name="tseo[' . esc_attr( $tx ) . '][' . (int) $t->term_id . '][title]" value="' . esc_attr( $tseo[ $tx ][ $t->term_id ]['title'] ?? '' ) . '"></td><td><textarea rows="2" name="tseo[' . esc_attr( $tx ) . '][' . (int) $t->term_id . '][description]">' . esc_textarea( $tseo[ $tx ][ $t->term_id ]['description'] ?? '' ) . '</textarea></td></tr>';
-		}
-		echo '</tbody></table>';
-	}
-	$users = get_users( array( 'has_published_posts' => true, 'fields' => array( 'ID', 'display_name' ) ) );
-	if ( $users ) {
-		echo '<h2>صفحات المؤلفين</h2><table class="widefat striped"><thead><tr><th>المؤلف</th><th>الصفحة</th></tr></thead><tbody>';
-		foreach ( $users as $u ) {
-			echo '<tr><td>' . esc_html( $u->display_name ) . '</td><td>';
-			zad_ac_pages_select( 'amap[' . $u->ID . ']', $amap[ $u->ID ] ?? 0 );
-			echo '</td></tr>';
-		}
-		echo '</tbody></table>';
-	}
-	echo '<p><button class="button button-primary" name="zad_ac_save" value="1">حفظ</button></p></form></div>';
-}
 
 /* =====================================================================
  * 2. BREADCRUMBS — path based trail, label/parent exceptions
@@ -553,12 +294,8 @@ add_action( 'init', function () {
  * 5. PERFORMANCE
  * ===================================================================== */
 
-add_action( 'wp_enqueue_scripts', function () {
-	if ( is_user_logged_in() ) {
-		return;
-	}
-	wp_dequeue_style( 'dashicons' );
-}, PHP_INT_MAX );
+// Frontend assets are registered by inc/core/assets.php.
+
 
 add_filter( 'style_loader_tag', function ( $html, $handle ) {
 	return 0 === strpos( (string) $handle, 'trustindex-widget-css-' ) ? '' : $html;

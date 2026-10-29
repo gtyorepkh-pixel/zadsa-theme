@@ -45,155 +45,11 @@ add_filter( 'body_class', function ( $c ) {
 add_filter( 'excerpt_length', function () { return 24; } );
 add_filter( 'excerpt_more', function () { return '…'; } );
 
-function zad_sbar_enabled() { return (bool) zad_opt( 'zad_sbar_on', true ); }
-
-/**
- * Manual sidebar links (service editor): one per line  «العنوان | الرابط»  — the title is optional for pages of this site
- * (رقم الصفحة أو رابطها). A line starting with «-» is a child of the previous line (one level).
- * Returns the item list: array( id, url, title, 'ch' => children ).
- */
-function zad_sbar_parse( $text ) {
-	$out = array(); $last = -1; $n = 0;
-	foreach ( preg_split( '/\r\n|\r|\n/', (string) $text ) as $line ) {
-		$line = trim( $line );
-		if ( '' === $line || ++$n > 40 ) { continue; }
-		$child = (bool) preg_match( '/^-+\s*/', $line );
-		$line  = trim( preg_replace( '/^-+\s*/', '', $line ) );
-		$parts = array_map( 'trim', explode( '|', $line, 2 ) );
-		$title = count( $parts ) > 1 ? $parts[0] : '';
-		$link  = count( $parts ) > 1 ? $parts[1] : $parts[0];
-		$id    = 0; $url = '';
-		if ( ctype_digit( $link ) ) { $p = get_post( (int) $link ); if ( $p && 'publish' === $p->post_status ) { $id = (int) $p->ID; $url = get_permalink( $p ); } }
-		else {
-			$url = ( '/' === ( $link[0] ?? '' ) && 0 !== strpos( $link, '//' ) ) ? home_url( $link ) : ( preg_match( '#^https?://#i', $link ) ? $link : '' );
-			if ( $url ) { $id = (int) url_to_postid( $url ); }
-		}
-		if ( '' === $url ) { continue; }
-		if ( '' === $title ) { if ( ! $id ) { continue; } $title = zad_card_title( $id ); }
-		$item = array( $id, $url, $title, 'ch' => array() );
-		if ( $child && $last >= 0 ) { $out[ $last ]['ch'][] = $item; } else { $out[] = $item; $last = count( $out ) - 1; }
-	}
-	return $out;
-}
-
-/** Editor box: the sidebar list of this page. */
-function zad_sbar_box( $post_id ) {
-	echo '<h4>روابط القائمة الجانبية <small>(اختياري؛ إن ملأتها تُعرض هي فقط بدل الاختيار التلقائي)</small></h4><input type="hidden" name="zad[sbar_present]" value="1">';
-	echo '<p><label>عنوان القائمة<input type="text" name="zad[sbar_title]" value="' . esc_attr( (string) get_post_meta( $post_id, '_zad_sbar_title', true ) ) . '" placeholder="في هذا القسم"></label></p>';
-	echo '<p><label>الروابط — سطر لكل رابط: العنوان | الرابط (أو رقم الصفحة). ابدأ السطر بـ - ليكون رابطاً فرعياً (ابن) تحت السطر الذي قبله.<textarea name="zad[sbar_links]" rows="7" style="width:100%" placeholder="مكافحة حشرات بالرياض | /pest-control/riyadh/&#10;- مكافحة الصراصير | /pest-control/riyadh/cockroach-control/&#10;- مكافحة النمل | 25797&#10;تنظيف الخزانات | /cleaning/tanks/">' . esc_textarea( (string) get_post_meta( $post_id, '_zad_sbar_links', true ) ) . '</textarea></label></p>';
-	echo '<p class="description">العنوان اختياري للصفحات الداخلية (يؤخذ عنوان مسار التنقل في Yoast أو عنوان الصفحة بلا أرقام الجوال). فارغ = القائمة تلقائية.</p>';
-}
-function zad_sbar_save( $post_id, $in ) {
-	if ( empty( $in['sbar_present'] ) ) { return; }
-	update_post_meta( $post_id, '_zad_sbar_title', sanitize_text_field( $in['sbar_title'] ?? '' ) );
-	update_post_meta( $post_id, '_zad_sbar_links', sanitize_textarea_field( $in['sbar_links'] ?? '' ) );
-}
-
-/** [ id, url, display title ] for the sidebar. */
-function zad_sbar_item( $p ) { return array( (int) $p->ID, get_permalink( $p ), zad_card_title( $p->ID ) ); }
-
-/**
- * Sidebar data for one service page, in this order:
- *  1. hierarchical page with a parent: the parent first, then its published siblings (same type; menu_order, then title; not the current page);
- *  2. top-level hierarchical page: its published child pages;
- *  3. otherwise the same section (service_cat) and the same city (service_area), if the page has them;
- *  4. otherwise the pages picked in «ذات صلة» (related_csv);
- *  5. otherwise nothing (the sidebar then only shows the request / call buttons).
- */
-function zad_services_sidebar_data( $current_id = 0 ) {
-	if ( ! $current_id ) { return array(); }
-	$key  = 'zad_sbar2_' . (int) get_option( 'zad_nav_ver', 1 ) . '_' . (int) $current_id . ( function_exists( 'zad_city_key' ) ? '_' . zad_city_key( $current_id ) : '' ); // the page's city is part of the key
-	$data = get_transient( $key );
-	if ( is_array( $data ) ) { return $data; }
-	$data = array();
-	$man  = zad_sbar_parse( get_post_meta( $current_id, '_zad_sbar_links', true ) ); // 0. hand-picked links win
-	if ( $man ) {
-		$data[] = array( 'name' => trim( (string) get_post_meta( $current_id, '_zad_sbar_title', true ) ) ?: 'في هذا القسم', 'open' => true, 'items' => $man );
-		set_transient( $key, $data, 12 * HOUR_IN_SECONDS );
-		return $data;
-	}
-	$cur  = get_post( $current_id );
-	$pt   = $cur ? $cur->post_type : '';
-	$ord  = array( 'menu_order' => 'ASC', 'title' => 'ASC' );
-	if ( $cur && is_post_type_hierarchical( $pt ) ) {
-		if ( $cur->post_parent ) {
-			$parent = get_post( $cur->post_parent );
-			$items  = array();
-			if ( $parent && 'publish' === $parent->post_status && ( ! function_exists( 'zad_city_allowed' ) || zad_city_allowed( $parent->ID, zad_service_city_scope( $current_id ) ) ) ) { $items[] = zad_sbar_item( $parent ); }
-			$sq = array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $cur->post_parent, 'post__not_in' => array( (int) $current_id ), 'zad_all' => true, 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord );
-			if ( function_exists( 'zad_city_args_for' ) ) { $sq = zad_city_args_for( $sq, $current_id ); } // same city (or «all») only
-			foreach ( get_posts( $sq ) as $p ) { $items[] = zad_sbar_item( $p ); }
-			if ( $items ) { $data[] = array( 'name' => 'في هذا القسم', 'open' => true, 'items' => $items ); }
-		} else {
-			$items = array();
-			$sq = array( 'post_type' => $pt, 'post_status' => 'publish', 'post_parent' => (int) $current_id, 'zad_all' => true, 'numberposts' => 40, 'no_found_rows' => true, 'orderby' => $ord );
-			if ( function_exists( 'zad_city_args_for' ) ) { $sq = zad_city_args_for( $sq, $current_id, false ); } // a main page keeps listing its city pages (the city picker); a city page only its own city
-			foreach ( get_posts( $sq ) as $p ) { $items[] = zad_sbar_item( $p ); }
-			if ( $items ) { $data[] = array( 'name' => zad_card_title( $current_id ), 'open' => true, 'items' => $items ); }
-		}
-	}
-	if ( ! $data ) { // same section and same city, when the page is categorised
-		$cats = wp_get_post_terms( $current_id, 'service_cat' );
-		$city = array();
-		$ar   = wp_get_post_terms( $current_id, 'service_area' );
-		if ( $ar && ! is_wp_error( $ar ) ) { foreach ( $ar as $t ) { $city[] = $t->parent ? (int) $t->parent : (int) $t->term_id; } }
-		$city = array_values( array_unique( $city ) );
-		if ( $cats && ! is_wp_error( $cats ) ) {
-			foreach ( $cats as $c ) {
-				$tq = array( 'relation' => 'AND', array( 'taxonomy' => 'service_cat', 'terms' => $c->term_id ) );
-				if ( $city ) { $tq[] = array( 'taxonomy' => 'service_area', 'terms' => $city, 'include_children' => true ); }
-				$items = array();
-				$cq = array( 'post_type' => zad_service_types(), 'post_status' => 'publish', 'numberposts' => 30, 'no_found_rows' => true, 'zad_all' => true, 'post__not_in' => array( (int) $current_id ), 'tax_query' => $tq, 'orderby' => $ord );
-				if ( function_exists( 'zad_city_args_for' ) ) { $cq = zad_city_args_for( $cq, $current_id ); }
-				foreach ( get_posts( $cq ) as $p ) { $items[] = zad_sbar_item( $p ); }
-				if ( $items ) { $data[] = array( 'name' => $c->name, 'open' => true, 'items' => $items ); }
-			}
-		}
-	}
-	if ( ! $data ) { // pages picked by hand in «ذات صلة»
-		$ids = array_values( array_filter( array_map( 'intval', (array) get_post_meta( $current_id, '_zad_related', true ) ) ) );
-		if ( $ids ) {
-			$items = array();
-			foreach ( get_posts( array( 'post_type' => 'any', 'post__in' => $ids, 'post__not_in' => array( (int) $current_id ), 'post_status' => 'publish', 'numberposts' => 12, 'orderby' => 'post__in', 'zad_all' => true, 'no_found_rows' => true ) ) as $p ) { $items[] = zad_sbar_item( $p ); }
-			if ( $items ) { $data[] = array( 'name' => 'قد يهمّك أيضاً', 'open' => true, 'items' => $items ); }
-		}
-	}
-	set_transient( $key, $data, 12 * HOUR_IN_SECONDS );
-	return $data;
-}
-
-function zad_services_sidebar( $current_id = 0 ) {
-	$wa = zad_wa_link( 'مرحباً، أرغب بمعاينة مجانية' . ( $current_id ? ' — ' . wp_strip_all_tags( get_the_title( $current_id ) ) : '' ), $current_id );
-	echo '<nav class="sbar" aria-label="كل خدماتنا">';
-	if ( $wa ) {
-		echo '<a class="sbar__cta" href="' . esc_url( $wa ) . '" target="_blank" rel="noopener">' . zad_icon( 'whatsapp', 20 ) . ' اطلب معاينة مجانية</a>'; // phpcs:ignore
-	} else {
-		echo '<button type="button" class="sbar__cta" data-open-wizard>' . zad_icon( 'bolt', 20 ) . ' اطلب معاينة مجانية</button>'; // phpcs:ignore
-	}
-	foreach ( zad_services_sidebar_data( $current_id ) as $g ) {
-		$open = ! empty( $g['open'] );
-		echo '<details class="sbar__grp"' . ( $open ? ' open' : '' ) . '><summary><span>' . esc_html( $g['name'] ) . '</span></summary><ul>'; // phpcs:ignore
-		foreach ( $g['items'] as $it ) {
-			$li = function ( $x ) use ( $current_id ) { return '<a href="' . esc_url( $x[1] ) . '"' . ( $x[0] && (int) $x[0] === (int) $current_id ? ' class="is-on" aria-current="page"' : '' ) . '>' . esc_html( $x[2] ) . '</a>'; };
-			echo '<li>' . $li( $it ); // phpcs:ignore
-			if ( ! empty( $it['ch'] ) ) { echo '<ul>'; foreach ( $it['ch'] as $ch ) { echo '<li>' . $li( $ch ) . '</li>'; } echo '</ul>'; } // phpcs:ignore
-			echo '</li>';
-		}
-		echo '</ul></details>';
-	}
-	echo '</nav>';
-	$phone = zad_phone( $current_id );
-	if ( $phone ) {
-		echo '<a class="callbox" href="' . esc_url( zad_tel_href( $phone ) ) . '">' . zad_icon( 'phone', 26 ) . '<span><small>اتصل مباشرة</small><b dir="ltr">' . esc_html( $phone ) . '</b></span></a>'; // phpcs:ignore
-	}
-}
-
 
 /** Mega menu: categories with their services. */
 /** Drop cached menus/lists when content or terms change. */
 function zad_flush_nav_cache() {
 	delete_transient( 'zad_mega_html2' );
-	update_option( 'zad_nav_ver', time(), false ); // invalidates the per-page sidebar caches
 	delete_transient( 'zad_wiz_map' );
 	delete_transient( 'zad_wiz_map2' );
 	delete_transient( 'zad_wiz_map3' );
@@ -304,50 +160,11 @@ add_action( 'save_post', function ( $id ) {
 	update_post_meta( $id, '_zad_post_service', isset( $_POST['zad_post_service'] ) ? absint( $_POST['zad_post_service'] ) : '' );
 } );
 
-/** Where the collapsed headings list shows. Default (option off): articles, FAQ pages. Option on: exactly the content types ticked in the theme options. */
-function zad_toc_enabled_here() {
-	if ( ! is_singular() ) { return false; }
-	if ( zad_opt( 'zad_toc_on', false ) ) {
-		return in_array( get_post_type(), (array) zad_opt( 'zad_toc_types', array() ), true );
-	}
-	return is_singular( 'post' ) || zad_is_faq() || zad_is_article();
-}
-
-/* Table of contents for articles with 3+ headings */
-add_filter( 'the_content', function ( $content ) {
-	if ( zad_suite_has( 'toc' ) || ! zad_toc_enabled_here() || ! in_the_loop() || ! is_main_query() ) {
-		return $content;
-	}
-	$n   = 0;
-	$toc = array();
-	$content = preg_replace_callback( '#<h([23])([^>]*)>(.*?)</h\1>#is', function ( $m ) use ( &$n, &$toc ) {
-		$n++;
-		$id = 'h' . $n . '-' . substr( md5( wp_strip_all_tags( $m[3] ) ), 0, 5 );
-		$toc[] = array( (int) $m[1], $id, wp_strip_all_tags( $m[3] ) );
-		return '<h' . $m[1] . $m[2] . ' id="' . $id . '">' . $m[3] . '</h' . $m[1] . '>';
-	}, $content );
-	if ( count( $toc ) < max( 2, (int) zad_opt( 'zad_toc_min', 3 ) ) ) {
-		return $content;
-	}
-	$toc_title = trim( (string) zad_opt( 'zad_toc_title', '' ) ) ?: 'عناوين المقال';
-	$html = '<nav class="toc" aria-label="' . esc_attr( $toc_title ) . '"><details><summary><span>' . esc_html( $toc_title ) . '</span><span class="toc__btn" aria-hidden="true">عرض العناوين</span></summary><ol>';
-	foreach ( $toc as $t ) {
-		$html .= '<li class="toc--' . (int) $t[0] . '"><a href="#' . esc_attr( $t[1] ) . '">' . esc_html( $t[2] ) . '</a></li>';
-	}
-	$html .= '</ol></details></nav>';
-	// Place the collapsed TOC right after the first H2 (not before it).
-	$done = false;
-	$out  = preg_replace_callback( '#</h2>#i', function ( $m ) use ( &$done, $html ) {
-		if ( $done ) { return $m[0]; }
-		$done = true;
-		return $m[0] . $html;
-	}, $content, 1 );
-	return $done ? $out : $html . $content;
-}, 9 );
-
 
 /** Hero photo of a service page: a real <img> (srcset, sizes, high priority, eager) behind the overlay. A 600w size (quality 70: it sits under a dark overlay) serves small screens. */
 add_action( 'after_setup_theme', function () { add_image_size( 'zad-hero-600', 600, 0, false ); } );
+/* Lighter generated images (as in rokn inc/media.php): WebP sizes at quality 72 instead of WordPress's 82. Applies to images uploaded or regenerated from now on. */
+add_filter( 'wp_editor_set_quality', function ( $q, $mime = '' ) { return 'image/webp' === $mime ? 72 : $q; }, 10, 2 );
 add_filter( 'image_make_intermediate_size', function ( $file ) {
 	if ( is_string( $file ) && preg_match( '/-600x\d+\.(jpe?g|webp)$/i', $file ) && function_exists( 'wp_get_image_editor' ) ) {
 		$ed = wp_get_image_editor( $file );
@@ -445,41 +262,6 @@ add_action( 'wp_head', function () {
 	}
 	echo '<style id="zad-fonts">' . $css . "</style>\n"; // phpcs:ignore WordPress.Security.EscapeOutput
 }, 1 );
-
-
-/** Child pages of a service page: cities under a pillar (cards) or neighbourhoods under a city page (chips). */
-function zad_children_html( $id ) {
-	$pt = get_post_type( $id );
-	$o  = get_post_type_object( $pt );
-	if ( ! $o || ! $o->hierarchical ) {
-		return '';
-	}
-	$kids = get_posts( array( 'post_type' => $pt, 'post_parent' => $id, 'post_status' => 'publish', 'numberposts' => 60, 'orderby' => array( 'menu_order' => 'ASC', 'title' => 'ASC' ), 'zad_all' => true ) );
-	if ( ! $kids ) {
-		return '';
-	}
-	$is_pillar = 0 === (int) wp_get_post_parent_id( $id );
-	$label     = function ( $p ) {
-		$l = trim( (string) get_post_meta( $p->ID, '_zad_breadcrumb_label', true ) );
-		return '' !== $l ? $l : ( function_exists( 'zad_bc_clean_label' ) ? zad_bc_clean_label( get_the_title( $p ) ) : wp_strip_all_tags( get_the_title( $p ) ) );
-	};
-	$out = '<section class="sec kids"><div class="wrap"><header class="sec__head"><span class="eyebrow">' . ( $is_pillar ? 'مناطق الخدمة' : 'التغطية' ) . '</span><h2>' . ( $is_pillar ? 'اختر مدينتك' : 'الأحياء التي نخدمها' ) . '</h2></header>';
-	if ( $is_pillar ) {
-		$out .= '<ul class="kids__grid">';
-		foreach ( $kids as $k ) {
-			$tag = trim( (string) get_post_meta( $k->ID, '_zad_tagline', true ) );
-			$out .= '<li><a class="kids__card" href="' . esc_url( get_permalink( $k ) ) . '"><span class="kids__ic">' . zad_icon( 'pin', 22 ) . '</span><span class="kids__tx"><b>' . esc_html( $label( $k ) ) . '</b>' . ( $tag ? '<small>' . esc_html( $tag ) . '</small>' : '' ) . '</span>' . zad_icon( 'arrow', 18 ) . '</a></li>';
-		}
-		$out .= '</ul>';
-	} else {
-		$out .= '<ul class="kids__chips">';
-		foreach ( $kids as $k ) {
-			$out .= '<li><span>' . esc_html( $label( $k ) ) . '</span></li>'; // neighbourhoods are shown as text
-		}
-		$out .= '</ul>';
-	}
-	return $out . '</div></section>';
-}
 
 
 /* ---- Comments on articles: closed by default (theme option zad_comments_on turns them on) ---- */

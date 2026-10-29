@@ -1,6 +1,6 @@
 <?php defined( 'ABSPATH' ) || exit;
 $logo = zad_opt( 'memopt_logo' );
-$logo_url = ( is_array( $logo ) && ! empty( $logo['url'] ) ) ? $logo['url'] : MEMO_THEME_URI . 'assets/img/logo.png';
+$logo_url = ( is_array( $logo ) && ! empty( $logo['url'] ) ) ? $logo['url'] : ZAD_THEME_URI . 'assets/img/logo.png';
 $phone = zad_opt( 'memopt_phone' );
 ?>
 <!DOCTYPE html>
@@ -8,8 +8,8 @@ $phone = zad_opt( 'memopt_phone' );
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="preload" href="<?php echo esc_url( MEMO_THEME_URI . 'assets/fonts/tajawal-400.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
-	<link rel="preload" href="<?php echo esc_url( MEMO_THEME_URI . 'assets/fonts/tajawal-800.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
+	<link rel="preload" href="<?php echo esc_url( ZAD_THEME_URI . 'assets/fonts/tajawal-400.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
+	<link rel="preload" href="<?php echo esc_url( ZAD_THEME_URI . 'assets/fonts/tajawal-800.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
 	<script>try{var t=localStorage.getItem('zad-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}</script>
 	<?php wp_head(); ?>
 </head>
@@ -49,7 +49,7 @@ $phone = zad_opt( 'memopt_phone' );
 					'menu_class'     => 'nav__list',
 					'items_wrap'     => '<ul class="%2$s">%3$s</ul>',
 					'depth'          => 3,
-					'walker'         => new memo_walker(),
+					'walker'         => new Zad_Nav_Walker(),
 					'fallback_cb'    => false,
 				) );
 				?>

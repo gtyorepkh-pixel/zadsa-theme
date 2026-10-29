@@ -21,7 +21,7 @@ $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'n
 			<ul class="ftr__contact">
 				<?php if ( zad_opt( 'memopt_phone' ) ) : ?><li><?php echo zad_icon( 'phone', 18 ); // phpcs:ignore ?><a href="<?php echo esc_url( zad_tel_href( zad_opt( 'memopt_phone' ) ) ); ?>" dir="ltr"><?php echo esc_html( zad_opt( 'memopt_phone' ) ); ?></a></li><?php endif; ?>
 				<?php if ( zad_opt( 'memopt_mail' ) ) : ?><li><?php echo zad_icon( 'mail', 18 ); // phpcs:ignore ?><a href="mailto:<?php echo esc_attr( zad_opt( 'memopt_mail' ) ); ?>"><?php echo esc_html( zad_opt( 'memopt_mail' ) ); ?></a></li><?php endif; ?>
-				<?php if ( zad_opt( 'memopt_address' ) ) : ?><li><?php echo zad_icon( 'pin', 18 ); // phpcs:ignore ?><span><?php echo esc_html( zad_opt( 'memopt_address' ) ); ?></span></li><?php endif; ?>
+				<?php if ( zad_opt( 'memopt_address' ) ) : ?><li><?php echo zad_icon( 'pin', 18 ); // phpcs:ignore ?><span><?php $addr = zad_opt( 'memopt_address' ); echo esc_html( ( false !== stripos( $addr, 'Olaya' ) ) ? '2851 شارع عبدالملك بن مروان، حي العليا، الرياض' : $addr ); ?></span></li><?php endif; ?>
 			</ul>
 			<div class="social">
 				<?php
@@ -74,7 +74,7 @@ $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'n
 	</div>
 	<?php if ( zad_opt( 'zad_cr' ) || zad_opt( 'zad_vat' ) || zad_hours_text() ) : ?>
 	<div class="wrap ftr__badges">
-		<?php if ( zad_opt( 'zad_cr' ) ) : ?><div class="ftr__badge"><?php echo zad_icon( 'badge', 26 ); // phpcs:ignore ?><div><b>السجل التجاري</b><span dir="ltr"><?php echo esc_html( zad_opt( 'zad_cr' ) ); ?></span></div></div><?php endif; ?>
+		<?php if ( zad_opt( 'zad_cr' ) ) : ?><div class="ftr__badge"><?php echo zad_icon( 'badge', 26 ); // phpcs:ignore ?><div><b>السجل التجاري</b><span dir="ltr"><?php echo esc_html( zad_opt( 'zad_cr' ) ); ?></span> · <a href="https://mc.gov.sa/ar/eservices/Pages/Commercial-data.aspx" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;font-size:12px">تحقق في وزارة التجارة</a></div></div><?php endif; ?>
 		<?php if ( zad_opt( 'zad_vat' ) ) : ?><div class="ftr__badge"><?php echo zad_icon( 'shield', 26 ); // phpcs:ignore ?><div><b>ضريبة القيمة المضافة</b><span dir="ltr"><?php echo esc_html( zad_opt( 'zad_vat' ) ); ?></span></div></div><?php endif; ?>
 		<?php if ( zad_hours_text() ) : ?><div class="ftr__badge"><?php echo zad_icon( 'clock', 26 ); // phpcs:ignore ?><div><b>ساعات العمل</b><span><?php echo esc_html( zad_hours_text() ); ?></span></div></div><?php endif; ?>
 	</div>
@@ -84,7 +84,10 @@ $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'n
 </footer>
 
 <?php if ( $phone || $wa ) : ?>
-<div class="dock" role="complementary" aria-label="تواصل سريع" style="--dock-n:<?php echo (int) ( ( $phone ? 1 : 0 ) + 1 ); ?>">
+<div class="dock" role="complementary" aria-label="تواصل سريع" style="--dock-n:<?php echo (int) ( ( $phone ? 1 : 0 ) + ( zad_is_service() && $wa ? 2 : 1 ) ); ?>">
+	<?php if ( zad_is_service() && $wa ) : $photo_wa = zad_wa_link( 'السلام عليكم، سأرسل صورة المكان لعرض سعر: ' . zad_svc_label( get_the_ID() ), get_the_ID() ); ?>
+	<a class="dock__btn dock__btn--photo" href="<?php echo esc_url( $photo_wa ); ?>" data-ev="lead_whatsapp" data-src="svc-bar-photo" target="_blank" rel="noopener" style="background:#0f172a;color:#fff"><span>📷 أرسل صورة</span></a>
+	<?php endif; ?>
 	<?php if ( $phone ) : ?><a class="dock__btn dock__btn--call" href="<?php echo esc_url( zad_tel_href( $phone ) ); ?>"><?php echo zad_icon( 'phone', 22 ); // phpcs:ignore ?><span>اتصل الآن</span></a><?php endif; ?>
 	<?php if ( $wa ) : ?><a class="dock__btn dock__btn--wa" href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"><?php echo zad_icon( 'whatsapp', 22 ); // phpcs:ignore ?><span>تواصل واتساب</span></a>
 	<?php else : // no WhatsApp number in the settings: the quote form keeps the bar at two buttons ?><button type="button" class="dock__btn dock__btn--quote" data-open-wizard><?php echo zad_icon( 'bolt', 22 ); // phpcs:ignore ?><span>عرض سعر</span></button><?php endif; ?>
@@ -98,6 +101,7 @@ $cats  = get_terms( array( 'taxonomy' => 'service_cat', 'hide_empty' => true, 'n
 </div>
 <button type="button" class="totop" data-totop aria-label="العودة للأعلى"><?php echo zad_icon( 'up', 22 ); // phpcs:ignore ?></button>
 <?php endif; ?>
+<noscript><style>@media(max-width:980px){.hdr__in{flex-wrap:wrap}.nav{position:static;transform:none;width:100%;max-height:none;padding:16px;box-shadow:none}.burger,.nav__close,.submenu-toggle,.nav-overlay{display:none!important}.nav__list .sub-menu,.nav__list .mega{display:block!important;position:static}.nav__list li:hover>.sub-menu:not(.active){display:block!important}}</style></noscript>
 <?php wp_footer(); ?>
 </body>
 </html>

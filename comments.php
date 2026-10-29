@@ -25,7 +25,7 @@ if ( have_comments() || comments_open() ) : ?>
 						wp_list_comments( array(
 							'style'       => 'ol',
 							'short_ping'  => true,
-                            'callback' => 'better_commets'
+                            'callback' => 'zad_comment_item'
 						) );
 					?>
         </ol>

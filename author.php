@@ -5,6 +5,11 @@ $name = get_the_author_meta( 'display_name', $uid );
 $bio  = zad_author_bio( $uid );
 $img  = zad_author_image( $uid );
 ?>
+<?php $about = is_paged() ? '' : zad_author_about_html( $uid ); ?>
+<?php if ( '' !== $about ) : // the «عن الكاتب» content carries its own hero and H1: no second header ?>
+<div class="wrap authorabout__crumbs"><?php zad_render_crumbs( zad_current_crumbs() ); ?></div>
+<section class="authorabout"><div class="wrap"><?php echo $about; // phpcs:ignore WordPress.Security.EscapeOutput -- saved by a user who can edit this profile ?></div></section>
+<?php else : ?>
 <section class="phero authorhd">
 	<div class="wrap">
 		<?php zad_render_crumbs( zad_current_crumbs() ); ?>
@@ -17,11 +22,13 @@ $img  = zad_author_image( $uid );
 		</div>
 	</div>
 </section>
+<?php endif; ?>
 <main id="main" class="sec">
 	<div class="wrap">
+		<?php if ( '' !== $about && have_posts() ) : ?><h2 class="h-line">مقالات <?php echo esc_html( $name ); ?></h2><?php endif; ?>
 		<?php if ( have_posts() ) : ?>
 			<div class="sgrid"><?php while ( have_posts() ) { the_post(); get_template_part( 'template-parts/author-card' ); } ?></div>
-			<?php echo memo_pagination(); // phpcs:ignore ?>
+			<?php echo zad_pagination(); // phpcs:ignore ?>
 		<?php else : ?>
 			<p class="empty">لا توجد مقالات منشورة لهذا الكاتب بعد.</p>
 		<?php endif; ?>

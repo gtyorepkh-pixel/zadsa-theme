@@ -2,7 +2,7 @@
 (function () {
 	'use strict';
 	var box = document.querySelector('[data-zw-player]'); if (!box) { return; }
-	var kind = box.getAttribute('data-kind'), yt = box.getAttribute('data-yt'), video = box.querySelector('video'), frame = null;
+	var kind = box.getAttribute('data-kind'), yt = box.getAttribute('data-yt'), video = box.querySelector('video'), frame = box.querySelector('iframe');
 	var clips = [].slice.call(document.querySelectorAll('.zw-clip'));
 
 	function secs(v) {
