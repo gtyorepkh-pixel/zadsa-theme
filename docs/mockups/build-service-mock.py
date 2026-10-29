@@ -43,6 +43,7 @@ def _tool(m):
     i=int(m.group(1)); li=m.group(0)
     return li.replace('</li>','<p class="hsteps__tool"><b>الأداة:</b> '+tools[i]+'</p></li>',1) if i in tools else li
 steps=re.sub(r'<li><span class="hsteps__n">(\d)</span>.*?</li>',_tool,steps,flags=re.S)
+steps=steps.replace('class="sec sec--cream"','class="sec"',1)  # white background, so it separates the hero price card from the cream price section
 # ---------- needs section (merged) ----------
 def demote(block,wrapper_cls):
     b=re.sub(r'^<section class="[^"]*"([^>]*)><div class="wrap">',r'<div class="need__grp \g<0>',block)
@@ -120,8 +121,8 @@ rel='<section class="sec sec--mint"><div class="wrap"><header class="sec__head">
 def sec(kind,label,x,cls=''): return wrap(kind,label,x,cls)
 order=[
  sec('keep','① الهيرو — كما هو (من غير سطر سعر إضافي: بطاقة التسعير الفوري فيه تعرض «يبدأ من»)',hero),
- sec('moved','② الأسعار — أول محتوى تحت الهيرو مباشرة (كانت 11 من 18) + سطر المنشآت + آخر تحديث',price),
- sec('merged','③ الخطوات — منقولة لفوق + «الأداة» لكل خطوة (بدل قسم المعدات)',steps),
+ sec('merged','② الخطوات — أول محتوى تحت الهيرو (فاصل بين بطاقة الأسعار في الهيرو وكروت الأسعار) + «الأداة» لكل خطوة بدل قسم المعدات',steps),
+ sec('moved','③ الأسعار — منقولة لفوق (كانت 11 من 18) + سطر المنشآت + آخر تحديث',price),
  sec('new','④ فيديو — يظهر فقط عند وجود رابط (لا يوجد رابط في هذه الصفحة الآن)',video),
  sec('merged','⑤ علامات الحاجة — مدمج: هل يحتاج + علامات + من أين يبدأ التلوث + ماذا لو أجّلت (الاختبار مطوي بزر)',needs),
  sec('merged','⑥ الفرق بين التنظيف والتعقيم + متى الصيانة/العزل + لماذا تعود الطحالب',K1),
