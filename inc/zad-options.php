@@ -543,6 +543,7 @@ Zad_Settings::createSection( $zad_prefix, array(
 				'svcconvert'   => 'محوّل صفحات الخدمات (Service Convert)',
 				'faqanswer'    => 'أداة إجابات الأسئلة (FAQ Answer Tool)',
 				'diag'         => 'تشخيص النظام (System Diagnostics)',
+				'layout'       => 'تصميم صفحات الخدمة (كلاسيكي/جديد)',
 			),
 			'default'    => array( 'leadreport', 'worksmigrate', 'schemacheck', 'audit' ),
 			'dependency' => array( 'zad_tools_mode', '==', 'custom' ),

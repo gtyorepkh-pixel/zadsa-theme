@@ -18,6 +18,7 @@ if ( is_admin() ) {
 		'ctxlinks'     => 'inc/zad-ctxlinks.php',  // «الروابط السياقية»: زرع روابط جوّه النص بين خدمات المدينة الواحدة
 		'pkgcopy'      => 'inc/zad-pkgcopy.php',   // «نسخ باقات الأسعار بين المدن»: جدة تأخذ أسعار الرياض
 		'faqlink'      => 'inc/zad-faqlink.php',  // «ربط الأسئلة بالخدمات»: الحقل اللي الـREST ما يكتبهوش
+		'layout'       => 'inc/zad-layout-tool.php', // «تصميم صفحات الخدمة»: تبديل كلاسيكي/جديد لعدة صفحات معاً (يلمس حقل التصميم فقط)
 	);
 	if ( 'all' === $tools_mode ) {
 		foreach ( $all_tools as $file ) {

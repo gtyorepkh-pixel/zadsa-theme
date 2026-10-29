@@ -67,6 +67,17 @@ update_post_meta( $id, '_zad_layout', 'weird' );
 list( , $junk ) = get( $url );
 ok( false === strpos( $junk, 'svc--new' ), 'unknown layout value = classic' );
 
+/* bulk tool: apply / undo only touch _zad_layout */
+if ( ! function_exists( 'zad_lt_apply' ) ) { require_once get_template_directory() . '/inc/zad-layout-tool.php'; }
+delete_option( ZAD_LT_LOG ); update_post_meta( $id, '_zad_layout', '' );
+$before = md5( json_encode( array( get_post( $id )->post_content, get_post_meta( $id, '_zad_signs', true ), get_post( $id )->post_name ) ) );
+ok( 1 === zad_lt_apply( array( $id ), 'new' ) && 'new' === get_post_meta( $id, '_zad_layout', true ), 'tool: apply new sets the meta' );
+ok( 0 === zad_lt_apply( array( $id ), 'new' ), 'tool: applying again changes nothing' );
+ok( $before === md5( json_encode( array( get_post( $id )->post_content, get_post_meta( $id, '_zad_signs', true ), get_post( $id )->post_name ) ) ), 'tool: content, slug and other meta untouched' );
+ok( 1 === zad_lt_undo() && '' === (string) get_post_meta( $id, '_zad_layout', true ), 'tool: undo restores the previous value' );
+ok( 0 === zad_lt_apply( array( 999999 ), 'new' ), 'tool: unknown id ignored' );
+$rows = zad_lt_pages( 'اختبار' ); ok( count( $rows ) >= 1 && 'classic' === $rows[0]['layout'], 'tool: listing shows the current layout' );
+
 if ( ! getenv( "KEEP" ) ) { wp_delete_post( $id, true ); } else { update_post_meta( $id, "_zad_layout", "new" ); echo "kept: $url\n"; }
 echo "layout-test: $n checks, $fail failed\n";
 exit( $fail ? 1 : 0 );
