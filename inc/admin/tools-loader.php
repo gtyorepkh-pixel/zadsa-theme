@@ -33,5 +33,11 @@ if ( is_admin() ) {
 			}
 		}
 	}
+	// الأداتان دول أدوات تشغيل لازم تظهر في وضع «اختيار أدوات محددة» كمان (بيتوقفوا بس لما الوضع «إيقاف»)
+	if ( 'off' !== $tools_mode ) {
+		foreach ( array( 'inc/zad-layout-tool.php', 'inc/zad-content-pack.php' ) as $zad_always ) {
+			if ( file_exists( ZAD_THEME_DIR . $zad_always ) ) { require_once ZAD_THEME_DIR . $zad_always; }
+		}
+	}
 }
 
