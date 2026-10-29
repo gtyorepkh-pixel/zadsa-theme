@@ -43,6 +43,7 @@ def _tool(m):
     i=int(m.group(1)); li=m.group(0)
     return li.replace('</li>','<p class="hsteps__tool"><b>الأداة:</b> '+tools[i]+'</p></li>',1) if i in tools else li
 steps=re.sub(r'<li><span class="hsteps__n">(\d)</span>.*?</li>',_tool,steps,flags=re.S)
+harms=harms.replace('class="sec sec--cream"','class="sec sec--tint"',1)  # not cream: the price section after it is cream
 steps=steps.replace('class="sec sec--cream"','class="sec"',1)  # white background, so it separates the hero price card from the cream price section
 # ---------- needs section (merged) ----------
 def demote(block,wrapper_cls):
@@ -61,8 +62,6 @@ needs=f'''<section class="sec" id="needs"><div class="wrap">
 <p>غالباً نعم إذا ظهرت أي علامة من العلامات التالية. افحص خزانك لتعرف الخطة المناسبة.</p></header>
 <details class="need__details"><summary class="btn btn--accent">ابدأ الفحص: 6 أسئلة سريعة تعرف بعدها الخطة المناسبة لخزانك</summary><div class="need__grp ix ix--wiz" id="ix-wiz">{w_in}</div></details>
 <div class="need__grp"><header class="sec__head"><h3>علامات تخبرك أنك تحتاج تنظيف خزانات بالرياض</h3></header>{s_in}</div>
-<div class="need__grp ix ix--map" id="ix-map">{m_in}</div>
-<div class="need__grp"><header class="sec__head"><h3>ماذا يحدث إذا أجّلت التنظيف؟</h3></header>{hm_in}</div>
 </div></section>'''
 # ---------- knowledge sections (regroup the 8 editor H2s) ----------
 body=re.search(r'<div class="prose entry-content">(.*)</div></div></section>\s*$',content,re.S).group(1)
@@ -118,26 +117,32 @@ rel='<section class="sec sec--mint"><div class="wrap"><header class="sec__head">
  card('http://zadksa.local/cleaning/air-conditioning/riyadh/','تنظيف مكيفات بالرياض','غسيل المكيفات بعد الخزانات في نفس الزيارة'),
  card('http://zadksa.local/cleaning/sofa/riyadh/','تنظيف كنب بالرياض','للبيت نفسه في نفس الأسبوع')])+'</div></div></section>'
 # ---------- compose ----------
-def sec(kind,label,x,cls=''): return wrap(kind,label,x,cls)
+_n=[0]
+CIRC='①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
+def sec(kind,label,x,cls=''):
+    i=_n[0]; _n[0]+=1
+    return wrap(kind,(CIRC[i] if i<len(CIRC) else str(i+1))+' '+label,x,cls)
 order=[
- sec('keep','① الهيرو — كما هو (من غير سطر سعر إضافي: بطاقة التسعير الفوري فيه تعرض «يبدأ من»)',hero),
- sec('merged','② الخطوات — أول محتوى تحت الهيرو (فاصل بين بطاقة الأسعار في الهيرو وكروت الأسعار) + «الأداة» لكل خطوة بدل قسم المعدات',steps),
- sec('moved','③ الأسعار — منقولة لفوق (كانت 11 من 18) + سطر المنشآت + آخر تحديث',price),
- sec('new','④ فيديو — يظهر فقط عند وجود رابط (لا يوجد رابط في هذه الصفحة الآن)',video),
- sec('merged','⑤ علامات الحاجة — مدمج: هل يحتاج + علامات + من أين يبدأ التلوث + ماذا لو أجّلت (الاختبار مطوي بزر)',needs),
- sec('merged','⑥ الفرق بين التنظيف والتعقيم + متى الصيانة/العزل + لماذا تعود الطحالب',K1),
- sec('merged','⑦ كم مرة ننظف + الرائحة بعد التنظيف',K2),
- sec('merged','⑧ الأرضي أم العلوي + خزانات العمائر',K3),
- sec('merged','⑨ هل الماء صالح للشرب؟',K4),
- sec('new','⑩ كيف أختار شركة تنظيف خزانات؟ — مسودة محتوى للمراجعة',K5),
- sec('new','⑪ كيف أحجز وكيف أدفع؟ — مسودة محتوى للمراجعة',K6),
- sec('keep','⑫ أحياء الرياض (روابط نصية) — بعد حذف مربع «30 يوماً ضمان» المكرر منها',cov),
- sec('new','⑬ بيانات الشركة + الخريطة (من الإعدادات؛ بيانات حقيقية) — الخريطة تُحمَّل عند الضغط',biz),
- sec('merged','⑭ أعمالنا + صور الزيارات في قسم واحد (واستُبعد عمل «كنب وموكيت»)',w2),
- sec('new','⑭ بطاقة المشرف (من حساب الكاتب الحقيقي)',expert),
- sec('new','⑭ المراجعات الحقيقية — لا تظهر إلا ببيانات',f'<section class="sec"><div class="wrap">{reviews_slot}</div></section>','mk--ghost'),
- sec('merged','⑮ الأسئلة الشائعة — 4 أسئلة غير مكررة + 6 أسئلة تفصيلية = 10 في قسم واحد',faq2),
- sec('new','⑯ خدمات أخرى قد تحتاجها',rel),
+ sec('keep','الهيرو — كما هو (بلا سطر سعر إضافي: بطاقة الحجز فيه تعرض «يبدأ من»)',hero),
+ sec('merged','هل يحتاج خزانك تنظيفاً الآن؟ — أول محتوى تحت الهيرو (الاختبار مطوي بزر + العلامات)',needs),
+ sec('moved','ماذا يحدث إذا أجّلت التنظيف؟ — تحت قسم الحاجة مباشرة (كان 13 من 18)',harms),
+ sec('moved','الأسعار — منقولة لفوق (كانت 11 من 18) + سطر المنشآت + آخر تحديث',price),
+ sec('merged','الخطوات — منقولة لفوق + «الأداة» لكل خطوة بدل قسم المعدات',steps),
+ sec('new','فيديو — يظهر فقط عند وجود رابط (لا يوجد رابط في هذه الصفحة الآن)',video),
+ sec('moved','من أين يبدأ تلوث الخزان؟ — انتقل من قسم الحاجة إلى قسم المعرفة',mp),
+ sec('merged','الفرق بين التنظيف والتعقيم + متى الصيانة/العزل + لماذا تعود الطحالب',K1),
+ sec('merged','كم مرة ننظف + الرائحة بعد التنظيف',K2),
+ sec('merged','الأرضي أم العلوي + خزانات العمائر',K3),
+ sec('merged','هل الماء صالح للشرب؟',K4),
+ sec('new','كيف أختار شركة تنظيف خزانات؟ — مسودة محتوى للمراجعة',K5),
+ sec('new','كيف أحجز وكيف أدفع؟ — مسودة محتوى للمراجعة',K6),
+ sec('keep','أحياء الرياض (روابط نصية) — بعد حذف مربع «30 يوماً ضمان» المكرر منها',cov),
+ sec('new','بيانات الشركة + الخريطة (بيانات حقيقية من موقعك) — الخريطة تُحمَّل عند الضغط',biz),
+ sec('merged','أعمالنا + صور الزيارات في قسم واحد (واستُبعد عمل «كنب وموكيت»)',w2),
+ sec('new','بطاقة المشرف (من حساب الكاتب الحقيقي)',expert),
+ sec('new','المراجعات الحقيقية — لا تظهر إلا ببيانات',f'<section class="sec"><div class="wrap">{reviews_slot}</div></section>','mk--ghost'),
+ sec('merged','الأسئلة الشائعة — 4 غير مكررة + 6 تفصيلية = 10 في قسم واحد',faq2),
+ sec('new','خدمات أخرى قد تحتاجها',rel),
 ]
 removed='''<div class="mk-removed"><h3>اللي اتشال من الصفحة (مكرر)</h3><ul>
 <li><b>المقدمة</b> («شركة تنظيف خزانات بالرياض من زاد…») — كررت الأسعار الثلاثة والضمان وخطوات الزيارة الست حرفياً تقريباً (والسعر نفسه في سؤال الأسئلة). رابط القسم الأب (تنظيف الخزانات) موجود في مسار التنقل.</li>
