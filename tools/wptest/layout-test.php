@@ -18,6 +18,9 @@ $m( 'steps',  array( array( 't' => 'STEPS_MARK تفريغ', 'd' => 'وصف' ), a
 $m( 'tools',  array( array( 't' => 'EQUIP_MARK مضخة', 'd' => 'وصف' ) ) );
 $m( 'faq',    array( array( 'q' => 'FAQ_MARK سؤال؟', 'a' => 'جواب' ) ) );
 $m( 'packages', "اقتصادية|150|ريال|وصف|ضمان 30 يوماً|تفريغ;غسيل|0|اطلب|\nشاملة|300|ريال|وصف|ضمان 60 يوماً|تفريغ;غسيل;تعقيم|1|اطلب|" );
+$m( 'stats', array( array( 'n' => '99', 'l' => 'STATS_MARK' ) ) );
+$m( 'subs', array( array( 't' => 'SUBS_MARK خدمة فرعية', 'd' => 'وصف' ) ) );
+update_user_meta( 1, 'description', 'EXPERT_MARK خبير تنظيف خزانات' );
 $m( 'ix', array( 'on' => 1, 'order' => 'wiz', 'en' => array( 'wiz' => 1 ), 'wiz' => array( 'questions' => 'WIZ_MARK متى آخر غسيل؟||single||أقل من 6 أشهر::0;أكثر من سنة::3', 'tiers' => '0|خطة|نص|تفريغ' ) ) );
 
 $url = get_permalink( $id );
@@ -29,6 +32,8 @@ $pos = function ( $html, $s ) use ( $body ) { $p = strpos( $body( $html ), $s );
 list( $code, $c ) = get( $url );
 ok( 200 === $code, "classic page 200 (got $code)" );
 $order_c = array( 'main' => 0, 'intro' => $pos( $c, 'INTRO_MARK' ), 'wiz' => $pos( $c, 'WIZ_MARK' ), 'after' => $pos( $c, 'AFTER_MARK' ), 'equip' => $pos( $c, 'EQUIP_MARK' ), 'steps' => $pos( $c, 'STEPS_MARK' ), 'prices' => $pos( $c, 'id="prices"' ), 'signs' => $pos( $c, 'SIGNS_MARK' ), 'harms' => $pos( $c, 'HARMS_MARK' ), 'faq' => $pos( $c, 'FAQ_MARK' ) );
+ok( false !== strpos( $body( $c ), 'STATS_MARK' ), 'classic prints the stats strip' );
+ok( false === strpos( $body( $c ), 'id="biz"' ) && false === strpos( $body( $c ), 'EXPERT_MARK' ), 'classic has no company block or reviewer card' );
 foreach ( $order_c as $k => $v ) { ok( $v >= 0, "classic has $k" ); }
 ok( $order_c['intro'] < $order_c['wiz'] && $order_c['wiz'] < $order_c['after'], 'classic: intro → wizard → after-more text' );
 ok( $order_c['after'] < $order_c['equip'] && $order_c['equip'] < $order_c['steps'] && $order_c['steps'] < $order_c['prices'] && $order_c['prices'] < $order_c['signs'] && $order_c['signs'] < $order_c['harms'] && $order_c['harms'] < $order_c['faq'], 'classic: after → equipment → steps → prices → signs → harms → faq' );
@@ -39,15 +44,19 @@ if ( getenv( 'BASELINE' ) ) { file_put_contents( getenv( 'BASELINE' ), preg_repl
 update_post_meta( $id, '_zad_layout', 'new' );
 list( $code, $nw ) = get( $url );
 ok( 200 === $code, 'new page 200' );
-$o = array( 'main' => 0, 'wiz' => $pos( $nw, 'WIZ_MARK' ), 'signs' => $pos( $nw, 'SIGNS_MARK' ), 'harms' => $pos( $nw, 'HARMS_MARK' ), 'prices' => $pos( $nw, 'id="prices"' ), 'steps' => $pos( $nw, 'STEPS_MARK' ), 'equip' => $pos( $nw, 'EQUIP_MARK' ), 'intro' => $pos( $nw, 'INTRO_MARK' ), 'after' => $pos( $nw, 'AFTER_MARK' ), 'faq' => $pos( $nw, 'FAQ_MARK' ) );
+$nb = $body( $nw );
+$o = array( 'wiz' => $pos( $nw, 'WIZ_MARK' ), 'signs' => $pos( $nw, 'SIGNS_MARK' ), 'harms' => $pos( $nw, 'HARMS_MARK' ), 'prices' => $pos( $nw, 'id="prices"' ), 'steps' => $pos( $nw, 'STEPS_MARK' ), 'equip' => $pos( $nw, 'EQUIP_MARK' ), 'intro' => $pos( $nw, 'INTRO_MARK' ), 'after' => $pos( $nw, 'AFTER_MARK' ), 'biz' => $pos( $nw, 'id="biz"' ), 'expert' => $pos( $nw, 'EXPERT_MARK' ), 'faq' => $pos( $nw, 'FAQ_MARK' ) );
 foreach ( $o as $k => $v ) { ok( $v >= 0, "new has $k" ); }
-ok( $o['main'] < $o['wiz'] && $o['wiz'] < $o['signs'] && $o['signs'] < $o['harms'] && $o['harms'] < $o['prices'] && $o['prices'] < $o['steps'] && $o['steps'] < $o['equip'], 'new: wizard → signs → harms → prices → steps → equipment' );
-ok( $o['equip'] < $o['intro'] && $o['intro'] < $o['after'] && $o['after'] < $o['faq'], 'new: equipment → intro → after-more text → faq' );
+ok( $o['wiz'] < $o['signs'] && $o['signs'] < $o['harms'] && $o['harms'] < $o['prices'] && $o['prices'] < $o['steps'] && $o['steps'] < $o['equip'], 'new: needs (wizard, signs) → harms → prices → steps → equipment line' );
+ok( $o['equip'] < $o['intro'] && $o['intro'] < $o['after'] && $o['after'] < $o['biz'] && $o['biz'] < $o['expert'] && $o['expert'] < $o['faq'], 'new: equipment → intro → knowledge → company data → reviewer → faq' );
 ok( false !== strpos( $nw, 'class="svc--new"' ), 'new: main has svc--new' );
-ok( false !== strpos( $nw, 'sec--tint' ) && 1 === preg_match( '#<section class="sec sec--tint"><div class="wrap">\s*<header[^>]*>.{0,400}HARMS_MARK#su', $nw ) || false !== strpos( $nw, 'HARMS_MARK' ), 'new: harms rendered' );
-ok( 1 === substr_count( $body( $nw ), 'WIZ_MARK' ), 'new: wizard printed once' );
-ok( 1 === substr_count( $body( $nw ), 'INTRO_MARK' ) && 1 === substr_count( $body( $nw ), 'AFTER_MARK' ), 'new: content printed once' );
-ok( strlen( $nw ) > 0.85 * strlen( $c ), 'new: no section lost (size within 15% of classic)' );
+ok( 1 === preg_match( '#<details class="need__details"><summary[^>]*>[^<]*</summary><div class="need__grp ix ix--wiz" id="ix-wiz">.*WIZ_MARK#su', $nb ), 'new: self-check sits inside the collapsed details block' );
+ok( 1 === substr_count( $nb, 'WIZ_MARK' ), 'new: wizard printed once' );
+ok( 1 === substr_count( $nb, 'INTRO_MARK' ) && 1 === substr_count( $nb, 'AFTER_MARK' ), 'new: content printed once' );
+ok( false === strpos( $nb, 'STATS_MARK' ), 'new: stats strip not printed' );
+ok( false === strpos( $nb, 'SUBS_MARK' ) && false !== strpos( $body( $c ), 'SUBS_MARK' ), 'new: sub-services section not printed (classic prints it)' );
+ok( 1 === preg_match( '#class="hsteps__tools"><b>[^<]*</b> [^<]*EQUIP_MARK#u', $nb ) && false === strpos( $nb, 'أدواتنا ومعداتنا' ), 'new: equipment is a line under the steps, not a section' );
+ok( 1 === substr_count( $nb, 'FAQ_MARK' ), 'new: faq printed once' );
 foreach ( array( 'SIGNS_MARK', 'HARMS_MARK', 'STEPS_MARK', 'EQUIP_MARK', 'FAQ_MARK', 'WIZ_MARK', 'INTRO_MARK', 'AFTER_MARK' ) as $mk ) { ok( false !== strpos( $nw, $mk ) && false !== strpos( $c, $mk ), "both layouts contain $mk" ); }
 
 /* preview param: needs edit capability */
@@ -79,5 +88,6 @@ ok( 0 === zad_lt_apply( array( 999999 ), 'new' ), 'tool: unknown id ignored' );
 $rows = zad_lt_pages( 'اختبار' ); ok( count( $rows ) >= 1 && 'classic' === $rows[0]['layout'], 'tool: listing shows the current layout' );
 
 if ( ! getenv( "KEEP" ) ) { wp_delete_post( $id, true ); } else { update_post_meta( $id, "_zad_layout", "new" ); echo "kept: $url\n"; }
+delete_user_meta( 1, "description" );
 echo "layout-test: $n checks, $fail failed\n";
 exit( $fail ? 1 : 0 );

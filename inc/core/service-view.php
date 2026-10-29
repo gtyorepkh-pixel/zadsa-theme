@@ -56,25 +56,24 @@ function zad_service_sections( $id = 0 ) {
 	if ( $id && 'new' === zad_service_layout( $id ) ) {
 		return array(
 			'hero',
-			'stats',
-			'ix-modules',   // self-check wizard / map (the text that follows the "Read more" tag moves to ix-after)
-			'signs',
+			'needs',        // heading → self-check collapsed behind one button → signs (replaces stats, the open wizard and signs)
 			'harms',
 			'pricing',
 			'price-factors',
-			'steps',
-			'equipment',
+			'steps',        // the equipment titles sit under the steps; no separate equipment section
 			'before-after',
 			'video',
+			'ix-rest',      // map / safety / story modules (the self-check is inside «needs»)
 			'content',
 			'ix-after',
 			'coverage',
-			'subservices',
-			'business',
-			'clients',
+			'biz',
 			'works',
 			'gallery',
-			'faq',
+			'expert',
+			'business',
+			'clients',
+			'faq-merged',   // FAQ + detailed questions in one section
 			'links',
 			'related',
 		);

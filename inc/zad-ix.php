@@ -294,6 +294,15 @@ function zad_ix_module_html( $k, $ix, $post_id ) {
 	return '<section class="sec ix ix--' . esc_attr( $k ) . '" id="ix-' . esc_attr( $k ) . '"><div class="wrap">' . $o . '</div></section>';
 }
 
+/** One module without its <section> wrapper and header (the new layout puts the wizard inside a collapsed block under its own heading). '' when the module is off or already printed. */
+function zad_ix_inner( $k, $post_id ) {
+	$ix = zad_ix_get( $post_id );
+	if ( empty( $ix['on'] ) || empty( $ix['en'][ $k ] ) || isset( zad_ix_done()[ $k ] ) ) { return ''; }
+	$h = zad_ix_module_html( $k, $ix, $post_id );
+	if ( ! preg_match( '#^<section[^>]*><div class="wrap">(.*)</div></section>$#s', $h, $m ) ) { return ''; }
+	return preg_replace( '#^<header class="sec__head">.*?</header>#s', '', $m[1], 1 );
+}
+
 /** Modules already printed (by shortcode) so the layout does not repeat them. */
 function zad_ix_done( $k = null ) {
 	static $done = array();
@@ -302,7 +311,7 @@ function zad_ix_done( $k = null ) {
 	return $done;
 }
 
-function zad_ix_render( $post_id ) {
+function zad_ix_render( $post_id, $skip = array() ) {
 	$ix = zad_ix_get( $post_id );
 	if ( empty( $ix['on'] ) ) {
 		return '';
@@ -310,7 +319,7 @@ function zad_ix_render( $post_id ) {
 	$out  = '';
 	$done = zad_ix_done();
 	foreach ( zad_ix_order( $ix ) as $k ) {
-		if ( empty( $ix['en'][ $k ] ) || isset( $done[ $k ] ) ) { continue; }
+		if ( empty( $ix['en'][ $k ] ) || isset( $done[ $k ] ) || in_array( $k, (array) $skip, true ) ) { continue; }
 		$out .= zad_ix_module_html( $k, $ix, $post_id );
 	}
 	return $out;

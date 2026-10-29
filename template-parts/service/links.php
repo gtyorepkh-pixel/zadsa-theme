@@ -1,7 +1,7 @@
 <?php defined( 'ABSPATH' ) || exit; ?>
 
 	<!-- 15a. Related detailed questions (right after the page's own FAQ; before «related services» when there is none) -->
-	<?php $qn = zad_qnet_html( $id ); if ( $faq ) { echo $qn; } // phpcs:ignore WordPress.Security.EscapeOutput ?>
+	<?php $qn = zad_qnet_html( $id ); if ( isset( $zad_layout ) && 'new' === $zad_layout ) { $qn = ''; } elseif ( $faq ) { echo $qn; } // new layout: the detailed questions are inside faq-merged.php // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
 	<!-- 15b. Guides (hand-picked / strict match) -->
 	<?php echo zad_guides_html( $id ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
